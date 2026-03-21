@@ -498,19 +498,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\test\\.nuget\\packages\\": {}
+    "C:\\Users\\ontha\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\test\\Documents\\School Directory\\DV300\\Semester 1\\Assignments\\Artifax\\Backend\\Backend.csproj",
+      "projectUniqueName": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
       "projectName": "Backend",
-      "projectPath": "C:\\Users\\test\\Documents\\School Directory\\DV300\\Semester 1\\Assignments\\Artifax\\Backend\\Backend.csproj",
-      "packagesPath": "C:\\Users\\test\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\test\\Documents\\School Directory\\DV300\\Semester 1\\Assignments\\Artifax\\Backend\\obj\\",
+      "projectPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
+      "packagesPath": "C:\\Users\\ontha\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\test\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\ontha\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
