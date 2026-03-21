@@ -1,3 +1,6 @@
+using Artifax.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,6 +12,8 @@ builder.Services.AddSwaggerGen();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("ArtifaxDatabase")));
 
 var app = builder.Build();
 
