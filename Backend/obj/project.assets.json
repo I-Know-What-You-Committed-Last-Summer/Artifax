@@ -2621,19 +2621,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ontha\\.nuget\\packages\\": {}
+    "C:\\Users\\kaied\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
+      "projectUniqueName": "E:\\School\\3rd Year\\DV300\\Artifax\\Artifax\\Backend\\Backend.csproj",
       "projectName": "Backend",
-      "projectPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
-      "packagesPath": "C:\\Users\\ontha\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\obj\\",
+      "projectPath": "E:\\School\\3rd Year\\DV300\\Artifax\\Artifax\\Backend\\Backend.csproj",
+      "packagesPath": "C:\\Users\\kaied\\.nuget\\packages\\",
+      "outputPath": "E:\\School\\3rd Year\\DV300\\Artifax\\Artifax\\Backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\ontha\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\kaied\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
