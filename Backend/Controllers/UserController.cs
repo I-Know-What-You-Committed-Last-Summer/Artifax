@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Artifax.DTOs;
 using Artifax.Models;
+using Artifax.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Artifax.Controllers
 {
@@ -8,16 +10,190 @@ namespace Artifax.Controllers
     [Route("api/[Controller]")]
     public class UserController : ControllerBase
     {
-        // [HttpPost("employee/login")]
-        // public async Task<ActionResult<Employee>> LoginEmployee ()
-        // {
-        //     return Ok();
-        // }
+        //TODO: Add Session Based Auth
+        readonly ArtifaxContext context;
 
-        // [HttpPost("admin/login")]
-        // public async Task<ActionResult<Admin>> LoginAdmin ()
-        // {
-        //     return Ok();
-        // }
+        public UserController(ArtifaxContext incoming)
+        {
+            context = incoming;
+        }
+
+        #region GetRoutes
+            [HttpGet("employee")]
+            public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllEmployees ()
+            {
+                return await context.Employees.Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
+            }
+
+            [HttpGet("admin")]
+            public async Task<ActionResult<IEnumerable<AdminReadDto>>> GetAllAdmins ()
+            {
+                return await context.Admins.Select(admin => AdminReadDto.ToDto(admin)).ToListAsync();
+            }
+
+            [HttpGet("employee/{id}")]
+            public async Task<ActionResult<EmployeeReadDto>> GetAllEmployeeById (int id)
+            {
+                var _result = await context.Employees.FindAsync(id);
+                if (_result == null) return NotFound();
+                return EmployeeReadDto.ToDto(_result);
+            }
+
+            [HttpGet("admin/{id}")]
+            public async Task<ActionResult<AdminReadDto>> GetAllAdminById (int id)
+            {
+                var _result = await context.Admins.FindAsync(id);
+                if (_result == null) return NotFound();
+                return AdminReadDto.ToDto(_result);
+            }
+        #endregion
+        
+        #region PostRoutes
+            [HttpPost("employee")]
+            public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
+            {
+                //FIXME: Auth
+                bool _employeeNotFound = await context.Admins.FindAsync(incoming.EmployeeEmail) == null;
+                if (_employeeNotFound) return Unauthorized ("Email Already Exists");
+                Employee _employee = new ()
+                {
+                    BranchId = 0,
+                    EmployeeEmail = incoming.EmployeeEmail,
+                    EmployeeId = context.Employees.Max(employee => employee.EmployeeId + 1),
+                    EmployeeName = incoming.EmployeeName,
+                    EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword)
+                };
+
+                context.Employees.Add(_employee);
+                await context.SaveChangesAsync();
+
+                EmployeeReadDto _dto = EmployeeReadDto.ToDto(_employee);
+
+                return CreatedAtAction("GetAllEmployeeById", new { id = _employee.EmployeeId}, _dto);
+            }
+
+            [HttpPost("admin")]
+            public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
+            {
+                //FIXME: Auth
+                bool _adminNotFound = await context.Admins.FindAsync(incoming.AdminEmail) == null;
+                if (_adminNotFound) return Unauthorized ("Email Already Exists");
+                Admin _admin = new ()
+                {
+                    AdminEmail = incoming.AdminEmail,
+                    AdminId = context.Admins.Max(_i => _i.AdminId + 1),
+                    AdminName = incoming.AdminName,
+                    AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword)
+                };
+
+                context.Admins.Add(_admin);
+                await context.SaveChangesAsync();
+
+                AdminReadDto _dto = AdminReadDto.ToDto(_admin);
+
+                return CreatedAtAction("GetAllAdminById", new { id = _admin.AdminId}, _dto);
+            }
+
+            [HttpPost("employees/login")]
+            public async Task<ActionResult<EmployeeReadDto>> LoginEmployee (string email, string password)
+            {
+                var _employee = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == email);
+                if (_employee == null) return Unauthorized ("Employee Not Found");
+
+                if (!BCrypt.Net.BCrypt.Verify(password, _employee.EmployeePasswordHash))
+                {
+                    return Unauthorized("Incorrect Password");
+                }
+
+                return Ok(EmployeeReadDto.ToDto(_employee));
+            }
+
+            [HttpPost("admins/login")]
+            public async Task<ActionResult<AdminReadDto>> LoginAdmin (string email, string password)
+            {
+                var _admin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == email);
+                if (_admin == null) return Unauthorized ("Admin Not Found");
+
+                if (!BCrypt.Net.BCrypt.Verify(password, _admin.AdminPasswordHash))
+                {
+                    return Unauthorized("Incorrect Password");
+                }
+
+                return Ok(AdminReadDto.ToDto(_admin));
+            }
+        #endregion
+        
+        #region UpdateRoutes
+            [HttpPatch("employee/branch")]
+            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (int EmployeeId, int BranchId)
+            {
+                //FIXME: Auth
+                var _employee = await context.Employees.FindAsync(EmployeeId);
+
+                if (_employee == null) return NotFound($"Employee with ID: {EmployeeId.ToString()} could not be found");
+
+                bool _branchExists = await context.Branches.FindAsync(BranchId) != null;
+
+                if (!_branchExists) return NotFound($"Branch with ID: {BranchId.ToString()} could not be found");
+
+                _employee.BranchId = BranchId;
+                await context.SaveChangesAsync();
+                return Ok(EmployeeReadDto.ToDto(_employee));
+            }
+
+            [HttpPatch("employee")]
+            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (int id, EmployeeWriteDto incoming)
+            {
+                //FIXME: Auth
+                var _employee = await context.Employees.FindAsync(id);
+
+                if (_employee == null) return NotFound($"Employee with ID: {id.ToString()} could not be found");
+
+                _employee.EmployeeEmail = incoming.EmployeeEmail;
+                _employee.EmployeeName = incoming.EmployeeName;
+                _employee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword);
+                
+                await context.SaveChangesAsync();
+                return Ok(EmployeeReadDto.ToDto(_employee));
+            }
+
+            [HttpPatch("admin")]
+            public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (int id, AdminWriteDto incoming)
+            {
+                //FIXME: Auth
+                var _admin = await context.Admins.FindAsync(id);
+
+                if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
+
+                _admin.AdminEmail = incoming.AdminEmail;
+                _admin.AdminName = incoming.AdminName;
+                _admin.AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword);
+
+                await context.SaveChangesAsync();
+                return Ok(AdminReadDto.ToDto(_admin));
+            }
+        #endregion
+
+        #region DeleteRoutes
+            [HttpDelete("admin")]
+            public async Task<IActionResult> DeleteAdmin (int id)
+            {
+                var _admin = await context.Admins.FindAsync(id);
+                if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
+                context.Admins.Remove(_admin);
+                await context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            [HttpDelete("employee")]
+            public async Task<IActionResult> DeleteEmployee (int id)
+            {
+                var _employee = await context.Employees.FindAsync(id);
+                if (_employee == null) return NotFound($"Employee with ID: {id.ToString()} could not be found");
+                context.Employees.Remove(_employee);
+                await context.SaveChangesAsync();
+                return NoContent();
+            }
+        #endregion
     }
 }
