@@ -1,4 +1,5 @@
 .env
 /bin
 /obj
+bin
 obj
