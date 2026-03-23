@@ -29,10 +29,10 @@ namespace Artifax.Data
             modelBuilder.Entity<Branch>().HasMany(b => b.BranchMaterials).WithOne(bm => bm.Branch).HasForeignKey(bm => bm.BranchID);
             modelBuilder.Entity<Material>().HasMany(m => m.BranchMaterials).WithOne(bm => bm.Material).HasForeignKey(bm => bm.MaterialID);
             modelBuilder.Entity<Material>().HasMany(m => m.ProductMaterials).WithOne(pm => pm.Material).HasForeignKey(pm => pm.MaterialId);
-            modelBuilder.Entity<Product>().HasMany(p => p.ProductMaterial).WithOne(pm => pm.Product).HasForeignKey(pm => pm.ProductId);
+            modelBuilder.Entity<Product>().HasMany(p => p.ProductMaterials).WithOne(pm => pm.Product).HasForeignKey(pm => pm.ProductId);
             modelBuilder.Entity<Branch>().HasMany(b => b.BranchProducts).WithOne(bp => bp.Branch).HasForeignKey(bp => bp.BranchID);
             modelBuilder.Entity<Product>().HasMany(p => p.BranchProducts).WithOne(bp => bp.Product).HasForeignKey(bp => bp.ProductID);
-            //Link Branch to employee
+            //TODO: Link Branch to employee
         }
     }
 }
