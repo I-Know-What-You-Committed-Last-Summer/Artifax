@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj": {}
+    "C:\\Users\\ojoma\\OneDrive\\Desktop\\Artifax\\Backend\\Backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj": {
+    "C:\\Users\\ojoma\\OneDrive\\Desktop\\Artifax\\Backend\\Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
+        "projectUniqueName": "C:\\Users\\ojoma\\OneDrive\\Desktop\\Artifax\\Backend\\Backend.csproj",
         "projectName": "Backend",
-        "projectPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\Backend.csproj",
-        "packagesPath": "C:\\Users\\ontha\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ontha\\Documents\\School directory\\DV300\\Semester 1\\Assignment\\Artifax\\Backend\\obj\\",
+        "projectPath": "C:\\Users\\ojoma\\OneDrive\\Desktop\\Artifax\\Backend\\Backend.csproj",
+        "packagesPath": "C:\\Users\\ojoma\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\ojoma\\OneDrive\\Desktop\\Artifax\\Backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\ontha\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\ojoma\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
