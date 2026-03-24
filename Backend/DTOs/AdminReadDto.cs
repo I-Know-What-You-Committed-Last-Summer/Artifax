@@ -5,8 +5,8 @@ namespace Artifax.DTOs
     public class AdminReadDto
     {
         public int AdminId { get; set; }
-        public string AdminEmail { get; set; }
-        public string AdminName { get; set; }
+        public string AdminEmail { get; set; } = string.Empty; // Initialize with default value
+        public string AdminName { get; set; } = string.Empty; // Initialize with default value
 
         public static AdminReadDto ToDto (Admin incoming)
         {
