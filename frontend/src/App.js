@@ -1,24 +1,34 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import Navbar from './pages/navbar/navbar';
+
+// Page Components
+const Dashboard = () => <div className="page-content"><h1>Dashboard</h1></div>;
+const Inventory = () => <div className="page-content"><h1>Inventory</h1></div>;
+const Crafting = () => <div className="page-content"><h1>Crafting</h1></div>;
+const Analytics = () => <div className="page-content"><h1>Analytics</h1></div>;
+const Users = () => <div className="page-content"><h1>Users</h1></div>;
+const Settings = () => <div className="page-content"><h1>Settings</h1></div>;
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/crafting" element={<Crafting />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 
