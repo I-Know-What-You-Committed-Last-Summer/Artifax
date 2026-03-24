@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// IgnoreCycles prevents JSON circular reference errors (e.g., Order → Branch → Orders → ...)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -17,7 +18,9 @@ builder.Services.AddSwaggerGen();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Use InMemory database if the connection string has placeholders, otherwise use PostgreSQL
+
+// used an InMemory database with seed data so we can test without a real PostgreSQL server until connected to postgresSQL database. 
+
 var connectionString = builder.Configuration.GetConnectionString("ArtifaxDatabase") ?? "";
 if (connectionString.Contains("(*"))
 {
@@ -30,7 +33,7 @@ else
 
 var app = builder.Build();
 
-// Seed test data when using InMemory database
+// Seed test data when using InMemory database so Swagger endpoints have data to work with
 if (connectionString.Contains("(*"))
 {
     using var scope = app.Services.CreateScope();
@@ -54,7 +57,8 @@ app.MapControllers();
 
 app.Run();
 
-// Seed test data for InMemory database
+// Populates the InMemory database with sample data for testing:
+// 3 materials, 3 products with recipes, 1 branch with material stock and 1 employee
 void SeedTestData(ArtifaxContext db)
 {
     // Materials

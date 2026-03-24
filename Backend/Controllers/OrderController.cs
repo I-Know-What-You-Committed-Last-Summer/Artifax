@@ -5,6 +5,10 @@ using Artifax.Data;
 
 namespace Artifax.Controllers
 {
+   
+    /// Handles all order-related operations: CRUD + crafting.
+    /// Crafting an order deducts materials from branch stock and adds finished products.
+   
     [ApiController]
     [Route("api/[Controller]")]
     public class OrderController : ControllerBase
@@ -18,17 +22,19 @@ namespace Artifax.Controllers
 
         #region GetRoutes
 
+        // GET /api/Order — Returns all orders with their items (products) and branch info
         [HttpGet]
         public async Task<IActionResult> GetAllOrders()
         {
             var orders = await context.Orders
-                .Include(o => o.Items)
-                    .ThenInclude(i => i.Product)
-                .Include(o => o.Branch)
+                .Include(o => o.Items)           // Load the order items (join table)
+                    .ThenInclude(i => i.Product) // Load the product details for each item
+                .Include(o => o.Branch)          // Load the branch this order belongs to
                 .ToListAsync();
             return Ok(orders);
         }
 
+        // GET /api/Order/{id} — Returns a single order by ID with items and branch
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderById(int id)
         {
@@ -48,23 +54,26 @@ namespace Artifax.Controllers
 
         #region CreateRoutes
 
+        // POST /api/Order/create — Creates a new order with items
+        // Request body: { branchID, employeeID, orderDateTime, orderExpedite, items: [{ productID, quantity }] }
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] Order newOrder)
         {
-            // Validate the branch exists
+            // Validate that the branch exists in the database
             var branch = await context.Branches.FindAsync(newOrder.BranchID);
             if (branch == null)
                 return BadRequest($"Branch with ID {newOrder.BranchID} does not exist.");
 
-            // Validate the employee exists
+            // Validate that the employee exists in the database
             var employee = await context.Employees.FindAsync(newOrder.EmployeeID);
             if (employee == null)
                 return BadRequest($"Employee with ID {newOrder.EmployeeID} does not exist.");
 
-            // Validate each item's product exists
+            // An order must have at least one item
             if (newOrder.Items == null || !newOrder.Items.Any())
                 return BadRequest("Order must contain at least one item.");
 
+            // Validate each item references an existing product and has a valid quantity
             foreach (var item in newOrder.Items)
             {
                 var product = await context.Products.FindAsync(item.ProductID);
@@ -75,11 +84,11 @@ namespace Artifax.Controllers
                     return BadRequest("Each item must have a quantity greater than 0.");
             }
 
-            // Set defaults
+            // All new orders start as "Pending" they become "Crafted" after the craft endpoint is called
             newOrder.Status = "Pending";
-            newOrder.Branch = null; // Let EF resolve via BranchID FK
+            newOrder.Branch = null; // Clear the Branch object so Entity Framework doesn't try to create a duplicate branch the BranchID value is enough to link the order to the correct branch
 
-            // Clear navigation properties on items to prevent EF tracking issues
+            // Clear navigation properties on items to prevent EF from trying to insert/track related entities
             foreach (var item in newOrder.Items)
             {
                 item.Order = null;
@@ -89,7 +98,7 @@ namespace Artifax.Controllers
             context.Orders.Add(newOrder);
             await context.SaveChangesAsync();
 
-            // Reload with includes for the response
+            // Reload the order with all related data included for the response
             var created = await context.Orders
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
@@ -103,6 +112,8 @@ namespace Artifax.Controllers
 
         #region UpdateRoutes
 
+        // PUT /api/Order/{id} — Updates an existing order (cannot update if already crafted)
+        // Replaces all order items with the new ones provided in the request body
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateOrder(int id, [FromBody] Order updatedOrder)
         {
@@ -113,15 +124,16 @@ namespace Artifax.Controllers
             if (existingOrder == null)
                 return NotFound($"Order with ID {id} not found.");
 
+            // Prevent updates to orders that have already been crafted (materials already deducted)
             if (existingOrder.Status == "Crafted")
                 return BadRequest("Cannot update an order that has already been crafted.");
 
-            // Validate the branch exists
+            // Validate the new branch exists
             var branch = await context.Branches.FindAsync(updatedOrder.BranchID);
             if (branch == null)
                 return BadRequest($"Branch with ID {updatedOrder.BranchID} does not exist.");
 
-            // Validate items
+            // Validate all new items reference existing products
             if (updatedOrder.Items != null)
             {
                 foreach (var item in updatedOrder.Items)
@@ -132,13 +144,13 @@ namespace Artifax.Controllers
                 }
             }
 
-            // Update fields
+            // Update the order's basic fields
             existingOrder.BranchID = updatedOrder.BranchID;
             existingOrder.EmployeeID = updatedOrder.EmployeeID;
             existingOrder.OrderDateTime = updatedOrder.OrderDateTime;
             existingOrder.OrderExpedite = updatedOrder.OrderExpedite;
 
-            // Replace items
+            // Remove all old items and replace with the new ones (full replacement strategy)
             context.OrderItems.RemoveRange(existingOrder.Items);
             if (updatedOrder.Items != null)
             {
@@ -154,6 +166,7 @@ namespace Artifax.Controllers
 
             await context.SaveChangesAsync();
 
+            // Reload with includes for the response
             var result = await context.Orders
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
@@ -167,6 +180,7 @@ namespace Artifax.Controllers
 
         #region DeleteRoutes
 
+        // DELETE /api/Order/{id} — Deletes an order (cannot delete if already crafted)
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
@@ -177,20 +191,27 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
+            // Prevent deletion of crafted orders since materials have already been consumed
             if (order.Status == "Crafted")
                 return BadRequest("Cannot delete an order that has already been crafted.");
 
+            // Remove the order items first (child records) then the order itself
             context.OrderItems.RemoveRange(order.Items);
             context.Orders.Remove(order);
             await context.SaveChangesAsync();
 
-            return NoContent();
+            return NoContent(); // 204 — successful deletion
         }
 
         #endregion
 
         #region CraftRoutes
 
+        // POST /api/Order/{id}/craft — Crafts an order by:
+        // - Checking if the branch has enough raw materials
+        // - Deducting raw materials from the branch's stock (BranchMaterial)
+        // - Adding the finished products to the branch's inventory (BranchProduct)
+        // - Marking the order status as "Crafted"
         [HttpPost("{id}/craft")]
         public async Task<IActionResult> CraftOrder(int id)
         {
