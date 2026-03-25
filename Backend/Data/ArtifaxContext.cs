@@ -22,17 +22,21 @@ namespace Artifax.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //Model builders to define relationships within the table. E.g. Branch has many orders with orders having one branch with foreign key being orders.branchID
-            //Might move to the WithMany() being empty, seems to do the same thing and allows us to not declare an ICollection for many relationships
 
             // modelBuilder.Entity<Order>().HasOne(o => o.Branch).WithMany().HasForeignKey(o => o.BranchID);
+            // Alternative way of writing the relationship with an empty. Advantages are not having to write the ICollection fields in the model. Seems to be just a shorthand way of writing it but unsure of cons. Wrote it the safer way how we were shown in class.
+
+            //Each branch has many orders with orders having one branch. Relationship has BranchID on orders as the foreign key. and so on...
             modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o=> o.BranchID);
+
             modelBuilder.Entity<Branch>().HasMany(b => b.BranchMaterials).WithOne(bm => bm.Branch).HasForeignKey(bm => bm.BranchID);
             modelBuilder.Entity<Material>().HasMany(m => m.BranchMaterials).WithOne(bm => bm.Material).HasForeignKey(bm => bm.MaterialID);
             modelBuilder.Entity<Material>().HasMany(m => m.ProductMaterials).WithOne(pm => pm.Material).HasForeignKey(pm => pm.MaterialId);
-            modelBuilder.Entity<Product>().HasMany(p => p.ProductMaterials).WithOne(pm => pm.Product).HasForeignKey(pm => pm.ProductId);
+            modelBuilder.Entity<Product>().HasMany(p => p.ProductMaterial).WithOne(pm => pm.Product).HasForeignKey(pm => pm.ProductId);
             modelBuilder.Entity<Branch>().HasMany(b => b.BranchProducts).WithOne(bp => bp.Branch).HasForeignKey(bp => bp.BranchID);
             modelBuilder.Entity<Product>().HasMany(p => p.BranchProducts).WithOne(bp => bp.Product).HasForeignKey(bp => bp.ProductID);
-            //TODO: Link Branch to employee
+            modelBuilder.Entity<Branch>().HasMany(b => b.Employees).WithOne(e => e.Branch).HasForeignKey(e => e.BranchId);
+
         }
     }
 }
