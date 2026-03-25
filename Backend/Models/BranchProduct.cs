@@ -7,7 +7,6 @@ namespace Artifax.Models
         public int BranchID {get;set;}
         public int ProductMaterialQuantity {get;set;}
 
-        //Defining the one relationships
         public Branch Branch {get;set;}
         public Product Product {get;set;}
     }
