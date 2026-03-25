@@ -22,10 +22,9 @@ namespace Artifax.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //Model builders to define relationships within the table. E.g. Branch has many orders with orders having one branch with foreign key being orders.branchID
-            //Might move to the WithMany() being empty, seems to do the same thing and allows us to not declare an ICollection for many relationships
 
             // modelBuilder.Entity<Order>().HasOne(o => o.Branch).WithMany().HasForeignKey(o => o.BranchID);
-            // Alternative way of writing it with an empty. Advantages are not having to write the ICollection fields in the model. Seems to be just a shorthand way of writing it
+            // Alternative way of writing the relationship with an empty. Advantages are not having to write the ICollection fields in the model. Seems to be just a shorthand way of writing it but unsure of cons. Wrote it the safer way how we were shown in class.
 
             //Each branch has many orders with orders having one branch. Relationship has BranchID on orders as the foreign key. and so on...
             modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o=> o.BranchID);
