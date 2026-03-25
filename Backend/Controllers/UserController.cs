@@ -18,18 +18,34 @@ namespace Artifax.Controllers
             context = incoming;
         }
 
+
+
+
+
         #region GetRoutes
+            // summary
+            // Retrieves a comprehensive list of all employees in the system.
+
             [HttpGet("employee")]
             public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllEmployees ()
             {
                 return await context.Employees.Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
             }
 
+
+
+            // summary
+            // Retrieves a comprehensive list of all administrators in the system.
+
             [HttpGet("admin")]
             public async Task<ActionResult<IEnumerable<AdminReadDto>>> GetAllAdmins ()
             {
                 return await context.Admins.Select(admin => AdminReadDto.ToDto(admin)).ToListAsync();
             }
+
+
+            // summary
+            // Retrieves the details of a specific employee by their unique identifier.
 
             [HttpGet("employee/{id}")]
             public async Task<ActionResult<EmployeeReadDto>> GetAllEmployeeById (int id)
@@ -38,6 +54,10 @@ namespace Artifax.Controllers
                 if (_result == null) return NotFound();
                 return EmployeeReadDto.ToDto(_result);
             }
+
+
+            // summary
+            // Retrieves the details of a specific administrator by their unique identifier.
 
             [HttpGet("admin/{id}")]
             public async Task<ActionResult<AdminReadDto>> GetAllAdminById (int id)
@@ -49,6 +69,10 @@ namespace Artifax.Controllers
         #endregion
         
         #region PostRoutes
+
+            // summary
+            // Registers a new employee in the system and hashes their password.
+
             [HttpPost("employee")]
             public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
             {
@@ -72,6 +96,10 @@ namespace Artifax.Controllers
                 return CreatedAtAction("GetAllEmployeeById", new { id = _employee.EmployeeId}, _dto);
             }
 
+
+            // summary
+            // Registers a new administrator in the system and hashes their password.
+            
             [HttpPost("admin")]
             public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
             {
@@ -94,6 +122,10 @@ namespace Artifax.Controllers
                 return CreatedAtAction("GetAllAdminById", new { id = _admin.AdminId}, _dto);
             }
 
+
+            // summary
+            // Authenticates an employee based on their email and password credentials. 
+
             [HttpPost("employees/login")]
             public async Task<ActionResult<EmployeeReadDto>> LoginEmployee (string email, string password)
             {
@@ -107,6 +139,10 @@ namespace Artifax.Controllers
 
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
+
+
+            // summary
+            // Authenticates an administrator based on their email and password credentials. 
 
             [HttpPost("admins/login")]
             public async Task<ActionResult<AdminReadDto>> LoginAdmin (string email, string password)
@@ -124,6 +160,10 @@ namespace Artifax.Controllers
         #endregion
         
         #region UpdateRoutes
+
+            // summary
+            // Updates the assigned branch for an existing employee.
+
             [HttpPatch("employee/branch")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (int EmployeeId, int BranchId)
             {
@@ -141,6 +181,10 @@ namespace Artifax.Controllers
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
 
+
+            // summary
+            // Updates the profile information of an existing employee.
+
             [HttpPatch("employee")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (int id, EmployeeWriteDto incoming)
             {
@@ -156,6 +200,10 @@ namespace Artifax.Controllers
                 await context.SaveChangesAsync();
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
+
+
+            // summary
+            // Updates the profile information of an existing administrator.
 
             [HttpPatch("admin")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (int id, AdminWriteDto incoming)
@@ -175,6 +223,10 @@ namespace Artifax.Controllers
         #endregion
 
         #region DeleteRoutes
+
+
+            // summary
+            // Permanently removes an administrator from the system.
             [HttpDelete("admin")]
             public async Task<IActionResult> DeleteAdmin (int id)
             {
@@ -185,6 +237,10 @@ namespace Artifax.Controllers
                 return NoContent();
             }
 
+
+            // summary
+            // Permanently removes an employee from the system.
+            
             [HttpDelete("employee")]
             public async Task<IActionResult> DeleteEmployee (int id)
             {
