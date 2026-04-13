@@ -8,8 +8,6 @@ namespace Artifax.Models
         public bool OrderExpedite {get; set;}
         public int BranchID {get; set;}
         public int EmployeeID {get; set;}
-
-        //Defining the one relationship
         public Branch Branch { get; set; }
     }
 }
