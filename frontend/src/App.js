@@ -2,11 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import Navbar from './pages/navbar/navbar';
+import Crafting from './pages/crafting/crafting';
 
 // Page Components
 const Dashboard = () => <div className="page-content"><h1>Dashboard</h1></div>;
 const Inventory = () => <div className="page-content"><h1>Inventory</h1></div>;
-const Crafting = () => <div className="page-content"><h1>Crafting</h1></div>;
 const Analytics = () => <div className="page-content"><h1>Analytics</h1></div>;
 const Users = () => <div className="page-content"><h1>Users</h1></div>;
 const Settings = () => <div className="page-content"><h1>Settings</h1></div>;

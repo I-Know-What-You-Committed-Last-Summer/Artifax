@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './navbar.css';
 
 // DUMMY DATA - Centralized for easy updates
@@ -24,6 +25,12 @@ const MENU_DATA = {
 };
 
 const Navbar = () => {
+  const navigate = useNavigate();
+
+  const handleNavClick = (id) => {
+    navigate(`/${id}`);
+  };
+
   return (
     <aside className="sidebar-container">
       {/* LOGO SECTION */}
@@ -37,7 +44,7 @@ const Navbar = () => {
         <p className="section-title nav-text">MAIN MENU</p>
         <ul className="nav-list">
           {MENU_DATA.mainMenu.map((item) => (
-            <li key={item.id} className={`nav-item ${item.active ? 'active' : ''}`}>
+            <li key={item.id} className={`nav-item ${item.active ? 'active' : ''}`} onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
               <div className="nav-icon">{/* ICON HERE */ item.icon}</div>
               <span className="nav-text">{item.label}</span>
             </li>
@@ -48,7 +55,7 @@ const Navbar = () => {
         <p className="section-title nav-text">ADMIN</p>
         <ul className="nav-list">
           {MENU_DATA.adminMenu.map((item) => (
-            <li key={item.id} className="nav-item">
+            <li key={item.id} className="nav-item" onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
               <div className="nav-icon">{/* ICON HERE */ item.icon}</div>
               <span className="nav-text">{item.label}</span>
               {item.badge && <span className="admin-badge nav-text">{item.badge}</span>}
