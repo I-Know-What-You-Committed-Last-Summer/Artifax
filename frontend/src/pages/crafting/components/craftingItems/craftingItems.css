@@ -1,0 +1,107 @@
+.active-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  width: 95%;
+  margin: 0 auto;
+}
+
+.job-card {
+  background: white;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.job-info-main { display: flex; gap: 12px; align-items: center; }
+
+.job-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.job-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.job-titles h3 { font-size: 16px; font-weight: 700; margin: 0; color: #1a202c; }
+.job-titles p { font-size: 13px; color: #718096; margin: 4px 0 0 0; }
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f1f3f5;
+  color: #4a5568;
+}
+
+.status-badge.in-progress { background: #e6f6ff; color: #0070f3; }
+
+.progress-section { margin-bottom: 20px; }
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #718096;
+  margin-bottom: 8px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: #edf2f7;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #1a202c;
+  transition: width 0.3s ease;
+}
+
+.section-label { font-size: 11px; font-weight: 700; color: #a0aec0; letter-spacing: 0.05em; margin-bottom: 8px; }
+
+.material-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.material-tag {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f3f5;
+}
+
+.btn-cancel { background: transparent; border: none; color: #718096; font-weight: 600; cursor: pointer; }
+.btn-action {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-action.resume { background: #1a202c; color: white; }

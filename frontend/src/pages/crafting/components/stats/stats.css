@@ -3,7 +3,7 @@
   /* Use 1fr to ensure all 4 blocks stay exactly the same size */
   grid-template-columns: repeat(4, 1fr); 
   gap: 16px;
-  padding: 20px 0;
+  padding: 10px 0;
   background-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   

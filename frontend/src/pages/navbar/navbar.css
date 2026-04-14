@@ -5,7 +5,7 @@
   --active-text: #ffffff;
   --inactive-text: #64748b;
   --section-title: #94a3b8;
-  --collapsed-width: 80px;
+  --collapsed-width: 90px;
   --expanded-width: 240px;
   --transition-speed: 0.3s ease;
 }
