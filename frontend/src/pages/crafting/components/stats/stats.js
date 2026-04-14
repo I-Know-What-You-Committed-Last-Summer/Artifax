@@ -34,17 +34,7 @@ const StatsGrid = () => {
       {statsData.map((item, index) => (
         <div key={index} className="info-card">
           <div className="icon-wrapper">
-            <svg 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="stat-icon"
-            >
-              {item.icon}
-            </svg>
+            {item.icon}
           </div>
           <div className="text-wrapper">
             <span className="stat-label">{item.label}</span>

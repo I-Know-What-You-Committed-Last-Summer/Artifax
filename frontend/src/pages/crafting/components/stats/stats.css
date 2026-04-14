@@ -1,11 +1,15 @@
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(4, 268px);
+  /* Use 1fr to ensure all 4 blocks stay exactly the same size */
+  grid-template-columns: repeat(4, 1fr); 
   gap: 16px;
-  padding: 20px;
-  background-color: #fcfcfc;
+  padding: 20px 0;
+  background-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  width: 20px;
+  
+  /* Layout constraints */
+  width: 98%;
+  margin: 0px auto 0;
 }
 
 .info-card {
@@ -16,6 +20,9 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  /* Ensure the card fills the grid cell */
+  width: 100%; 
+  box-sizing: border-box;
 }
 
 .icon-wrapper {
@@ -27,11 +34,18 @@
   background-color: #f8f9fa;
   border-radius: 8px;
   margin-right: 20px;
+  flex-shrink: 0; /* Prevents icon box from squishing */
+}
+
+.icon-wrapper img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
 }
 
 .stat-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   color: #4a5568;
 }
 
@@ -54,7 +68,11 @@
   line-height: 1;
 }
 
-/* Responsive adjustment for smaller screens */
+.info-card:nth-child(2) .icon-wrapper {
+  background-color: #111827;
+}
+
+/* Responsive adjustment */
 @media (max-width: 1024px) {
   .stats-container {
     grid-template-columns: repeat(2, 1fr);
