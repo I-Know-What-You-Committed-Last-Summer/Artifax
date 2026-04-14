@@ -4,6 +4,7 @@
   gap: 20px;
   width: 95%;
   margin: 0  auto;
+  perspective: 1000px;
 }
 
 .job-card {
@@ -11,6 +12,8 @@
   border: 1px solid #eef0f2;
   border-radius: 12px;
   padding: 24px;
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
 }
 
 .card-header {
@@ -70,7 +73,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: #1a202c;
+  background: #F8462A;
   transition: width 0.3s ease;
 }
 

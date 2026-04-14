@@ -1,15 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './craftingItems.css';
 import { craftingData } from '../craftingData';
 import unitIcon from '../../../../accests/images/uniitIcon.png';
 
 const CraftingItems = () => {
+  const [tilts, setTilts] = useState({});
+
   const activeJobs = craftingData.filter(item => item.status !== "Queued");
+
+  const handleMouseMove = (e, id) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = (y - centerY) / centerY * -10;
+    const rotateY = (x - centerX) / centerX * 10;
+    setTilts(prev => ({
+      ...prev,
+      [id]: `scale(1.05) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
+    }));
+  };
+
+  const handleMouseLeave = (id) => {
+    setTilts(prev => ({
+      ...prev,
+      [id]: ''
+    }));
+  };
 
   return (
     <div className="active-grid">
       {activeJobs.map((job) => (
-        <div key={job.id} className="job-card">
+        <div
+          key={job.id}
+          className="job-card"
+          onMouseMove={(e) => handleMouseMove(e, job.id)}
+          onMouseLeave={() => handleMouseLeave(job.id)}
+          style={{ transform: tilts[job.id] || '' }}
+        >
           <div className="card-header">
             <div className="job-info-main">
               <div className="job-icon-box">

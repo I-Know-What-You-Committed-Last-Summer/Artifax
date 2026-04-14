@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './stats.css';
 import recipesIcon from '../../../../accests/images/recipesIcon.png';
 import activeJodIcon from '../../../../accests/images/activeJodIcon.png';
@@ -29,10 +29,39 @@ const statsData = [
 ];
 
 const StatsGrid = () => {
+  const [tilts, setTilts] = useState({});
+
+  const handleMouseMove = (e, index) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = (y - centerY) / centerY * -10;
+    const rotateY = (x - centerX) / centerX * 10;
+    setTilts(prev => ({
+      ...prev,
+      [index]: `scale(1.05) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
+    }));
+  };
+
+  const handleMouseLeave = (index) => {
+    setTilts(prev => ({
+      ...prev,
+      [index]: ''
+    }));
+  };
+
   return (
     <div className="stats-container">
       {statsData.map((item, index) => (
-        <div key={index} className="info-card">
+        <div
+          key={index}
+          className="info-card"
+          onMouseMove={(e) => handleMouseMove(e, index)}
+          onMouseLeave={() => handleMouseLeave(index)}
+          style={{ transform: tilts[index] || '' }}
+        >
           <div className="icon-wrapper">
             {item.icon}
           </div>

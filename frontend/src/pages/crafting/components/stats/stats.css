@@ -10,6 +10,7 @@
   /* Layout constraints */
   width: 98%;
   margin: 0px auto 0;
+  perspective: 1000px;
 }
 
 .info-card {
@@ -23,6 +24,8 @@
   /* Ensure the card fills the grid cell */
   width: 100%; 
   box-sizing: border-box;
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
 }
 
 .icon-wrapper {
