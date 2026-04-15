@@ -1,15 +1,15 @@
 .queue-sidebar {
   background: white;
-  border: 1px solid #eef0f2;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
-  width: 95%;
+  width: 100%;
   margin: 0 auto;
 }
 
 .queue-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .queue-title-row h3 { font-size: 15px; font-weight: 700; margin: 0; }
-.queue-count { background: #1a202c; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.queue-count { background: var(--primary); color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
 
 .item-info {
   display: flex;
@@ -21,32 +21,32 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--app);
   padding: 6px;
   object-fit: contain;
 }
 
-.limit-note { font-size: 12px; color: #a0aec0; margin: 0 0 20px 0; padding: 5px 0px; }
+.limit-note { font-size: 12px; color: var(--muted); margin: 0 0 20px 0; padding: 5px 0px; }
 
 .queue-item {
   padding: 16px 0;
-  border-bottom: 1px solid #f1f3f5;
+  border-bottom: 1px solid var(--border);
 }
 
 .queue-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.item-info h4 { font-size: 14px; margin: 0; color: #1a202c; }
-.item-info p { font-size: 11px; color: #a0aec0; margin: 2px 0 0 0; }
+.item-info h4 { font-size: 14px; margin: 0; color: var(--text); }
+.item-info p { font-size: 11px; color: var(--muted); margin: 2px 0 0 0; }
 
-.queue-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #f1f3f5; }
-.queue-badge.in-progress { background: #1a202c; color: white; }
+.queue-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--app); color: var(--muted); }
+.queue-badge.in-progress { background: var(--primary); color: white; }
 
 .waiting-status {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #cbd5e0;
+  color: var(--muted);
 }
 
-.mini-bar-bg { height: 4px; background: #edf2f7; border-radius: 2px; margin-bottom: 8px; }
-.mini-bar-fill { height: 100%; background: #4a5568; border-radius: 2px; }
-.mini-text { display: flex; justify-content: space-between; font-size: 11px; color: #718096; }
+.mini-bar-bg { height: 4px; background: #e9edf3; border-radius: 2px; margin-bottom: 8px; }
+.mini-bar-fill { height: 100%; background: var(--primary); border-radius: 2px; }
+.mini-text { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }

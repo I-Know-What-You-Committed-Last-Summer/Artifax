@@ -1,11 +1,11 @@
 .history-panel {
-  width: 95%;
+  width: 100%;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-  color: #0f172a;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  color: var(--text);
   margin: 10px auto;
   margin-top: 30px;
 }
@@ -26,7 +26,7 @@
 
 .history-meta {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--muted);
   font-size: 14px;
 }
 
@@ -40,16 +40,16 @@
 .history-search input {
   width: 320px;
   max-width: 100%;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #0f172a;
+  border: 1px solid var(--border);
+  background: var(--app);
+  color: var(--text);
   border-radius: 16px;
   padding: 14px 16px;
   font-size: 14px;
 }
 
 .history-search input::placeholder {
-  color: #94a3b8;
+  color: var(--muted);
 }
 
 .history-filters {
@@ -63,7 +63,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #475569;
+  color: var(--muted);
 }
 
 .history-select-wrapper label {
@@ -72,10 +72,10 @@
 
 .history-select-wrapper select {
   min-width: 140px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: #ffffff;
-  color: #0f172a;
+  color: var(--text);
   padding: 10px 12px;
   font-size: 14px;
 }
@@ -90,8 +90,8 @@
 .history-tab {
   border: none;
   border-radius: 999px;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--app);
+  color: var(--text);
   padding: 10px 18px;
   cursor: pointer;
   font-weight: 700;
@@ -99,7 +99,7 @@
 }
 
 .history-tab.active {
-  background: #0f172a;
+  background: var(--primary);
   color: #ffffff;
 }
 
@@ -116,21 +116,21 @@
 .history-table th,
 .history-table td {
   padding: 18px 14px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 .history-table th {
   text-align: left;
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
 }
 
 .history-table tbody tr:hover {
-  background: #f8fafc;
+  background: var(--app);
 }
 
 .history-arrow-column {
@@ -143,9 +143,9 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #f8fafc;
+  background: var(--app);
   border-radius: 50%;
-  color: #475569;
+  color: var(--muted);
   font-size: 18px;
 }
 
@@ -159,7 +159,7 @@
   width: 34px;
   height: 34px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--app);
   padding: 8px;
   object-fit: contain;
 }
@@ -167,11 +167,11 @@
 .item-name {
   font-weight: 700;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .item-subtitle {
-  color: #94a3b8;
+  color: var(--muted);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -189,21 +189,21 @@
 }
 
 .status-pill.crafted {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--app);
+  color: var(--text);
 }
 
 .status-pill.cancelled {
-  background: #0f172a;
+  background: var(--primary);
   color: #ffffff;
 }
 
 .view-button {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   background: #ffffff;
   border-radius: 14px;
   padding: 10px 16px;
-  color: #0f172a;
+  color: var(--text);
   cursor: pointer;
   font-weight: 600;
 }
@@ -214,7 +214,7 @@
   align-items: center;
   margin-top: 22px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--muted);
 }
 
 .history-pagination-controls {
@@ -224,27 +224,27 @@
 }
 
 .pagination-btn {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   background: #ffffff;
   border-radius: 8px;
   padding: 8px 12px;
   min-width: 36px;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text);
   cursor: pointer;
   font-weight: 600;
   transition: all 150ms ease;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: var(--app);
+  border-color: var(--muted);
 }
 
 .pagination-btn.active {
-  background: #0f172a;
+  background: var(--primary);
   color: #ffffff;
-  border-color: #0f172a;
+  border-color: var(--primary);
 }
 
 .pagination-btn:disabled {
