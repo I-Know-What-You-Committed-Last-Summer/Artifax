@@ -2,6 +2,7 @@ using Artifax.Models;
 
 namespace Artifax.DTOs
 {
+    //DTO excluding properties for sql relationships
     public class BranchMaterialReadDto
     {
         public int BranchMaterialID {get;set;}

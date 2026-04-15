@@ -16,6 +16,8 @@ namespace Artifax.Controllers
             _context = context;
         }
 
+        //All materials and branch materials, as well as endpoints for creating, updating, and deleting materials and branch materials. Branch material endpoints are not fully completed until the branch controller is completed and fully functional, as the branch does not yet have DTOs.
+
         [HttpGet("AllMaterials")]
         public async Task<ActionResult<IEnumerable<MaterialReadDto>>> GetAllMaterials()
         {

@@ -1,5 +1,6 @@
 namespace Artifax.DTOs
 {
+    //DTO excluding properties for sql relationships
     public class ProductWriteDto
     {
         public string ProductName {get; set;}
