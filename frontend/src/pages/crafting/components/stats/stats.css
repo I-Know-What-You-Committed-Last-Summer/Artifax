@@ -1,0 +1,89 @@
+.stats-container {
+  display: grid;
+  /* Use 1fr to ensure all 4 blocks stay exactly the same size */
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 16px;
+  padding: 10px 0;
+  background-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Layout constraints */
+  width: 98%;
+  margin: 0px auto 0;
+  perspective: 1000px;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  /* Ensure the card fills the grid cell */
+  width: 100%; 
+  box-sizing: border-box;
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
+}
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-right: 20px;
+  flex-shrink: 0; /* Prevents icon box from squishing */
+}
+
+.icon-wrapper img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.stat-icon {
+  width: 20px;
+  height: 20px;
+  color: #4a5568;
+}
+
+.text-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #718096;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1;
+}
+
+.info-card:nth-child(2) .icon-wrapper {
+  background-color: #111827;
+}
+
+/* Responsive adjustment */
+@media (max-width: 1024px) {
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+}
