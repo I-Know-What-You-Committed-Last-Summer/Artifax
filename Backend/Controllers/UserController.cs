@@ -23,29 +23,17 @@ namespace Artifax.Controllers
 
 
         #region GetRoutes
-            // summary
-            // Retrieves a comprehensive list of all employees in the system.
-
             [HttpGet("employee")]
             public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllEmployees ()
             {
                 return await context.Employees.Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
             }
 
-
-
-            // summary
-            // Retrieves a comprehensive list of all administrators in the system.
-
             [HttpGet("admin")]
             public async Task<ActionResult<IEnumerable<AdminReadDto>>> GetAllAdmins ()
             {
                 return await context.Admins.Select(admin => AdminReadDto.ToDto(admin)).ToListAsync();
             }
-
-
-            // summary
-            // Retrieves the details of a specific employee by their unique identifier.
 
             [HttpGet("employee/{id}")]
             public async Task<ActionResult<EmployeeReadDto>> GetAllEmployeeById (int id)
@@ -54,10 +42,6 @@ namespace Artifax.Controllers
                 if (_result == null) return NotFound();
                 return EmployeeReadDto.ToDto(_result);
             }
-
-
-            // summary
-            // Retrieves the details of a specific administrator by their unique identifier.
 
             [HttpGet("admin/{id}")]
             public async Task<ActionResult<AdminReadDto>> GetAllAdminById (int id)
@@ -77,8 +61,12 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
             {
                 //FIXME: Auth
+
+                //Check whether employee with incoming details already exists to prevent duplicate emails for login
                 bool _employeeNotFound = await context.Admins.FindAsync(incoming.EmployeeEmail) == null;
                 if (_employeeNotFound) return Unauthorized ("Email Already Exists");
+
+                //Creates new employee from incoming details
                 Employee _employee = new ()
                 {
                     BranchId = 0,
@@ -88,9 +76,11 @@ namespace Artifax.Controllers
                     EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword)
                 };
 
+                //Save new employee to database
                 context.Employees.Add(_employee);
                 await context.SaveChangesAsync();
 
+                //Convert new employee to Read DTO using static function in EmployeeReadDto class
                 EmployeeReadDto _dto = EmployeeReadDto.ToDto(_employee);
 
                 return CreatedAtAction("GetAllEmployeeById", new { id = _employee.EmployeeId}, _dto);
@@ -104,8 +94,12 @@ namespace Artifax.Controllers
             public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
             {
                 //FIXME: Auth
+
+                //Check whether admin with incoming details already exists to prevent duplicate emails for login
                 bool _adminNotFound = await context.Admins.FindAsync(incoming.AdminEmail) == null;
                 if (_adminNotFound) return Unauthorized ("Email Already Exists");
+
+                //Creates new admin from incoming details
                 Admin _admin = new ()
                 {
                     AdminEmail = incoming.AdminEmail,
@@ -114,9 +108,11 @@ namespace Artifax.Controllers
                     AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword)
                 };
 
+                //Save new admin to database
                 context.Admins.Add(_admin);
                 await context.SaveChangesAsync();
 
+                //Convert new admin to Read DTO using static function in AdminReadDto class
                 AdminReadDto _dto = AdminReadDto.ToDto(_admin);
 
                 return CreatedAtAction("GetAllAdminById", new { id = _admin.AdminId}, _dto);
@@ -129,9 +125,11 @@ namespace Artifax.Controllers
             [HttpPost("employees/login")]
             public async Task<ActionResult<EmployeeReadDto>> LoginEmployee (string email, string password)
             {
+                //Find employee by email
                 var _employee = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == email);
                 if (_employee == null) return Unauthorized ("Employee Not Found");
 
+                //Verify employee password
                 if (!BCrypt.Net.BCrypt.Verify(password, _employee.EmployeePasswordHash))
                 {
                     return Unauthorized("Incorrect Password");
@@ -147,9 +145,11 @@ namespace Artifax.Controllers
             [HttpPost("admins/login")]
             public async Task<ActionResult<AdminReadDto>> LoginAdmin (string email, string password)
             {
+                //Find admin by email
                 var _admin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == email);
                 if (_admin == null) return Unauthorized ("Admin Not Found");
 
+                //Verify admin password
                 if (!BCrypt.Net.BCrypt.Verify(password, _admin.AdminPasswordHash))
                 {
                     return Unauthorized("Incorrect Password");
@@ -168,14 +168,18 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (int EmployeeId, int BranchId)
             {
                 //FIXME: Auth
+
+                //Check for existing employee
                 var _employee = await context.Employees.FindAsync(EmployeeId);
 
                 if (_employee == null) return NotFound($"Employee with ID: {EmployeeId.ToString()} could not be found");
 
+                //Check for existing branch
                 bool _branchExists = await context.Branches.FindAsync(BranchId) != null;
 
                 if (!_branchExists) return NotFound($"Branch with ID: {BranchId.ToString()} could not be found");
 
+                //Update information
                 _employee.BranchId = BranchId;
                 await context.SaveChangesAsync();
                 return Ok(EmployeeReadDto.ToDto(_employee));
@@ -189,14 +193,18 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (int id, EmployeeWriteDto incoming)
             {
                 //FIXME: Auth
+
+                //Check for existing employee
                 var _employee = await context.Employees.FindAsync(id);
 
                 if (_employee == null) return NotFound($"Employee with ID: {id.ToString()} could not be found");
 
+                //Update details
                 _employee.EmployeeEmail = incoming.EmployeeEmail;
                 _employee.EmployeeName = incoming.EmployeeName;
                 _employee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword);
                 
+                //Save changes
                 await context.SaveChangesAsync();
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
@@ -209,14 +217,18 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (int id, AdminWriteDto incoming)
             {
                 //FIXME: Auth
+
+                //Check for existing admin
                 var _admin = await context.Admins.FindAsync(id);
 
                 if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
 
+                //Update details
                 _admin.AdminEmail = incoming.AdminEmail;
                 _admin.AdminName = incoming.AdminName;
                 _admin.AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword);
 
+                //Save changes
                 await context.SaveChangesAsync();
                 return Ok(AdminReadDto.ToDto(_admin));
             }
@@ -230,9 +242,12 @@ namespace Artifax.Controllers
             [HttpDelete("admin")]
             public async Task<IActionResult> DeleteAdmin (int id)
             {
+                //Check for existing admin
                 var _admin = await context.Admins.FindAsync(id);
                 if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
+                //Remove admin from list
                 context.Admins.Remove(_admin);
+                //Save changes
                 await context.SaveChangesAsync();
                 return NoContent();
             }
@@ -244,9 +259,12 @@ namespace Artifax.Controllers
             [HttpDelete("employee")]
             public async Task<IActionResult> DeleteEmployee (int id)
             {
+                //Check for existing admin
                 var _employee = await context.Employees.FindAsync(id);
                 if (_employee == null) return NotFound($"Employee with ID: {id.ToString()} could not be found");
+                //Remove admin from list
                 context.Employees.Remove(_employee);
+                //Save changes
                 await context.SaveChangesAsync();
                 return NoContent();
             }
