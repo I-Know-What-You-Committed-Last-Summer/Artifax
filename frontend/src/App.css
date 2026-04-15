@@ -1,26 +1,4 @@
-.App {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  background-color: #f8fafc;
-  padding: 0px 20px;
-}
-
-.page-content {
-  display: flex;
-  align-items: top;
-  justify-content: center;
-  min-height: 100%;
-  padding: 0px 20px;
-}
-
-.page-content h1 {
-  font-size: 2.5rem;
-  color: #0f172a;
-  margin: 0;
+.page-wrap {
+  max-width: 1440px;
+  margin: 0 auto;
 }

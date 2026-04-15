@@ -2,15 +2,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 98%;
-  margin: 10px auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 100%;
+  margin: 8px auto;
 }
 
 .tab-group {
   display: flex;
   gap: 8px;
-  background-color: #f1f3f5; /* Light grey track background */
+  background-color: var(--app);
   padding: 6px;
   border-radius: 10px;
 }
@@ -26,13 +25,13 @@
   font-weight: 600;
   cursor: pointer;
   background: transparent;
-  color: #718096;
+  color: var(--muted);
   transition: all 0.2s ease;
 }
 
 /* Active State Styles */
 .nav-btn.active {
-  background-color: #1a202c; /* Dark charcoal/black */
+  background-color: var(--primary);
   color: #ffffff;
 }
 
@@ -40,7 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #4a5568;
+  background-color: var(--muted);
   color: #ffffff;
   font-size: 11px;
   min-width: 18px;
@@ -54,7 +53,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #1a202c;
+  background-color: var(--primary);
   color: #ffffff;
   border: none;
   padding: 10px 20px;
@@ -71,6 +70,6 @@
 
 /* Matching the UI's subtle borders */
 .tab-group {
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border: 1px solid var(--border);
+  background-color: var(--app);
 }

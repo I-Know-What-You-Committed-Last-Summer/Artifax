@@ -1,17 +1,17 @@
 .crafting-page {
   width: 100%;
-  font-family: 'Orbitron', sans-serif;
+  display: block;
 }
 
 .crafting-panel {
   width: 100%;
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
 .active-jobs-layout {
   display: flex;
-  width: 97%;
-  margin: 20px 0;
+  width: 100%;
+  margin: 12px 0;
   gap: 25px;
   align-items: flex-start;
 }
@@ -26,12 +26,12 @@
 
 .crafting-panel h2 {
   margin: 0 0 12px;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .crafting-panel p {
   margin: 0;
-  color: #475569;
+  color: var(--muted);
 }
 
 @media (max-width: 960px) {

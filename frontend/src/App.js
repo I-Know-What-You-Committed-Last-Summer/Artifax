@@ -1,34 +1,28 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
-import Navbar from './pages/navbar/navbar';
-import Crafting from './pages/crafting/crafting';
-
-// Page Components
-const Dashboard = () => <div className="page-content"><h1>Dashboard</h1></div>;
-const Inventory = () => <div className="page-content"><h1>Inventory</h1></div>;
-const Analytics = () => <div className="page-content"><h1>Analytics</h1></div>;
-const Users = () => <div className="page-content"><h1>Users</h1></div>;
-const Settings = () => <div className="page-content"><h1>Settings</h1></div>;
+import AppLayout from './layouts/AppLayout';
+import PlaceholderPage from './pages/PlaceholderPage';
+import CraftingPage from './pages/crafting/crafting';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import InventoryPage from './pages/inventory/InventoryPage';
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/crafting" element={<Crafting />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="crafting" element={<CraftingPage />} />
+          <Route path="analytics" element={<PlaceholderPage title="Analytics" />} />
+          <Route path="users" element={<PlaceholderPage title="Users" />} />
+          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="profile" element={<PlaceholderPage title="Profile" />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
