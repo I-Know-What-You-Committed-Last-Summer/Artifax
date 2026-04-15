@@ -3,8 +3,9 @@ import './Sidebar.css';
 
 const MENU_DATA = {
   logo: {
-    short: 'A',
-    full: 'Artifax',
+    shortSrc: `${process.env.PUBLIC_URL}/logo192.png`,
+    shortAlt: 'Artifax mark',
+    fullText: 'Artifax',
   },
   mainMenu: [
     { id: 'dashboard', label: 'Dashboard', icon: '⊞', path: '/dashboard' },
@@ -51,8 +52,10 @@ function Sidebar() {
   return (
     <aside className="sidebar-container">
       <div className="sidebar-header">
-        <div className="logo-placeholder">{MENU_DATA.logo.short}</div>
-        <span className="nav-text logo-text">{MENU_DATA.logo.full}</span>
+        <div className="logo-placeholder">
+          <img className="logo-mark-image" src={MENU_DATA.logo.shortSrc} alt={MENU_DATA.logo.shortAlt} />
+        </div>
+        <span className="nav-text logo-text">{MENU_DATA.logo.fullText}</span>
       </div>
 
       <div className="sidebar-content">

@@ -57,16 +57,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--active-bg);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+  background: transparent;
+  overflow: hidden;
+}
+
+.logo-mark-image {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
 }
 
 .logo-text {
+  display: inline-block;
   font-weight: 700;
   font-size: 1.2rem;
   color: #0f172a;
+  line-height: 1;
   margin-left: 15px;
 }
 
