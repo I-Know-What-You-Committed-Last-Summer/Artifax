@@ -16,13 +16,19 @@ namespace Artifax.Controllers
             _context = context;
         }
 
+        //Endpoints for general products
+
         #region ProductEndpoints
+
+        //List of all products we can make
 
         [HttpGet("AllProducts")]
         public async Task<ActionResult<IEnumerable<ProductReadDto>>> GetAllProducts()
         {
             return await _context.Products.Select(p => ProductReadDto.toDto(p)).ToListAsync();
         }
+
+        //Specific product by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductReadDto>> GetProduct(int id)
         {
@@ -33,6 +39,7 @@ namespace Artifax.Controllers
             }
             return ProductReadDto.toDto(_product);
         }
+        //Create a new product, we do not assign materials with this endpoint as that is done with the ProductMaterial endpoints
         [HttpPost("")]
         public async Task<ActionResult<Product>> CreateProduct(ProductWriteDto _incoming)
         {
@@ -51,6 +58,7 @@ namespace Artifax.Controllers
                 ProductImageURL = _product.ProductImageURL
             });
         }
+        //Update a product
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, ProductWriteDto _incoming)
         {
@@ -65,6 +73,7 @@ namespace Artifax.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        //Delete a product. DB auto collapes foreign relations so no need to collapse related product materials and product branches
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
@@ -80,11 +89,24 @@ namespace Artifax.Controllers
         #endregion
 
         #region ProductMaterialEndpoints
+
+        //Endpoints for assigning materials to products and managing those relationships
+
+        //All product materials regardless of product
         [HttpGet("AllProductMaterials")]
         public async Task<ActionResult<IEnumerable<ProductMaterialReadDto>>> GetAllProductMaterials()
         {
             return await _context.ProductMaterials.Select(pm => ProductMaterialReadDto.ToDto(pm)).ToListAsync();
         }
+
+        // Get all materials for a specific product
+        [HttpGet("ProductMaterials/{id}")]
+        public async Task<ActionResult<IEnumerable<ProductMaterialReadDto>>> GetAllProductMaterials(int id)
+        {
+            return await _context.ProductMaterials.Where(pm => pm.ProductId == id).Select(pm => ProductMaterialReadDto.ToDto(pm)).ToListAsync();
+        }
+
+        //Create a new product material
         [HttpPost("ProductMaterial")]
         public async Task<ActionResult<ProductMaterialReadDto>> CreateProductMaterial(ProductMaterialWriteDto _incoming)
         {
@@ -98,6 +120,7 @@ namespace Artifax.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetAllProductMaterials), new { id = _productMaterial.ProductMaterialId }, ProductMaterialReadDto.ToDto(_productMaterial));
         }
+        //Update a product material
         [HttpPut("ProductMaterial/{id}")]
         public async Task<IActionResult> UpdateProductMaterial(int id, ProductMaterialWriteDto _incoming)
         {
@@ -110,6 +133,7 @@ namespace Artifax.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        //Delete a product material
         [HttpDelete("ProductMaterial/{id}")]
         public async Task<IActionResult> DeleteProductMaterial(int id)
         {
@@ -124,6 +148,8 @@ namespace Artifax.Controllers
         }
         #endregion
 
+        //Endpoints for assigning products to branches and managing those relationships
+        //Not yet completed, waiting on the branch controller to be completed and fully functional.
         #region BranchProductEndpoints
         #endregion
     }
