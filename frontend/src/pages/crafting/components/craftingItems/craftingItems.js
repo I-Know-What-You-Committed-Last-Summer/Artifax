@@ -8,6 +8,8 @@ const CraftingItems = () => {
 
   const activeJobs = craftingData.filter(item => item.status !== "Queued");
 
+
+  // Handle mouse movement to create a 3D tilt effect
   const handleMouseMove = (e, id) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;

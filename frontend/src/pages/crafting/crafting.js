@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './crafting.css';
 import CraftingNav from './components/craftingNav/craftingNav';
 import StatsGrid from './components/stats/stats';
+import HistoryStats from './components/historyStats/historyStats';
+import HistoryPanel from './components/historyPanel/historyPanel';
 import CraftingItems from './components/craftingItems/craftingItems';
 import CraftingQueue from './components/craftingQueue/craftingQueue';
 
@@ -31,12 +33,15 @@ const CraftPage = () => (
   </div>
 );
 
-const HistoryPage = () => (
+const HistoryPage = ({ activeTab, onTabChange }) => (
   <div className="crafting-panel">
-    <h2>History</h2>
-    <p>Recent crafting activity and completed jobs will appear here.</p>
+    <HistoryStats />
+    <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
+    <HistoryPanel />
   </div>
 );
+
+
 
 const Crafting = () => {
   const [activeTab, setActiveTab] = useState('active');
@@ -45,10 +50,10 @@ const Crafting = () => {
     <div className="page-content">
       <div className="crafting-page">
         {activeTab === 'active' && <ActiveJobsPage />}
-        <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} />
+        {activeTab === 'history' && <HistoryPage activeTab={activeTab} onTabChange={setActiveTab} />}
+        {activeTab !== 'history' && <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} />}
         {activeTab === 'active' && <ActiveJobsContent />}
         {activeTab === 'craft' && <CraftPage />}
-        {activeTab === 'history' && <HistoryPage />}
       </div>
     </div>
   );

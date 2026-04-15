@@ -31,6 +31,8 @@ const statsData = [
 const StatsGrid = () => {
   const [tilts, setTilts] = useState({});
 
+
+  // Handle mouse movement to create a 3D tilt effect
   const handleMouseMove = (e, index) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
