@@ -32,6 +32,9 @@ function SidebarNavGroup({ title, items }) {
             <NavLink
               to={item.path}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              data-label={item.label}
+              aria-label={item.label}
+              title={item.label}
             >
               <div className="nav-icon">{item.icon}</div>
               <span className="nav-text">{item.label}</span>
