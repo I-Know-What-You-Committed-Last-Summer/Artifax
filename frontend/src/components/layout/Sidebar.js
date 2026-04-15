@@ -3,7 +3,7 @@ import './Sidebar.css';
 
 const MENU_DATA = {
   logo: {
-    shortSrc: `${process.env.PUBLIC_URL}/logo192.png`,
+    shortSrc: `${process.env.PUBLIC_URL}/Logo.png`,
     shortAlt: 'Artifax mark',
     fullText: 'Artifax',
   },
