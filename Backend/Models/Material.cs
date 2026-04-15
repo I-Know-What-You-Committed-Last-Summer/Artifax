@@ -4,6 +4,7 @@ namespace Artifax.Models
     {
         public int MaterialID {get; set;}
         public string MaterialName {get; set;}
+        public string MaterialImageURL {get; set;}
         public ICollection<BranchMaterial> BranchMaterials {get;set;}
         public ICollection<ProductMaterial> ProductMaterials {get;set;}
     }
