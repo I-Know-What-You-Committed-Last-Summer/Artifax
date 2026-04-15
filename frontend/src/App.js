@@ -1,24 +1,27 @@
-import logo from './logo.svg';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import AppLayout from './layouts/AppLayout';
+import PlaceholderPage from './pages/PlaceholderPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import InventoryPage from './pages/inventory/InventoryPage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="crafting" element={<PlaceholderPage title="Crafting" />} />
+          <Route path="analytics" element={<PlaceholderPage title="Analytics" />} />
+          <Route path="users" element={<PlaceholderPage title="Users" />} />
+          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="profile" element={<PlaceholderPage title="Profile" />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
