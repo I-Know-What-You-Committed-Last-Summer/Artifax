@@ -32,6 +32,7 @@ const ActiveJobsContent = () => (
 
 const CraftPage = () => (
   <div className="crafting-panel">
+    <HistoryStats />
     <h2>Craft</h2>
     <p>Use this space for crafting actions and workflows.</p>
   </div>
