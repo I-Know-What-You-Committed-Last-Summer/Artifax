@@ -53,7 +53,6 @@ const CraftPage = ({ activeTab, onTabChange }) => {
     <div className="crafting-panel">
       <HistoryStats />
       <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
-      <h2>Craft</h2>
       <div className="active-jobs-layout">
         <div className="active-jobs-main">
           <CraftPanel

@@ -6,27 +6,34 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+  min-height: 620px;
 }
 
 .craft-panel-header {
   display: flex;
-  gap: 18px;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.craft-panel-icon-box {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: var(--app);
+.craft-panel-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.craft-panel-selected {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.craft-panel-icon {
-  width: 26px;
-  height: 26px;
+.craft-panel-selected h4 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
 }
 
 .craft-panel-label {

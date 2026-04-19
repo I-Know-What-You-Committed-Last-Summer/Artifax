@@ -28,9 +28,7 @@ const BlueprintPanel = ({ blueprints, selectedBlueprintId, filter, onFilterChang
   return (
     <div className="blueprint-panel">
       <div className="blueprint-header">
-        <div>
-          <h3>Blueprints</h3>
-        </div>
+        <h3>Blueprints</h3>
         <div className="blueprint-filter">
           <label htmlFor="blueprintFilter">Filter Blueprints</label>
           <select id="blueprintFilter" value={filter} onChange={(e) => onFilterChange(e.target.value)}>

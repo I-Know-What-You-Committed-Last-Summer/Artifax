@@ -11,21 +11,14 @@
 
 .blueprint-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .blueprint-header h3 {
   margin: 0;
   font-size: 18px;
   color: var(--text);
-}
-
-.blueprint-header p {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: var(--muted);
 }
 
 .blueprint-filter {

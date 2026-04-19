@@ -1,6 +1,5 @@
 import React from 'react';
 import './craftPanel.css';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
 
 const CraftPanel = ({ blueprint, amount, onAmountChange, onCraft }) => {
   const canCraft = blueprint.materials.every(item => item.have >= item.need * amount);
@@ -16,14 +15,11 @@ const CraftPanel = ({ blueprint, amount, onAmountChange, onCraft }) => {
   return (
     <div className="craft-panel-card">
       <div className="craft-panel-header">
-        <div className="craft-panel-icon-box">
-          <img src={unitIcon} alt={`${blueprint.name} icon`} className="craft-panel-icon" />
-        </div>
-        <div>
-          <span className="craft-panel-label">Selected Blueprint</span>
-          <h3>{blueprint.name}</h3>
-
-        </div>
+        <h3>Crafting</h3>
+      </div>
+      <div className="craft-panel-selected">
+        <span className="craft-panel-label">SELECT BLUEPRINT</span>
+        <h4>{blueprint.name}</h4>
       </div>
 
       <div className="craft-amount-row">
