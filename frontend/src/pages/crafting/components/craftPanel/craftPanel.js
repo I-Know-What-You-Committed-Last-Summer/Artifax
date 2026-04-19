@@ -22,7 +22,7 @@ const CraftPanel = ({ blueprint, amount, onAmountChange, onCraft }) => {
         <div>
           <span className="craft-panel-label">Selected Blueprint</span>
           <h3>{blueprint.name}</h3>
-          <p>{blueprint.description}</p>
+
         </div>
       </div>
 

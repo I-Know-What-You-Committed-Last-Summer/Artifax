@@ -89,7 +89,7 @@ namespace Artifax.Controllers
 
             // summary
             // Registers a new administrator in the system and hashes their password.
-
+            
             [HttpPost("admin")]
             public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
             {
@@ -120,7 +120,7 @@ namespace Artifax.Controllers
 
 
             // summary
-            // Authenticates an employee based on their email and password credentials.
+            // Authenticates an employee based on their email and password credentials. 
 
             [HttpPost("employees/login")]
             public async Task<ActionResult<EmployeeReadDto>> LoginEmployee (string email, string password)
@@ -140,7 +140,7 @@ namespace Artifax.Controllers
 
 
             // summary
-            // Authenticates an administrator based on their email and password credentials.
+            // Authenticates an administrator based on their email and password credentials. 
 
             [HttpPost("admins/login")]
             public async Task<ActionResult<AdminReadDto>> LoginAdmin (string email, string password)
@@ -238,7 +238,6 @@ namespace Artifax.Controllers
 
             // summary
             // Permanently removes an administrator from the system.
-
             [HttpDelete("admin")]
             public async Task<IActionResult> DeleteAdmin (int id)
             {
@@ -255,7 +254,7 @@ namespace Artifax.Controllers
 
             // summary
             // Permanently removes an employee from the system.
-
+            
             [HttpDelete("employee")]
             public async Task<IActionResult> DeleteEmployee (int id)
             {

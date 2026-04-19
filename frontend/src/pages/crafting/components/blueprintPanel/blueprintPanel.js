@@ -59,7 +59,6 @@ const BlueprintPanel = ({ blueprints, selectedBlueprintId, filter, onFilterChang
                 <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
                 <div>
                   <h4>{blueprint.name}</h4>
-                  <p>{blueprint.description}</p>
                 </div>
               </div>
               <div className="blueprint-card-meta">
@@ -79,14 +78,6 @@ const BlueprintPanel = ({ blueprints, selectedBlueprintId, filter, onFilterChang
 
       <div className="blueprint-actions">
         <button type="button" className="blueprint-new-btn">New Blueprint</button>
-        <button
-          type="button"
-          className="blueprint-select-btn"
-          onClick={() => onSelectBlueprint(selectedBlueprintId)}
-          disabled={!selectedBlueprintId || !selectedCanCraft}
-        >
-          Select Blueprint
-        </button>
       </div>
     </div>
   );
