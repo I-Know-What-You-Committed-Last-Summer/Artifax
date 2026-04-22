@@ -2,14 +2,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './navbar.css';
 
-// DUMMY DATA - Centralized for easy updates
+// DUMMY DATA - 
 const MENU_DATA = {
   logo: {
-    short: "A", // The icon version
-    full: "Artifax" // The text version
+    shortSrc: `${process.env.PUBLIC_URL}/artifax-logo.png`,
+    shortAlt: 'Artifax mark',
+    full: 'Artifax',
   },
   mainMenu: [
-    { id: 'dashboard', label: 'Dashboard', icon: '⊞' }, // Replace with your Icon components
+    { id: 'dashboard', label: 'Dashboard', icon: '⊞' }, // 
     { id: 'inventory', label: 'Inventory', icon: '⬢' },
     { id: 'crafting', label: 'Crafting', icon: '⚒' },
     { id: 'analytics', label: 'Analytics', icon: '📊', active: true },
@@ -35,7 +36,9 @@ const Navbar = () => {
     <aside className="sidebar-container">
       {/* LOGO SECTION */}
       <div className="sidebar-header">
-        <div className="logo-placeholder">{/* ICON HERE */ MENU_DATA.logo.short}</div>
+        <div className="logo-placeholder">
+          <img className="logo-mark-image" src={MENU_DATA.logo.shortSrc} alt={MENU_DATA.logo.shortAlt} />
+        </div>
         <span className="nav-text logo-text">{MENU_DATA.logo.full}</span>
       </div>
 
@@ -66,7 +69,7 @@ const Navbar = () => {
 
       {/* FOOTER / USER SECTION */}
       <div className="sidebar-footer">
-        <div className="user-avatar">{/* ICON/IMAGE HERE */}</div>
+        <div className="user-avatar">{/* ICON/IMAGE  */}</div>
         <div className="user-info nav-text">
           <p className="user-name">{MENU_DATA.user.name}</p>
           <p className="user-role">{MENU_DATA.user.role}</p>

@@ -12,8 +12,8 @@
 .history-card {
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #eef0f2;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -29,7 +29,7 @@
   justify-content: center;
   width: 52px;
   height: 52px;
-  background-color: #f8fafc; /* Very light blue-grey */
+  background-color: var(--bg);
   border-radius: 10px;
   margin-right: 16px;
   flex-shrink: 0;
@@ -44,7 +44,7 @@
 .history-icon {
   width: 22px;
   height: 22px;
-  color: #64748b; /* Slate grey */
+  color: var(--muted);
 }
 
 .history-text-wrapper {
@@ -55,14 +55,14 @@
 .history-label {
   font-size: 13px;
   font-weight: 500;
-  color: #94a3b8; /* Muted label color */
+  color: var(--muted);
   margin-bottom: 2px;
 }
 
 .history-value {
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a; /* Deep charcoal */
+  color: var(--text);
   line-height: 1.2;
 }
 

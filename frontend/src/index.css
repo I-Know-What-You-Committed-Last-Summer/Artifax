@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Sora:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,6 +12,22 @@
   --muted: #64748b;
   --primary: #0f172a;
   --primary-dark: #020617;
+  --ok-bg: #e5f7ed;
+  --ok-text: #166534;
+  --warn-bg: #fff7dd;
+  --warn-text: #92400e;
+  --danger-bg: #fee2e2;
+  --danger-text: #991b1b;
+}
+
+html[data-theme='synthwave'] {
+  --bg: #274c77;
+  --surface: #1e3e62;
+  --border: #5a82ad;
+  --text: #f3f8ff;
+  --muted: #c7d9ec;
+  --primary: #297fbf;
+  --primary-dark: #1f5f92;
   --ok-bg: #e5f7ed;
   --ok-text: #166534;
   --warn-bg: #fff7dd;
@@ -38,6 +54,15 @@
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  html[data-theme='synthwave'] body {
+    background: radial-gradient(circle at 10% 0%, #35628f 0%, #274c77 45%, #1c3554 100%);
+  }
+
+  .main-title-heading {
+    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
   }
 
   button,

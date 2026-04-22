@@ -46,9 +46,38 @@
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 0 25px;
+  justify-content: center;
+  padding: 0;
   margin-bottom: 40px;
+  height: 48px;
+}
+
+.sidebar-container:hover .sidebar-header {
+  justify-content: flex-start;
+  padding: 0 8px;
+}
+
+.logo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar-container:hover .logo-placeholder {
+  width: 40px;
   height: 40px;
+}
+
+.logo-mark-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .logo-text {
