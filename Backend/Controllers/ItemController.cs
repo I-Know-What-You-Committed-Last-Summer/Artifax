@@ -102,6 +102,22 @@ namespace Artifax.Controllers
             }
             return ItemIngredientReadDto.ToDto(_itemIngredient);
         }
+        [HttpGet("itemIngredient/item/{itemId}")]
+        public async Task<ActionResult<IEnumerable<IngredientBlueprintReadDto>>> GetIngredientsForItem(int itemId)
+        {
+            var blueprint = await (from ingredient in _context.ItemIngredients join item in _context.Items on ingredient.IngredientID equals item.ItemID where ingredient.ProductID == itemId select new IngredientBlueprintReadDto
+            {
+                IngredientID = item.ItemID,
+                ItemName = item.ItemName,
+                ItemCategory = item.ItemCategory,
+                Quantity = ingredient.IngredientQuantity
+            }).ToListAsync();
+            if (!blueprint.Any())
+            {
+                return NotFound();
+            }
+            return blueprint;
+        }
 
         // Create a new item ingredient
         [HttpPost("itemIngredient/")]
