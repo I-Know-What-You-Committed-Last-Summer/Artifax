@@ -53,7 +53,7 @@ const MostCrafted = () => {
             </div>
             <div className="blueprint-card-meta">
               <div className="meta-block">
-                <span className="meta-label">Craft</span>
+                <span className="meta-label">Crafted</span>
                 <strong>{blueprint.craft}</strong>
               </div>
             </div>
