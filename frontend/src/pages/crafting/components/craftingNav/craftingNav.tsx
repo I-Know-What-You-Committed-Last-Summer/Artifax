@@ -25,15 +25,15 @@ const CraftingNav: FC<CraftingNavProps> = ({ activeTab, onTabChange }) => {
       <div className="tab-group">
         {navData.map((tab) => (
           <button
-            key={tab.id}
-            className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => onTabChange(tab.id)}
-          >
-            {tab.label}
-            {tab.badge !== null && (
-              <span className="nav-badge">{tab.badge}</span>
-            )}
-          </button>
+              key={tab.id}
+              className={`nav-btn ${activeTab === tab.id ? 'active' : ''} nav-pill`}
+              onClick={() => onTabChange(tab.id)}
+            >
+              {tab.label}
+              {tab.badge !== null && (
+                <span className="nav-badge nav-pill">{tab.badge}</span>
+              )}
+            </button>
         ))}
       </div>
 

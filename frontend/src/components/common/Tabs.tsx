@@ -4,10 +4,10 @@ function Tabs({ tabs, activeTab, onChange }) {
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+          className={`px-3 py-1.5 text-xs font-medium nav-pill transition ${
             activeTab === tab.id
-              ? 'bg-primary text-white'
-              : 'border border-border bg-surface text-muted hover:border-primary hover:text-text'
+              ? 'rounded-full bg-primary text-white shadow-[0_6px_18px_rgba(15,23,42,0.08)] tracking-tight'
+              : 'rounded-lg border border-border bg-surface text-muted hover:border-primary hover:text-text'
           }`}
           onClick={() => onChange(tab.id)}
           type="button"
