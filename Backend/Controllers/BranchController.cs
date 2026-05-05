@@ -11,6 +11,7 @@ namespace Artifax.Controllers
     [Route("api/[Controller]")]
     public class BranchController : ControllerBase
     {
+        const string adminLevel = "Admin";
         readonly ArtifaxContext context;
 
         public BranchController (ArtifaxContext incoming)
@@ -38,6 +39,12 @@ namespace Artifax.Controllers
             [HttpPost]
             public async Task<ActionResult<BranchDto>> CreateBranch (BranchDto incoming)
             {
+                //Authentication Test
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
+                {
+                    return Unauthorized("Creation attempted by non-admin!");
+                }
+
                 if (context.Branches.Count() > 0) {
                     incoming.BranchID = context.Branches.Max(b => b.BranchID + 1);
                 } else
@@ -56,6 +63,12 @@ namespace Artifax.Controllers
             [HttpPatch]
             public async Task<ActionResult<Branch>> UpdateBranchName (int id, string incoming)
             {
+                //Authentication Test
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
+                {
+                    return Unauthorized("Update attempted by non-admin!");
+                }
+
                 var _result = await context.Branches.FindAsync(id);
                 if (_result == null) return NotFound();
 
@@ -70,6 +83,12 @@ namespace Artifax.Controllers
             [HttpDelete]
             public async Task<IActionResult> DeleteBranch (int id)
             {
+                //Authentication Test
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
+                {
+                    return Unauthorized("Deletion attempted by non-admin!");
+                }
+
                 var _result = await context.Branches.FindAsync(id);
                 if (_result == null) return NotFound();
 

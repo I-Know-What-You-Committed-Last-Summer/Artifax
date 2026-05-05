@@ -17,7 +17,7 @@ builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(build
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(option => {
-    option.IdleTimeout = TimeSpan.FromTicks(30);
+    option.IdleTimeout = TimeSpan.FromHours(14);
     option.Cookie.HttpOnly = true;
     option.Cookie.IsEssential = true;
 });
@@ -34,9 +34,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.UseSession();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
