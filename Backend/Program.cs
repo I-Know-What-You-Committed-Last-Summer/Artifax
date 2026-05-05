@@ -28,6 +28,13 @@ var connectionString = $"Host={host};Port={port};Database={database};Username={u
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(option => {
+    option.IdleTimeout = TimeSpan.FromTicks(30);
+    option.Cookie.HttpOnly = true;
+    option.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -41,6 +48,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapControllers();
 

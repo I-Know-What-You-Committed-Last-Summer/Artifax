@@ -60,7 +60,7 @@ namespace Artifax.Controllers
             [HttpPost("employee")]
             public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
             {
-                //FIXME: Auth
+                //FIXME: Add session Auth
 
                 //Check whether employee with incoming details already exists to prevent duplicate emails for login
                 bool _employeeNotFound = await context.Admins.FindAsync(incoming.EmployeeEmail) == null;
@@ -93,7 +93,7 @@ namespace Artifax.Controllers
             [HttpPost("admin")]
             public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
             {
-                //FIXME: Auth
+                //FIXME: Add session Auth
 
                 //Check whether admin with incoming details already exists to prevent duplicate emails for login
                 bool _adminNotFound = await context.Admins.FindAsync(incoming.AdminEmail) == null;
@@ -103,7 +103,7 @@ namespace Artifax.Controllers
                 Admin _admin = new ()
                 {
                     AdminEmail = incoming.AdminEmail,
-                    AdminId = context.Admins.Max(_i => _i.AdminId + 1),
+                    AdminId = context.Admins.Count() > 0 ? context.Admins.Max(_i => _i.AdminId + 1) : 0,
                     AdminName = incoming.AdminName,
                     AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword)
                 };
@@ -134,6 +134,8 @@ namespace Artifax.Controllers
                 {
                     return Unauthorized("Incorrect Password");
                 }
+                HttpContext.Session.SetString("UserLevel","Employee");
+                HttpContext.Session.SetString("UserEmail",email);
 
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
@@ -154,6 +156,8 @@ namespace Artifax.Controllers
                 {
                     return Unauthorized("Incorrect Password");
                 }
+                HttpContext.Session.SetString("UserLevel","Admin");
+                HttpContext.Session.SetString("UserEmail",email);
 
                 return Ok(AdminReadDto.ToDto(_admin));
             }
@@ -167,7 +171,7 @@ namespace Artifax.Controllers
             [HttpPatch("employee/branch")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (int EmployeeId, int BranchId)
             {
-                //FIXME: Auth
+                //FIXME: Add session Auth
 
                 //Check for existing employee
                 var _employee = await context.Employees.FindAsync(EmployeeId);
@@ -192,7 +196,7 @@ namespace Artifax.Controllers
             [HttpPatch("employee")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (int id, EmployeeWriteDto incoming)
             {
-                //FIXME: Auth
+                //FIXME: Add session Auth
 
                 //Check for existing employee
                 var _employee = await context.Employees.FindAsync(id);
@@ -216,7 +220,7 @@ namespace Artifax.Controllers
             [HttpPatch("admin")]
             public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (int id, AdminWriteDto incoming)
             {
-                //FIXME: Auth
+                //FIXME: Add session Auth
 
                 //Check for existing admin
                 var _admin = await context.Admins.FindAsync(id);
