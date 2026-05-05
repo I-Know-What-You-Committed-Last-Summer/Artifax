@@ -1,4 +1,16 @@
-export const historyData = [
+export interface HistoryItem {
+  id: string;
+  name: string;
+  date: string;
+  qty: number;
+  min: number;
+  operator: string;
+  status: 'Crafted' | 'Cancelled';
+  type: string;
+  location: string;
+}
+
+export const historyData: HistoryItem[] = [
   { id: 'J-2515', name: 'table', date: '2024/02/05', qty: 120, min: 20, operator: 'Mike', status: 'Crafted', type: 'furniture', location: 'Warehouse A' },
   { id: 'J-2516', name: 'A4 Sketch book', date: '2024/02/05', qty: 4, min: 15, operator: 'Jim', status: 'Cancelled', type: 'stationery', location: 'Studio 1' },
   { id: 'MET-003', name: 'Aluminium Sheet', date: '2024/02/05', qty: 88, min: 10, operator: 'Dan', status: 'Crafted', type: 'metal', location: 'Warehouse B' },

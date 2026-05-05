@@ -1,4 +1,14 @@
-function SectionCard({ title, subtitle, rightSlot, children, className = '' }) {
+import React from 'react';
+
+type SectionCardProps = {
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  rightSlot?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;
+};
+
+function SectionCard({ title, subtitle, rightSlot, children, className = '' }: SectionCardProps) {
   return (
     <section className={`rounded-2xl border border-border bg-surface p-4 shadow-card sm:p-5 ${className}`}>
       {(title || rightSlot) && (

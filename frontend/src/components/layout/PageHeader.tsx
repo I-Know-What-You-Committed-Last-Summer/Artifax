@@ -1,4 +1,12 @@
-function PageHeader({ title, subtitle, rightSlot }) {
+import React from 'react';
+
+type PageHeaderProps = {
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  rightSlot?: React.ReactNode;
+};
+
+function PageHeader({ title, subtitle, rightSlot }: PageHeaderProps) {
   return (
     <div className="mb-4 flex flex-col gap-3 border-b border-border pb-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>

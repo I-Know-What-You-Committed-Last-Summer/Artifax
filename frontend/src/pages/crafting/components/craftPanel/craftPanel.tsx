@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { FC } from 'react';
 import './craftPanel.css';
+import { Blueprint } from '../craftingData';
 
-const CraftPanel = ({ blueprint, amount, onAmountChange, onCraft }) => {
+interface CraftPanelProps {
+  blueprint: Blueprint;
+  amount: number;
+  onAmountChange: (amount: number) => void;
+  onCraft: () => void;
+}
+
+const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, onCraft }) => {
   const canCraft = blueprint.materials.every(item => item.have >= item.need * amount);
 
-  const handleDecrement = () => {
+  const handleDecrement = (): void => {
     onAmountChange(Math.max(1, amount - 1));
   };
 
-  const handleIncrement = () => {
+  const handleIncrement = (): void => {
     onAmountChange(amount + 1);
   };
 

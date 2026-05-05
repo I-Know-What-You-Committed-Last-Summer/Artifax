@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
-import dashboardIcon from '../../accests/images/dashboardIcon.png';
-import inventoryIcon from '../../accests/images/inventoryIcon.png';
-import craftingIcon from '../../accests/images/craftingIcon.png';
-import analyticsIcon from '../../accests/images/analyticsIcon.png';
-import usersIcon from '../../accests/images/usersIcon.png';
+import dashboardIcon from '../../assets/images/dashboardIcon.png';
+import inventoryIcon from '../../assets/images/inventoryIcon.png';
+import craftingIcon from '../../assets/images/craftingIcon.png';
+import analyticsIcon from '../../assets/images/analyticsIcon.png';
+import usersIcon from '../../assets/images/usersIcon.png';
 
 const MENU_DATA = {
   logo: {

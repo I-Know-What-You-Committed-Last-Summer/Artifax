@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
+import React, { FC, useState } from 'react';
 import './craftingQueue.css';
-import { craftingData } from '../craftingData';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
+import { craftingData, CraftingItem } from '../craftingData';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
 
 const itemsPerPage = 3;
 
-const CraftingQueue = () => {
-  const [page, setPage] = useState(1);
-  const activeItems = craftingData.filter((item) => item.status !== 'Queued');
-  const queuedItems = craftingData.filter((item) => item.status === 'Queued');
+const CraftingQueue: FC = () => {
+  const [page, setPage] = useState<number>(1);
+  const activeItems: CraftingItem[] = craftingData.filter((item) => item.status !== 'Queued');
+  const queuedItems: CraftingItem[] = craftingData.filter((item) => item.status === 'Queued');
   const activeCount = activeItems.length;
   const totalPages = Math.max(1, Math.ceil(queuedItems.length / itemsPerPage));
 
   const pageItems = queuedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const handlePrevious = () => setPage((prev) => Math.max(1, prev - 1));
-  const handleNext = () => setPage((prev) => Math.min(totalPages, prev + 1));
+  const handlePrevious = (): void => setPage((prev) => Math.max(1, prev - 1));
+  const handleNext = (): void => setPage((prev) => Math.min(totalPages, prev + 1));
 
   return (
     <div className="queue-sidebar">

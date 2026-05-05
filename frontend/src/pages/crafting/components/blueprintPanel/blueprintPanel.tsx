@@ -1,15 +1,29 @@
-import React from 'react';
+import React, { FC } from 'react';
 import './blueprintPanel.css';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
+import { Blueprint, BlueprintMaterial } from '../craftingData';
 
-const categories = [
+interface Category {
+  id: string;
+  label: string;
+}
+
+interface BlueprintPanelProps {
+  blueprints: Blueprint[];
+  selectedBlueprintId: string;
+  filter: string;
+  onFilterChange: (filter: string) => void;
+  onSelectBlueprint: (blueprintId: string) => void;
+}
+
+const categories: Category[] = [
   { id: 'all', label: 'All' },
   { id: 'mechanical', label: 'Mechanical' },
   { id: 'electronics', label: 'Electronics' },
   { id: 'furniture', label: 'Furniture' },
 ];
 
-const computeCraftable = (materials) => {
+const computeCraftable = (materials: BlueprintMaterial[]): number => {
   if (!materials || materials.length === 0) return 0;
   return materials.reduce((minValue, material) => {
     const count = Math.floor(material.have / material.need);
@@ -17,13 +31,16 @@ const computeCraftable = (materials) => {
   }, Infinity) || 0;
 };
 
-const BlueprintPanel = ({ blueprints, selectedBlueprintId, filter, onFilterChange, onSelectBlueprint }) => {
+const BlueprintPanel: FC<BlueprintPanelProps> = ({ 
+  blueprints, 
+  selectedBlueprintId, 
+  filter, 
+  onFilterChange, 
+  onSelectBlueprint 
+}) => {
   const filteredBlueprints = filter === 'all'
     ? blueprints
-    : blueprints.filter((blueprint) => blueprint.category === filter);
-
-  const selectedBlueprint = blueprints.find((item) => item.id === selectedBlueprintId);
-  const selectedCanCraft = selectedBlueprint ? computeCraftable(selectedBlueprint.materials) > 0 : false;
+    : blueprints.filter((blueprint) => blueprint.category === filter as any);
 
   return (
     <div className="blueprint-panel">

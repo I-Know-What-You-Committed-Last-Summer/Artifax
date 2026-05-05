@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
+import React, { FC, useState, ReactNode } from 'react';
 import './stats.css';
-import recipesIcon from '../../../../accests/images/recipesIcon.png';
-import activeJodIcon from '../../../../accests/images/activeJodIcon.png';
-import completedIcon from '../../../../accests/images/completeIcon.png';
-import blockedIcon from '../../../../accests/images/blockedIcon.png';
+import recipesIcon from '../../../../assets/images/recipesIcon.png';
+import activeJodIcon from '../../../../assets/images/activeJodIcon.png';
+import completedIcon from '../../../../assets/images/completeIcon.png';
+import blockedIcon from '../../../../assets/images/blockedIcon.png';
 
-const statsData = [
+interface StatItem {
+  label: string;
+  value: number;
+  icon: ReactNode;
+}
+
+interface TiltsState {
+  [key: number]: string;
+}
+
+const statsData: StatItem[] = [
   {
     label: "Recipes",
     value: 8,
@@ -28,12 +38,10 @@ const statsData = [
   }
 ];
 
-const StatsGrid = () => {
-  const [tilts, setTilts] = useState({});
+const StatsGrid: FC = () => {
+  const [tilts, setTilts] = useState<TiltsState>({});
 
-
-  // Handle mouse movement to create a 3D tilt effect
-  const handleMouseMove = (e, index) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number): void => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -47,7 +55,7 @@ const StatsGrid = () => {
     }));
   };
 
-  const handleMouseLeave = (index) => {
+  const handleMouseLeave = (index: number): void => {
     setTilts(prev => ({
       ...prev,
       [index]: ''

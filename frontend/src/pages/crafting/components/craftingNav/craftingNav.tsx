@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { FC } from 'react';
 import './craftingNav.css';
 
-const navData = [
+interface NavItem {
+  id: string;
+  label: string;
+  badge: number | null;
+}
+
+interface CraftingNavProps {
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+}
+
+const navData: NavItem[] = [
   { id: 'active', label: 'Active Jobs', badge: 3 },
   { id: 'craft', label: 'Craft', badge: null },
   { id: 'history', label: 'History', badge: null },
 ];
 
-const CraftingNav = ({ activeTab, onTabChange }) => {
-
+const CraftingNav: FC<CraftingNavProps> = ({ activeTab, onTabChange }) => {
   return (
     <div className="nav-container">
       {/* Tab Group */}
