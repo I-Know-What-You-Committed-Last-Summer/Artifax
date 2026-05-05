@@ -32,7 +32,7 @@
 /* Active State Styles */
 .nav-btn.active {
   background-color: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
 }
 
 .nav-badge {
@@ -40,7 +40,7 @@
   align-items: center;
   justify-content: center;
   background-color: var(--muted);
-  color: #ffffff;
+  color: var(--on-primary);
   font-size: 11px;
   min-width: 18px;
   height: 18px;
@@ -54,7 +54,7 @@
   align-items: center;
   gap: 8px;
   background-color: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
   border: none;
   padding: 10px 20px;
   border-radius: 8px;

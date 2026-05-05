@@ -7,7 +7,6 @@ export const mainMenu = [
 
 export const adminMenu = [
   { id: 'users', label: 'Users', short: 'US', path: '/users', badge: 'Admin' },
-  { id: 'settings', label: 'Settings', short: 'ST', path: '/settings' },
 ];
 
 export const userMenu = [

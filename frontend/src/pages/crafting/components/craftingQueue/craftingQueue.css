@@ -1,5 +1,5 @@
 .queue-sidebar {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
@@ -25,7 +25,7 @@
 
 .queue-count {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
@@ -105,7 +105,7 @@
 
 .queue-badge.in-progress {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
 }
 
 .waiting-status {
@@ -126,7 +126,7 @@
 
 .queue-footer button {
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
   color: var(--text);
   padding: 8px 14px;
   border-radius: 10px;

@@ -1,5 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
+import dashboardIcon from '../../accests/images/dashboardIcon.png';
+import inventoryIcon from '../../accests/images/inventoryIcon.png';
+import craftingIcon from '../../accests/images/craftingIcon.png';
+import analyticsIcon from '../../accests/images/analyticsIcon.png';
+import usersIcon from '../../accests/images/usersIcon.png';
 
 const MENU_DATA = {
   logo: {
@@ -8,14 +13,13 @@ const MENU_DATA = {
     fullText: 'Artifax',
   },
   mainMenu: [
-    { id: 'dashboard', label: 'Dashboard', icon: '⊞', path: '/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '⬢', path: '/inventory' },
-    { id: 'crafting', label: 'Crafting', icon: '⚒', path: '/crafting' },
-    { id: 'analytics', label: 'Analytics', icon: '📊', path: '/analytics' },
+    { id: 'dashboard', label: 'Dashboard', icon: dashboardIcon, path: '/dashboard' },
+    { id: 'inventory', label: 'Inventory', icon: inventoryIcon, path: '/inventory' },
+    { id: 'crafting', label: 'Crafting', icon: craftingIcon, path: '/crafting' },
+    { id: 'analytics', label: 'Analytics', icon: analyticsIcon, path: '/analytics' },
   ],
   adminMenu: [
-    { id: 'users', label: 'Users', icon: '👥', path: '/users', badge: 'Admin' },
-    { id: 'settings', label: 'Settings', icon: '⚙', path: '/settings' },
+    { id: 'users', label: 'Users', icon: usersIcon, path: '/users', badge: 'Admin' },
   ],
   user: {
     name: 'J. Martinez',
@@ -37,7 +41,9 @@ function SidebarNavGroup({ title, items }) {
               aria-label={item.label}
               title={item.label}
             >
-              <div className="nav-icon">{item.icon}</div>
+              <div className="nav-icon">
+                <img className="nav-icon-image" src={item.icon} alt="" aria-hidden="true" />
+              </div>
               <span className="nav-text">{item.label}</span>
               {item.badge ? <span className="admin-badge nav-text">{item.badge}</span> : null}
             </NavLink>

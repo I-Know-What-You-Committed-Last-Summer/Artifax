@@ -100,7 +100,7 @@
 
 .history-tab.active {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
 }
 
 .history-table-wrapper {
@@ -243,7 +243,7 @@
 
 .pagination-btn.active {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--on-primary);
   border-color: var(--primary);
 }
 

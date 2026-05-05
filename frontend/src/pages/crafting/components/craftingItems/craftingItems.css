@@ -8,7 +8,7 @@
 }
 
 .job-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
@@ -66,7 +66,7 @@
 
 .progress-bar-bg {
   height: 8px;
-  background: #e9edf3;
+  background: var(--surface-2);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -103,7 +103,7 @@
   padding: 8px 24px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 5px 5px rgba(15, 23, 42, 0.2);
@@ -117,7 +117,7 @@
 
 .btn-cancel:hover {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border-color: transparent;
 }
 
@@ -125,32 +125,32 @@
   padding: 8px 24px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 5px 5px rgba(15, 23, 42, 0.2);
 }
 
 .btn-action.pause {
-  background: white;
+  background: var(--surface);
   color: var(--text);
 }
 
 .btn-action.pause:hover {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border-color: transparent;
   box-shadow: 0 18px 30px rgba(15, 23, 42, 0.16);
 }
 
 .btn-action.resume {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border-color: transparent;
 }
 
 .btn-action.resume:hover {
-  background: white;
+  background: var(--surface);
   color: var(--primary);
   border-color: var(--border);
   box-shadow: 0 18px 30px rgba(15, 23, 42, 0.16);

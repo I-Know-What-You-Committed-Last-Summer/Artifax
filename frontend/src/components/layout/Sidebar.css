@@ -2,7 +2,7 @@
   --sidebar-bg: var(--surface);
   --sidebar-border: var(--border);
   --active-bg: var(--primary-dark);
-  --active-text: #ffffff;
+  --active-text: var(--on-primary);
   --inactive-text: var(--muted);
   --section-title: var(--muted);
   --collapsed-width: 90px;
@@ -50,7 +50,7 @@
   padding: 0;
   margin-bottom: 36px;
   height: 44px;
-  transition: justify-content var(--transition-speed), padding var(--transition-speed);
+  transition: padding var(--transition-speed);
 }
 
 .sidebar-container:hover .sidebar-header {
@@ -69,6 +69,7 @@
   border: 1px solid var(--border);
   overflow: hidden;
   flex-shrink: 0;
+  margin: 0 auto;
   transition: width var(--transition-speed), height var(--transition-speed), border-color var(--transition-speed);
 }
 
@@ -80,9 +81,10 @@
 .logo-mark-image {
   width: 100%;
   height: 100%;
+  padding: 3px;
+  box-sizing: border-box;
   object-fit: contain;
   object-position: center;
-  transform: scale(1.42);
   display: block;
 }
 
@@ -92,6 +94,15 @@
   font-size: 1.2rem;
   color: var(--text);
   line-height: 1;
+  margin-left: 0;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width var(--transition-speed), margin-left var(--transition-speed);
+}
+
+.sidebar-container:hover .logo-text {
+  width: auto;
   margin-left: 12px;
 }
 
@@ -139,9 +150,25 @@
 
 .nav-icon {
   min-width: 35px;
-  font-size: 19px;
   display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+.nav-icon-image {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+  display: block;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-item.active .nav-icon-image {
+  filter: brightness(0) invert(1);
+}
+
+.nav-item:hover .nav-icon-image {
+  opacity: 0.95;
 }
 
 .admin-badge {
@@ -210,6 +237,12 @@
   .sidebar-container:hover .sidebar-header {
     justify-content: center;
     padding: 0;
+  }
+
+  .logo-text,
+  .sidebar-container:hover .logo-text {
+    width: 0;
+    margin-left: 0;
   }
 
   .logo-placeholder,

@@ -1,10 +1,10 @@
 :root {
-  --sidebar-bg: #ffffff;
-  --sidebar-border: #eef1f5;
-  --active-bg: #0f172a;
-  --active-text: #ffffff;
-  --inactive-text: #64748b;
-  --section-title: #94a3b8;
+  --sidebar-bg: var(--surface);
+  --sidebar-border: var(--border);
+  --active-bg: var(--primary);
+  --active-text: var(--on-primary);
+  --inactive-text: var(--muted);
+  --section-title: var(--muted);
   --collapsed-width: 90px;
   --expanded-width: 240px;
   --transition-speed: 0.3s ease;
@@ -83,7 +83,7 @@
 .logo-text {
   font-weight: 700;
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text);
   margin-left: 15px;
 }
 
@@ -115,7 +115,7 @@
 }
 
 .nav-item:hover {
-  background: #f8fafc;
+  background: var(--bg);
 }
 
 .nav-item.active {

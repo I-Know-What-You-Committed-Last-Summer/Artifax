@@ -5,6 +5,15 @@
 @tailwind utilities;
 
 :root {
+  /* app surface and chart tokens for theme-aware components */
+  --app: linear-gradient(180deg, #ffffff, #f8fafc);
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --chart-grid: #e6edf6;
+  --chart-tick: #94a3b8;
+  --chart-tooltip-bg: rgba(30,41,59,0.95);
+  --chart-accent: #0f172a;
+
   --bg: #f2f4f8;
   --surface: #ffffff;
   --border: #dfe3e8;
@@ -12,6 +21,7 @@
   --muted: #64748b;
   --primary: #0f172a;
   --primary-dark: #020617;
+  --on-primary: #ffffff;
   --ok-bg: #e5f7ed;
   --ok-text: #166534;
   --warn-bg: #fff7dd;
@@ -21,6 +31,15 @@
 }
 
 html[data-theme='synthwave'] {
+  /* dark/synthwave-specific tokens */
+  --app: linear-gradient(180deg, #1c3554, #274c77);
+  --surface-2: #20364e;
+  --surface-3: #163049;
+  --chart-grid: rgba(255,255,255,0.05);
+  --chart-tick: #9fbbe0;
+  --chart-tooltip-bg: rgba(8,18,30,0.85);
+  --chart-accent: #cbdcff;
+
   --bg: #274c77;
   --surface: #1e3e62;
   --border: #5a82ad;
