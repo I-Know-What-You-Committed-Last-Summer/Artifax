@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { FC, useState } from 'react';
 import './craftingItems.css';
-import { craftingData } from '../craftingData';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
+import { craftingData, CraftingItem } from '../craftingData';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
 
-const CraftingItems = () => {
-  const [tilts, setTilts] = useState({});
+interface TiltsState {
+  [key: string]: string;
+}
 
-  const activeJobs = craftingData.filter(item => item.status !== "Queued");
+const CraftingItems: FC = () => {
+  const [tilts, setTilts] = useState<TiltsState>({});
 
+  const activeJobs: CraftingItem[] = craftingData.filter(item => item.status !== "Queued");
 
-  // Handle mouse movement to create a 3D tilt effect
-  const handleMouseMove = (e, id) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -24,7 +26,7 @@ const CraftingItems = () => {
     }));
   };
 
-  const handleMouseLeave = (id) => {
+  const handleMouseLeave = (id: string): void => {
     setTilts(prev => ({
       ...prev,
       [id]: ''

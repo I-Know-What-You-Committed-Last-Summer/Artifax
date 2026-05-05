@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { FC, ReactNode } from 'react';
 import './historyStats.css';
-import totalJobsIcon from '../../../../accests/images/TjodsIcon.png';
-import cancelledIcon from '../../../../accests/images/cancelledIcon.png';
-import completedIcon from '../../../../accests/images/completeIcon.png';
-import avgDurationIcon from '../../../../accests/images/durationIcon.png';
+import totalJobsIcon from '../../../../assets/images/TjodsIcon.png';
+import cancelledIcon from '../../../../assets/images/cancelledIcon.png';
+import completedIcon from '../../../../assets/images/completeIcon.png';
+import avgDurationIcon from '../../../../assets/images/durationIcon.png';
 
-const historyData = [
+interface HistoryStat {
+  label: string;
+  value: string;
+  icon: ReactNode;
+}
+
+const historyStatsData: HistoryStat[] = [
   {
     label: "Total Jobs",
     value: "24",
@@ -28,10 +34,10 @@ const historyData = [
   }
 ];
 
-const HistoryStats = () => {
+const HistoryStats: FC = () => {
   return (
     <div className="history-stats-container">
-      {historyData.map((stat, index) => (
+      {historyStatsData.map((stat, index) => (
         <div key={index} className="history-card">
           <div className="history-icon-wrapper">
             {stat.icon}

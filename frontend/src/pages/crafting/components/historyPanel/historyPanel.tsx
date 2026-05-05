@@ -1,37 +1,48 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { FC, useMemo, useState, useEffect } from 'react';
 import './historyPanel.css';
-import { historyData } from '../historyData';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
+import { historyData, HistoryItem } from '../historyData';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
 
-const STATUS_TABS = [
+interface SelectOption {
+  label: string;
+  value: string;
+}
+
+interface StatusCounts {
+  [key: string]: number;
+  All: number;
+  Crafted: number;
+  Cancelled: number;
+}
+
+const STATUS_TABS: SelectOption[] = [
   { label: 'All', value: 'All' },
   { label: 'Crafted', value: 'Crafted' },
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
-const SORT_OPTIONS = [
+const SORT_OPTIONS: SelectOption[] = [
   { label: 'Name', value: 'name' },
   { label: 'Date', value: 'date' },
   { label: 'Qty', value: 'qty' },
   { label: 'Operator', value: 'operator' }
 ];
 
-const HistoryPanel = () => {
-  const [activeTab, setActiveTab] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [typeFilter, setTypeFilter] = useState('All');
-  const [sortKey, setSortKey] = useState('name');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+const HistoryPanel: FC = () => {
+  const [activeTab, setActiveTab] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [sortKey, setSortKey] = useState<string>('name');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 10;
-
 
   const typeOptions = useMemo(() => [
     'All',
     ...Array.from(new Set(historyData.map((item) => item.type)))
   ], []);
 
-  const statusCounts = useMemo(() => {
+  const statusCounts: StatusCounts = useMemo(() => {
     return historyData.reduce(
       (counts, item) => {
         counts.All += 1;
@@ -43,7 +54,7 @@ const HistoryPanel = () => {
     );
   }, []);
 
-  const filteredData = useMemo(() => {
+  const filteredData: HistoryItem[] = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
     return historyData
@@ -59,17 +70,17 @@ const HistoryPanel = () => {
       .sort((a, b) => {
         if (sortKey === 'qty') return b.qty - a.qty;
         if (sortKey === 'date') return a.date.localeCompare(b.date);
-        return a[sortKey].toString().localeCompare(b[sortKey].toString());
+        return a[sortKey as keyof HistoryItem].toString().localeCompare(b[sortKey as keyof HistoryItem].toString());
       });
   }, [activeTab, statusFilter, typeFilter, sortKey, searchQuery]);
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = useMemo(() => {
+  const paginatedData: HistoryItem[] = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredData, currentPage]);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number): void => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }

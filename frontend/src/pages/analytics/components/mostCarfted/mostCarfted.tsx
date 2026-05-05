@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import './mostCarfted.css';
 import { blueprintData } from '../../../../pages/crafting/components/craftingData';
-import unitIcon from '../../../../accests/images/uniitIcon.png';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
 
 type SortOrder = 'high' | 'low';
 

@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
+import React, { FC, useState } from 'react';
 import './crafting.css';
-import AlertStrip from '../../components/layout/AlertStrip';
-import PageHeader from '../../components/layout/PageHeader';
 import CraftingNav from './components/craftingNav/craftingNav';
 import StatsGrid from './components/stats/stats';
 import HistoryStats from './components/historyStats/historyStats';
@@ -10,17 +8,20 @@ import CraftingItems from './components/craftingItems/craftingItems';
 import CraftingQueue from './components/craftingQueue/craftingQueue';
 import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
-import { blueprintData } from './components/craftingData';
+import { blueprintData, Blueprint } from './components/craftingData';
 
-const craftingAlerts = ['Steel Rods (4 remaining)', 'Copper Wire (2 remaining)'];
+interface PageProps {
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+}
 
-const ActiveJobsPage = () => (
+const ActiveJobsPage: FC = () => (
   <div className="crafting-panel">
     <StatsGrid />
   </div>
 );
 
-const ActiveJobsContent = () => (
+const ActiveJobsContent: FC = () => (
   <div className="crafting-panel">
     <div className="active-jobs-layout">
       <div className="active-jobs-main">
@@ -33,18 +34,18 @@ const ActiveJobsContent = () => (
   </div>
 );
 
-const CraftPage = ({ activeTab, onTabChange }) => {
-  const [selectedBlueprintId, setSelectedBlueprintId] = React.useState(blueprintData[0]?.id || '');
-  const [amount, setAmount] = React.useState(1);
-  const [filter, setFilter] = React.useState('all');
+const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
+  const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>(blueprintData[0]?.id || '');
+  const [amount, setAmount] = useState<number>(1);
+  const [filter, setFilter] = useState<string>('all');
 
-  const selectedBlueprint = blueprintData.find((item) => item.id === selectedBlueprintId) || blueprintData[0];
+  const selectedBlueprint: Blueprint = blueprintData.find((item) => item.id === selectedBlueprintId) || blueprintData[0];
 
   React.useEffect(() => {
     setAmount(1);
   }, [selectedBlueprintId]);
 
-  const handleCraft = () => {
+  const handleCraft = (): void => {
     if (!selectedBlueprint) return;
     console.log(`Crafting ${amount} ${selectedBlueprint.name}(s)`);
   };
@@ -77,7 +78,7 @@ const CraftPage = ({ activeTab, onTabChange }) => {
   );
 };
 
-const HistoryPage = ({ activeTab, onTabChange }) => (
+const HistoryPage: FC<PageProps> = ({ activeTab, onTabChange }) => (
   <div className="crafting-panel">
     <HistoryStats />
     <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
@@ -85,10 +86,8 @@ const HistoryPage = ({ activeTab, onTabChange }) => (
   </div>
 );
 
-
-
-const Crafting = () => {
-  const [activeTab, setActiveTab] = useState('active');
+const Crafting: FC = () => {
+  const [activeTab, setActiveTab] = useState<string>('active');
 
   return (
     <div className="page-content">
@@ -104,9 +103,3 @@ const Crafting = () => {
 };
 
 export default Crafting;
-
-
-
-
-
-

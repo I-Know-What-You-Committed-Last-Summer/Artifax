@@ -17,6 +17,8 @@
   },
   "include": ["src"]
 }
+
+
 // tsconfig.json defines TypeScript compiler options for the frontend app.
 // It enables JSX support, module resolution, and allows the project to
 // compile .tsx files while still allowing JavaScript files in the src folder.
