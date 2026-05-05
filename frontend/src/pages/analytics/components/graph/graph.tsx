@@ -8,6 +8,8 @@ import {
   Tooltip,
   Filler,
   Legend,
+  type ChartData,
+  type ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import './graph.css';
@@ -17,7 +19,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 const graphLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 const graphValues = [28, 42, 58, 47, 52, 49, 58, 68];
 
-const data = {
+const data: ChartData<'line'> = {
   labels: graphLabels,
   datasets: [
     {
@@ -35,7 +37,7 @@ const data = {
   ],
 };
 
-const options = {
+const options: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -62,7 +64,7 @@ const options = {
   },
 };
 
-const GraphCard = () => {
+const GraphCard: React.FC = () => {
   return (
     <section className="graph-card">
       <div className="graph-card-header">

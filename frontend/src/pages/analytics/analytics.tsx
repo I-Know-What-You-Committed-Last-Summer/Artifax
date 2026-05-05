@@ -5,7 +5,7 @@ import MostCrafted from './components/mostCarfted/mostCarfted';
 import StatsGrid from '../crafting/components/stats/stats';
 import './analytics.css';
 
-const AnalyticsPage = () => (
+const AnalyticsPage: React.FC = () => (
   <div className="page-content">
     <div className="crafting-page">
       <div className="crafting-panel analytics-top-panel">

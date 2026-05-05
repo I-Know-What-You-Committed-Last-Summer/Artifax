@@ -3,15 +3,32 @@ import './mostCarfted.css';
 import { blueprintData } from '../../../../pages/crafting/components/craftingData';
 import unitIcon from '../../../../accests/images/uniitIcon.png';
 
-const sortOptions = [
+type SortOrder = 'high' | 'low';
+
+type SortOption = {
+  value: SortOrder;
+  label: string;
+};
+
+type Blueprint = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  have: number;
+  craft: number;
+  materials: Array<{ name: string; need: number; have: number }>;
+};
+
+const sortOptions: SortOption[] = [
   { value: 'high', label: 'High to low' },
-  { value: 'low', label: 'Low to high' }
+  { value: 'low', label: 'Low to high' },
 ];
 
-const MostCrafted = () => {
-  const [sortOrder, setSortOrder] = useState('high');
+const MostCrafted: React.FC = () => {
+  const [sortOrder, setSortOrder] = useState<SortOrder>('high');
 
-  const sortedBlueprints = useMemo(() => {
+  const sortedBlueprints = useMemo<Blueprint[]>(() => {
     return [...blueprintData].sort((a, b) => {
       if (sortOrder === 'low') return a.craft - b.craft;
       return b.craft - a.craft;
@@ -29,10 +46,12 @@ const MostCrafted = () => {
           <select
             id="mostCraftedSort"
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
+            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
           >
             {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </div>
@@ -40,11 +59,7 @@ const MostCrafted = () => {
 
       <div className="blueprint-list most-crafted-list">
         {sortedBlueprints.map((blueprint) => (
-          <button
-            key={blueprint.id}
-            type="button"
-            className="blueprint-card"
-          >
+          <button key={blueprint.id} type="button" className="blueprint-card">
             <div className="blueprint-card-main">
               <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
               <div>
