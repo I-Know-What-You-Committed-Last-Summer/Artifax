@@ -29,7 +29,6 @@ function Topbar() {
   const { pathname } = useLocation();
   const [isSynthwave, setIsSynthwave] = useState(false);
   const breadcrumbItems = getBreadcrumbItems(pathname);
-  const currentLabel = breadcrumbItems[breadcrumbItems.length - 1]?.label || 'Dashboard';
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -98,9 +97,6 @@ function Topbar() {
               );
             })}
           </ol>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.22em] text-muted sm:text-xs">
-            {currentLabel}
-          </p>
         </nav>
 
         <div className="flex items-center gap-2">
