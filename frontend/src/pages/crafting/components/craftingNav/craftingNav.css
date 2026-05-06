@@ -35,6 +35,16 @@
   color: var(--on-primary);
 }
 
+.nav-btn.active {
+  font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+  font-weight: 700;
+}
+
+.nav-btn,
+.nav-btn.active {
+  letter-spacing: 0.02em;
+}
+
 .nav-badge {
   display: flex;
   align-items: center;
@@ -42,9 +52,10 @@
   background-color: var(--muted);
   color: var(--on-primary);
   font-size: 11px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 7px;
   border-radius: 10px;
 }
 

@@ -140,13 +140,13 @@ function Topbar() {
               </svg>
             </span>
           </label>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition hover:border-primary hover:text-text">
+          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
             Warehouse A
           </button>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition hover:border-primary hover:text-text">
+          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
             Alerts
           </button>
-          <div className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text">
+          <div className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-text">
             D. Dastardly
           </div>
         </div>

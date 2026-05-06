@@ -3,6 +3,9 @@ module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        orbitron: ["'Orbitron'", "'Sora'", "'Segoe UI'", "sans-serif"],
+      },
       colors: {
         app: 'var(--bg)',
         surface: 'var(--surface)',

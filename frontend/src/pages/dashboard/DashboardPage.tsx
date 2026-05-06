@@ -26,7 +26,7 @@ function DashboardPage() {
         <SectionCard title="Inventory" subtitle="24 items">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-muted">
+              <thead className="font-orbitron text-xs uppercase tracking-wide text-muted">
                 <tr className="border-b border-border">
                   <th className="pb-2 font-medium">Material</th>
                   <th className="pb-2 font-medium">Qty</th>

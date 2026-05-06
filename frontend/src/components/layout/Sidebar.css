@@ -35,6 +35,8 @@
   opacity: 0;
   transition: opacity var(--transition-speed);
   pointer-events: none;
+  font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .sidebar-container:hover .nav-text {

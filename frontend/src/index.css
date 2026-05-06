@@ -84,9 +84,46 @@ html[data-theme='synthwave'] {
     letter-spacing: 0.02em;
   }
 
-  button,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  nav[aria-label="Breadcrumb"] span {
+    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  button {
+    @apply font-orbitron;
+  }
+
   input,
   select {
     font: inherit;
+  }
+}
+
+@layer components {
+  .nav-pill {
+    @apply font-orbitron tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+  .btn-orbitron {
+    @apply font-orbitron tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  a[role="button"], a.btn, a.button, a[class*="btn-"], a[class*="button-"] {
+    @apply font-orbitron tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
   }
 }
