@@ -16,8 +16,6 @@ namespace Artifax.Controllers
             _context = context;
         }
 
-        //TODO: Crud for items and itemRecipes
-
         #region ItemEndpoints
 
         //List of all items
@@ -177,13 +175,76 @@ namespace Artifax.Controllers
 
         #endregion
 
-        //TODO: Might move this to a its own controller
         #region BranchItemEndpoints
-        [HttpGet("AllBranchItems/{branchID}")]
-        public async Task<ActionResult<IEnumerable<ItemReadDto>>> GetItemsByBranch(int branchID)
+        [HttpGet("Branch")]
+        public async Task<ActionResult<IEnumerable<BranchItemCapacityReadDto>>> GetAllBranchItems()
         {
-            return await _context.BranchItemCapacities.Where(bic => bic.BranchID == branchID).Select(bic => ItemReadDto.ToDto(bic.Item)).ToListAsync();
+            return await _context.BranchItemCapacities.Select(bic => BranchItemCapacityReadDto.ToDto(bic)).ToListAsync();
         }
+        [HttpGet("Branch/{branchID}")]
+        public async Task<ActionResult<IEnumerable<BranchItemCapacityReadDto>>> GetItemsByBranch(int branchID)
+        {
+            return await _context.BranchItemCapacities.Where(bic => bic.BranchID == branchID).Select(bic => BranchItemCapacityReadDto.ToDto(bic)).ToListAsync();
+        }
+        [HttpGet("Branch/GetItemCapacity/{id}")]
+        public async Task<ActionResult<BranchItemCapacityReadDto>> GetBranchItemsByID(int id)
+        {
+            var _branchItemCapacity = await _context.BranchItemCapacities.FindAsync(id);
+            if (_branchItemCapacity == null)
+            {
+                return NotFound();
+            }
+            return BranchItemCapacityReadDto.ToDto(_branchItemCapacity);
+        }
+        [HttpPost("Branch")]
+        public async Task<ActionResult<BranchItemCapacity>> CreateBranchItems(BranchItemCapacityWriteDto incoming)
+        {
+            BranchItemCapacity _branchItemCapacity = new BranchItemCapacity()
+            {
+                BranchID = incoming.BranchID,
+                ItemID = incoming.ItemID,
+                ItemQuantity = incoming.ItemQuantity
+            };
+            _context.BranchItemCapacities.Add(_branchItemCapacity);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetBranchItemsByID), new {id = _branchItemCapacity.BranchItemCapacityID}, new BranchItemCapacityReadDto()
+            {
+                BranchItemCapacityID = _branchItemCapacity.BranchItemCapacityID,
+                BranchID = _branchItemCapacity.BranchID,
+                ItemID = _branchItemCapacity.ItemID,
+                ItemQuantity = _branchItemCapacity.ItemQuantity
+            });
+        }
+        [HttpPut("Branch/{id}")]
+        public async Task<IActionResult> UpdateBranchItemCapacity(int id, BranchItemCapacityWriteDto incoming)
+        {
+            var _branchItemCapacity = await _context.BranchItemCapacities.FindAsync(id);
+            if (_branchItemCapacity == null)
+            {
+                return NotFound();
+            }
+            _branchItemCapacity.BranchID = incoming.BranchID;
+            _branchItemCapacity.ItemID = incoming.ItemID;
+            _branchItemCapacity.ItemQuantity = incoming.ItemQuantity;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("Branch/{id}")]
+        public async Task<IActionResult> DeleteBranchItemCapacity(int id)
+        {
+            var _branchItemCapacity = await _context.BranchItemCapacities.FindAsync(id);
+            if (_branchItemCapacity == null)
+            {
+                return NotFound();
+            }
+            
+            _context.BranchItemCapacities.Remove(_branchItemCapacity);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+
         #endregion
     }
 }
