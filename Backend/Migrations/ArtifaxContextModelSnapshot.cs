@@ -64,56 +64,30 @@ namespace Backend.Migrations
                     b.ToTable("Branches");
                 });
 
-            modelBuilder.Entity("Artifax.Models.BranchMaterial", b =>
+            modelBuilder.Entity("Artifax.Models.BranchItemCapacity", b =>
                 {
-                    b.Property<int>("BranchMaterialID")
+                    b.Property<int>("BranchItemCapacityID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BranchMaterialID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BranchItemCapacityID"));
 
                     b.Property<int>("BranchID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("BranchMaterialQuantity")
+                    b.Property<int>("ItemID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MaterialID")
+                    b.Property<int>("ItemQuantity")
                         .HasColumnType("integer");
 
-                    b.HasKey("BranchMaterialID");
+                    b.HasKey("BranchItemCapacityID");
 
                     b.HasIndex("BranchID");
 
-                    b.HasIndex("MaterialID");
+                    b.HasIndex("ItemID");
 
-                    b.ToTable("BranchMaterials");
-                });
-
-            modelBuilder.Entity("Artifax.Models.BranchProduct", b =>
-                {
-                    b.Property<int>("BranchProductID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BranchProductID"));
-
-                    b.Property<int>("BranchID")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductMaterialQuantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("BranchProductID");
-
-                    b.HasIndex("BranchID");
-
-                    b.HasIndex("ProductID");
-
-                    b.ToTable("BranchProducts");
+                    b.ToTable("BranchItemCapacities");
                 });
 
             modelBuilder.Entity("Artifax.Models.Employee", b =>
@@ -146,25 +120,54 @@ namespace Backend.Migrations
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("Artifax.Models.Material", b =>
+            modelBuilder.Entity("Artifax.Models.Item", b =>
                 {
-                    b.Property<int>("MaterialID")
+                    b.Property<int>("ItemID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaterialID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemID"));
 
-                    b.Property<string>("MaterialImageURL")
+                    b.Property<string>("ItemCategory")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("MaterialName")
+                    b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("MaterialID");
+                    b.Property<int>("ProductionTime")
+                        .HasColumnType("integer");
 
-                    b.ToTable("Materials");
+                    b.HasKey("ItemID");
+
+                    b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("Artifax.Models.ItemIngredient", b =>
+                {
+                    b.Property<int>("ItemIngredientID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemIngredientID"));
+
+                    b.Property<int>("IngredientID")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IngredientQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ItemIngredientID");
+
+                    b.HasIndex("IngredientID");
+
+                    b.HasIndex("ProductID");
+
+                    b.ToTable("ItemIngredients");
                 });
 
             modelBuilder.Entity("Artifax.Models.Order", b =>
@@ -197,92 +200,23 @@ namespace Backend.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("Artifax.Models.Product", b =>
-                {
-                    b.Property<int>("ProductID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductID"));
-
-                    b.Property<string>("ProductImageURL")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<float>("ProductionDuration")
-                        .HasColumnType("real");
-
-                    b.HasKey("ProductID");
-
-                    b.ToTable("Products");
-                });
-
-            modelBuilder.Entity("Artifax.Models.ProductMaterial", b =>
-                {
-                    b.Property<int>("ProductMaterialId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProductMaterialId"));
-
-                    b.Property<int>("MaterialId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductMaterialId");
-
-                    b.HasIndex("MaterialId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductMaterials");
-                });
-
-            modelBuilder.Entity("Artifax.Models.BranchMaterial", b =>
+            modelBuilder.Entity("Artifax.Models.BranchItemCapacity", b =>
                 {
                     b.HasOne("Artifax.Models.Branch", "Branch")
-                        .WithMany("BranchMaterials")
+                        .WithMany("BranchItemCapacities")
                         .HasForeignKey("BranchID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Artifax.Models.Material", "Material")
-                        .WithMany("BranchMaterials")
-                        .HasForeignKey("MaterialID")
+                    b.HasOne("Artifax.Models.Item", "Item")
+                        .WithMany("BranchItemCapacities")
+                        .HasForeignKey("ItemID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Branch");
 
-                    b.Navigation("Material");
-                });
-
-            modelBuilder.Entity("Artifax.Models.BranchProduct", b =>
-                {
-                    b.HasOne("Artifax.Models.Branch", "Branch")
-                        .WithMany("BranchProducts")
-                        .HasForeignKey("BranchID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Artifax.Models.Product", "Product")
-                        .WithMany("BranchProducts")
-                        .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Branch");
-
-                    b.Navigation("Product");
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("Artifax.Models.Employee", b =>
@@ -296,6 +230,25 @@ namespace Backend.Migrations
                     b.Navigation("Branch");
                 });
 
+            modelBuilder.Entity("Artifax.Models.ItemIngredient", b =>
+                {
+                    b.HasOne("Artifax.Models.Item", "IngredientItem")
+                        .WithMany("IngredientItemIngredients")
+                        .HasForeignKey("IngredientID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Artifax.Models.Item", "ProductItem")
+                        .WithMany("ProductItemIngredients")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IngredientItem");
+
+                    b.Navigation("ProductItem");
+                });
+
             modelBuilder.Entity("Artifax.Models.Order", b =>
                 {
                     b.HasOne("Artifax.Models.Branch", "Branch")
@@ -307,48 +260,22 @@ namespace Backend.Migrations
                     b.Navigation("Branch");
                 });
 
-            modelBuilder.Entity("Artifax.Models.ProductMaterial", b =>
-                {
-                    b.HasOne("Artifax.Models.Material", "Material")
-                        .WithMany("ProductMaterials")
-                        .HasForeignKey("MaterialId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Artifax.Models.Product", "Product")
-                        .WithMany("ProductMaterial")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Material");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Artifax.Models.Branch", b =>
                 {
-                    b.Navigation("BranchMaterials");
-
-                    b.Navigation("BranchProducts");
+                    b.Navigation("BranchItemCapacities");
 
                     b.Navigation("Employees");
 
                     b.Navigation("Orders");
                 });
 
-            modelBuilder.Entity("Artifax.Models.Material", b =>
+            modelBuilder.Entity("Artifax.Models.Item", b =>
                 {
-                    b.Navigation("BranchMaterials");
+                    b.Navigation("BranchItemCapacities");
 
-                    b.Navigation("ProductMaterials");
-                });
+                    b.Navigation("IngredientItemIngredients");
 
-            modelBuilder.Entity("Artifax.Models.Product", b =>
-                {
-                    b.Navigation("BranchProducts");
-
-                    b.Navigation("ProductMaterial");
+                    b.Navigation("ProductItemIngredients");
                 });
 #pragma warning restore 612, 618
         }
