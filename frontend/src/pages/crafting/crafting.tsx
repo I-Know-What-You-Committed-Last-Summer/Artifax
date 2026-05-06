@@ -1,5 +1,7 @@
 import React, { FC, useState } from 'react';
 import './crafting.css';
+import AlertStrip from '../../components/layout/AlertStrip';
+import PageHeader from '../../components/layout/PageHeader';
 import CraftingNav from './components/craftingNav/craftingNav';
 import StatsGrid from './components/stats/stats';
 import HistoryStats from './components/historyStats/historyStats';
@@ -9,6 +11,8 @@ import CraftingQueue from './components/craftingQueue/craftingQueue';
 import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import { blueprintData, Blueprint } from './components/craftingData';
+import { craftingAlerts } from '../../data/mockDashboard';
+import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 interface PageProps {
   activeTab: string;
@@ -88,15 +92,24 @@ const HistoryPage: FC<PageProps> = ({ activeTab, onTabChange }) => (
 
 const Crafting: FC = () => {
   const [activeTab, setActiveTab] = useState<string>('active');
+   const currentDate = getCurrentDateSAST();
 
   return (
     <div className="page-content">
-      <div className="crafting-page">
-        {activeTab === 'active' && <ActiveJobsPage />}
-        {activeTab === 'history' && <HistoryPage activeTab={activeTab} onTabChange={setActiveTab} />}
-        {activeTab === 'craft' && <CraftPage activeTab={activeTab} onTabChange={setActiveTab} />}
-        {activeTab === 'active' && <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} />}
-        {activeTab === 'active' && <ActiveJobsContent />}
+      <div className="space-y-4 sm:space-y-5">
+        <PageHeader
+          title="Crafting Management"
+          subtitle={`Crafting Dashboard · ${currentDate}`}
+        />
+        <AlertStrip label="Active Jobs:" items={craftingAlerts} />
+
+        <div className="crafting-page">
+          {activeTab === 'active' && <ActiveJobsPage />}
+          {activeTab === 'history' && <HistoryPage activeTab={activeTab} onTabChange={setActiveTab} />}
+          {activeTab === 'craft' && <CraftPage activeTab={activeTab} onTabChange={setActiveTab} />}
+          {activeTab === 'active' && <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} />}
+          {activeTab === 'active' && <ActiveJobsContent />}
+        </div>
       </div>
     </div>
   );

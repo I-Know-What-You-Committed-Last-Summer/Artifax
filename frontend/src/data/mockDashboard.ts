@@ -47,3 +47,27 @@ export const craftQueueItems = [
     location: 'Warehouse A',
   },
 ];
+
+export const craftingAlerts = [
+  'Gear Assembly x2 (18 min remaining)',
+  'Frame Bracket x5 (45 min est.)',
+];
+
+export const craftingStats = [
+  { id: 'active', label: 'Active Jobs', value: 5 },
+  { id: 'completed-today', label: 'Completed Today', value: 12 },
+  { id: 'queued', label: 'Queued', value: 8 },
+  { id: 'efficiency', label: 'Efficiency', value: '94%' },
+];
+
+export const analyticsAlerts = [
+  'Gear Assembly (trending up)',
+  'Frame Bracket (high demand)',
+];
+
+export const analyticsStats = [
+  { id: 'total-crafted', label: 'Total Crafted', value: '2,451' },
+  { id: 'weekly-avg', label: 'Weekly Average', value: '351' },
+  { id: 'most-crafted', label: 'Most Crafted', value: 'Gear Assembly' },
+  { id: 'demand-trend', label: 'Demand Trend', value: '+12%' },
+];
