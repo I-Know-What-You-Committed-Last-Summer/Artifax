@@ -37,19 +37,19 @@ namespace Artifax.Controllers
             }
 
             //Get All Employee by Id
-            [HttpGet("employee/{id}")]
-            public async Task<ActionResult<EmployeeReadDto>> GetAllEmployeeById (int id)
+            [HttpGet("employee/{email}")]
+            public async Task<ActionResult<EmployeeReadDto>> GetEmployeeByEmail (string email)
             {
-                var _result = await context.Employees.FindAsync(id);
+                var _result = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == email);
                 if (_result == null) return NotFound();
                 return EmployeeReadDto.ToDto(_result);
             }
 
             //Get All Admin by Id
-            [HttpGet("admin/{id}")]
-            public async Task<ActionResult<AdminReadDto>> GetAllAdminById (int id)
+            [HttpGet("admin/{email}")]
+            public async Task<ActionResult<AdminReadDto>> GetAdminById (string email)
             {
-                var _result = await context.Admins.FindAsync(id);
+                var _result = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == email);
                 if (_result == null) return NotFound();
                 return AdminReadDto.ToDto(_result);
             }
@@ -183,7 +183,7 @@ namespace Artifax.Controllers
         
         #region UpdateRoutes
             [HttpPatch("employee/branch")]
-            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (int EmployeeId, int BranchId)
+            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (string EmployeeEmail, int BranchId)
             {
                 //Authentication Check
                 if (HttpContext.Session.GetString("UserLevel") != adminLevel)
@@ -192,14 +192,14 @@ namespace Artifax.Controllers
                 }
                 
                 //Check for existing employee
-                var _employee = await context.Employees.FindAsync(EmployeeId);
+                var _employee = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == EmployeeEmail);
 
-                if (_employee == null) return NotFound($"Employee with ID: {EmployeeId.ToString()} could not be found");
+                if (_employee == null) return NotFound($"Employee with Email: [{EmployeeEmail}] could not be found");
 
                 //Check for existing branch
                 bool _branchExists = await context.Branches.FindAsync(BranchId) != null;
 
-                if (!_branchExists) return NotFound($"Branch with ID: {BranchId.ToString()} could not be found");
+                if (!_branchExists) return NotFound($"Branch with ID: [{BranchId.ToString()}] could not be found");
 
                 //Update information
                 _employee.BranchId = BranchId;
@@ -208,12 +208,12 @@ namespace Artifax.Controllers
             }
 
             [HttpPatch("employee")]
-            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (int id, EmployeeWriteDto incoming)
+            public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeDetails (string EmployeeEmail, EmployeeWriteDto incoming)
             {
                 //Check for existing employee
-                var _employee = await context.Employees.FindAsync(id);
+                var _employee = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == EmployeeEmail);
 
-                if (_employee == null) return NotFound($"Employee with ID: {id.ToString()} could not be found");
+                if (_employee == null) return NotFound($"Employee with email: [{EmployeeEmail}] could not be found");
 
                 //Authentication Check
                 bool _isAdmin = HttpContext.Session.GetString("UserLevel") == adminLevel;
@@ -234,13 +234,13 @@ namespace Artifax.Controllers
             }
 
             [HttpPatch("admin")]
-            public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (int id, AdminWriteDto incoming)
+            public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (string adminEmail, AdminWriteDto incoming)
             {
 
                 //Check for existing admin
-                var _admin = await context.Admins.FindAsync(id);
+                var _admin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == adminEmail);
 
-                if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
+                if (_admin == null) return NotFound($"Admin with email: [{adminEmail}] could not be found");
 
                 //Authentication Check
                 if (HttpContext.Session.GetString("UserLevel") != adminLevel || HttpContext.Session.GetString("UserEmail") != _admin.AdminEmail)
