@@ -8,6 +8,18 @@ Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+//Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            // Replace with your actual React app's URL/Port
+            policy.WithOrigins("http://localhost:3000", "http://localhost:5253") 
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 builder.Services.AddControllers();
 
@@ -44,6 +56,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.MapOpenApi();
 }
+
+app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 
