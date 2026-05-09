@@ -81,10 +81,11 @@
 }
 
 .logo-text {
+  font-family: 'Zen Dots', 'Outfit', 'Sora', 'Segoe UI', sans-serif;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   color: var(--text);
-  margin-left: 15px;
+  margin-left: 4px;
 }
 
 /* Typography & Lists */
