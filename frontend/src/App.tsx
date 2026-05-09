@@ -7,29 +7,11 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import InventoryPage from './pages/inventory/InventoryPage';
 import AnalyticsPage from './pages/analytics/analytics';
 import LoginPage from './pages/auth/LoginPage';
-import { useEffect } from 'react';
-import axios from 'axios';
 
 function App() {
+  // Backend integration commented out - requires .NET SDK installation
+  // TODO: Uncomment when backend is running on localhost:5253
 
-
-  useEffect(() => {
-    console.log("RUNNINGGGGGG");
-    
-    const url = 'http://localhost:5253/api/Item/item';
-    
-    const fetchData = (async () => {
-      try {
-        console.log("In try");
-        const result = await axios.get(url);
-        console.log(result);
-        return result;
-      } catch (error) {
-        console.log("Error:"+error);
-      }
-    })();
-    
-  }, []);
   return (
     <BrowserRouter>
       <Routes>
