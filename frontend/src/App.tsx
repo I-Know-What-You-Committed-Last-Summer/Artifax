@@ -17,6 +17,7 @@ function App() {
     console.log("RUNNINGGGGGG");
     
     const url = 'http://localhost:5253/api/Item/item';
+    
     const fetchData = (async () => {
       try {
         console.log("In try");
