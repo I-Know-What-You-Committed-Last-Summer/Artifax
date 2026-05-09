@@ -61,7 +61,7 @@ function Topbar() {
     <header className="sticky top-0 z-10 border-b border-border bg-app/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" className="min-w-0">
-          <ol className="flex items-center gap-2 text-xs font-medium text-muted sm:text-sm">
+          <ol className="flex items-center gap-2 text-sm font-medium text-muted sm:text-base">
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
 
@@ -69,7 +69,7 @@ function Topbar() {
                 <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-2">
                   {index > 0 ? <span className="text-border/90">/</span> : null}
                   <span
-                    className={`inline-flex max-w-[150px] items-center gap-2 rounded-full border px-3 py-1 transition ${
+                    className={`inline-flex max-w-[150px] items-center gap-2 rounded-full border px-4 py-1.5 transition ${
                       isLast
                         ? 'border-primary/30 bg-surface text-text shadow-[0_6px_18px_rgba(15,23,42,0.08)]'
                         : 'border-border bg-surface text-muted'
@@ -78,7 +78,7 @@ function Topbar() {
                   >
                     {item.isHome ? (
                       <svg
-                        className="h-3.5 w-3.5 shrink-0"
+                        className="h-4 w-4 shrink-0"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -100,7 +100,7 @@ function Topbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <label className="relative inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
+          <label className="relative inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
             <input
               type="checkbox"
               className="theme-controller absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -109,9 +109,9 @@ function Topbar() {
               onChange={handleThemeToggle}
             />
 
-            <span className="pointer-events-none relative flex h-4 w-4 items-center justify-center">
+            <span className="pointer-events-none relative flex h-5 w-5 items-center justify-center">
               <svg
-                className={`absolute inset-0 h-4 w-4 transition-all duration-300 ease-out ${isSynthwave ? 'scale-75 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'}`}
+                className={`absolute inset-0 h-5 w-5 transition-all duration-300 ease-out ${isSynthwave ? 'scale-75 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -126,7 +126,7 @@ function Topbar() {
               </svg>
 
               <svg
-                className={`absolute inset-0 h-4 w-4 transition-all duration-300 ease-out ${isSynthwave ? 'scale-100 rotate-0 opacity-100' : 'scale-75 -rotate-90 opacity-0'}`}
+                className={`absolute inset-0 h-5 w-5 transition-all duration-300 ease-out ${isSynthwave ? 'scale-100 rotate-0 opacity-100' : 'scale-75 -rotate-90 opacity-0'}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"

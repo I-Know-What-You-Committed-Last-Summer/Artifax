@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Sora:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Dots&family=Outfit:wght@600;700&family=Sora:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -80,7 +80,7 @@ html[data-theme='synthwave'] {
   }
 
   .main-title-heading {
-    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif !important;
     letter-spacing: 0.02em;
   }
 
@@ -90,17 +90,17 @@ html[data-theme='synthwave'] {
   h4,
   h5,
   h6 {
-    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif !important;
     letter-spacing: 0.02em;
   }
 
   nav[aria-label="Breadcrumb"] span {
-    font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif;
     letter-spacing: 0.02em;
   }
 
   button {
-    @apply font-orbitron;
+    @apply font-outfit;
   }
 
   input,
@@ -111,18 +111,18 @@ html[data-theme='synthwave'] {
 
 @layer components {
   .nav-pill {
-    @apply font-orbitron tracking-tight;
+    @apply font-outfit tracking-tight;
     letter-spacing: 0.02em;
     font-weight: 600;
   }
-  .btn-orbitron {
-    @apply font-orbitron tracking-tight;
+  .btn-outfit {
+    @apply font-outfit tracking-tight;
     letter-spacing: 0.02em;
     font-weight: 600;
   }
 
   a[role="button"], a.btn, a.button, a[class*="btn-"], a[class*="button-"] {
-    @apply font-orbitron tracking-tight;
+    @apply font-outfit tracking-tight;
     letter-spacing: 0.02em;
     font-weight: 600;
   }

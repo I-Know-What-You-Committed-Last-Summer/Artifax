@@ -11,7 +11,7 @@ const statusMap = {
 function StatusBadge({ status }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium font-orbitron uppercase tracking-wide ${
+      className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium font-outfit uppercase tracking-wide ${
         statusMap[status] || 'bg-app text-muted border border-border'
       }`}
     >

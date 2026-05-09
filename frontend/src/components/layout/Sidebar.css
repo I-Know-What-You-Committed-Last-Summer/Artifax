@@ -35,7 +35,7 @@
   opacity: 0;
   transition: opacity var(--transition-speed);
   pointer-events: none;
-  font-family: 'Orbitron', 'Sora', 'Segoe UI', sans-serif;
+  font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif;
   letter-spacing: 0.02em;
 }
 
@@ -92,8 +92,9 @@
 
 .logo-text {
   display: inline-block;
+  font-family: 'Zen Dots', 'Outfit', 'Sora', 'Segoe UI', sans-serif;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   color: var(--text);
   line-height: 1;
   margin-left: 0;
@@ -105,7 +106,7 @@
 
 .sidebar-container:hover .logo-text {
   width: auto;
-  margin-left: 12px;
+  margin-left: 4px;
 }
 
 .sidebar-content {

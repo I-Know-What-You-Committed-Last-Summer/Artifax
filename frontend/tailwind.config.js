@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        orbitron: ["'Orbitron'", "'Sora'", "'Segoe UI'", "sans-serif"],
+        outfit: ["'Outfit'", "'Sora'", "'Segoe UI'", "sans-serif"],
       },
       colors: {
         app: 'var(--bg)',
