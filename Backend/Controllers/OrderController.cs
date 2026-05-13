@@ -23,16 +23,24 @@ namespace Artifax.Controllers
         #region GetRoutes
 
         // GET /api/Order — Returns all orders with their items (products) and branch info
-        [HttpGet]
-        public async Task<IActionResult> GetAllOrders()
-        {
-            var orders = await context.Orders
-                .Include(o => o.Items)           // Load the order items (join table)
-                    .ThenInclude(i => i.Product) // Load the product details for each item
-                .Include(o => o.Branch)          // Load the branch this order belongs to
-                .ToListAsync();
-            return Ok(orders);
-        }
+       [HttpGet]
+public async Task<IActionResult> GetAllOrders()
+{
+    var orders = await context.Orders
+        .Include(o => o.Items) // Or OrderItems
+            .ThenInclude(i => i.Product)
+        .ToListAsync();
+
+    // This part "attaches" the DTO
+    var dtoResult = orders.Select(o => new OrderReadDto
+    {
+        OrderId = o.OrderID,
+        Status = o.Status,
+        // Map other properties here...
+    }).ToList();
+
+    return Ok(dtoResult);
+}
 
         // GET /api/Order/{id} — Returns a single order by ID with items and branch
         [HttpGet("{id}")]

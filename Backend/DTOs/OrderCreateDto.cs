@@ -1,11 +1,11 @@
-namespace Artifax.DTOs
+public class OrderCreateDto
 {
-    public class OrderCreateDto
-    {
-        // we leave out OrderID and OrderDateTime because the server should handle those
-        public int ProductID { get; set; }
-        public bool OrderExpedite { get; set; }
-        public int BranchID { get; set; }
-        public int EmployeeID { get; set; }
-    }
+    public int CustomerId { get; set; }
+    public List<OrderItemCreateDto> Items { get; set; }
+}
+
+public class OrderItemCreateDto
+{
+    public int ProductId { get; set; }
+    public int Quantity { get; set; }
 }

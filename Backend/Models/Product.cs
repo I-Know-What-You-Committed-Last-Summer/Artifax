@@ -14,7 +14,7 @@ namespace Artifax.Models
         [Column("ItemCategory")] // ERD Compliance
         public string ItemCategory { get; set; } = "General";
 
-        [Column("ItemName")] // ERD Compliance
+        [Column("Name")] // ERD Compliance
         public string ProductName { get; set; } = string.Empty;
 
         [Column("ProductionTime")] // ERD Compliance

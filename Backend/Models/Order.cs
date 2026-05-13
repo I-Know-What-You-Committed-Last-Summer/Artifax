@@ -15,6 +15,7 @@ namespace Artifax.Models
         public int BranchID { get; set; }
         public int EmployeeID { get; set; }
         public string Status { get; set; } = "Pending";
+        public decimal TotalAmount { get; set; }
 
         // Relationships
         public Branch? Branch { get; set; }
