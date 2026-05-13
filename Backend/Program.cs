@@ -68,9 +68,9 @@ void SeedTestData(ArtifaxContext db)
     db.Materials.AddRange(wood, metal, fabric);
 
     // Products
-    var chair = new Artifax.Product { ProductID = 1, ProductName = "Chair", ProductionDuration = 2.0f };
-    var table = new Artifax.Product { ProductID = 2, ProductName = "Table", ProductionDuration = 4.0f };
-    var lamp = new Artifax.Product { ProductID = 3, ProductName = "Lamp", ProductionDuration = 1.5f };
+    var chair = new Artifax.Models.Product { ProductID = 1, ProductName = "Chair", ProductionDuration = 2.0f };
+    var table = new Artifax.Models.Product { ProductID = 2, ProductName = "Table", ProductionDuration = 4.0f };
+    var lamp = new Artifax.Models.Product { ProductID = 3, ProductName = "Lamp", ProductionDuration = 1.5f };
     db.Products.AddRange(chair, table, lamp);
 
     // ProductMaterials (recipes)

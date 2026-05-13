@@ -42,7 +42,7 @@ namespace Artifax.Controllers
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Branch)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
@@ -103,9 +103,9 @@ namespace Artifax.Controllers
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Branch)
-                .FirstOrDefaultAsync(o => o.Id == newOrder.Id);
+                .FirstOrDefaultAsync(o => o.OrderID == newOrder.OrderID);
 
-            return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.Id }, created);
+            return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.OrderID }, created);
         }
 
         #endregion
@@ -119,7 +119,7 @@ namespace Artifax.Controllers
         {
             var existingOrder = await context.Orders
                 .Include(o => o.Items)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             if (existingOrder == null)
                 return NotFound($"Order with ID {id} not found.");
@@ -171,7 +171,7 @@ namespace Artifax.Controllers
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Branch)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             return Ok(result);
         }
@@ -186,7 +186,7 @@ namespace Artifax.Controllers
         {
             var order = await context.Orders
                 .Include(o => o.Items)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
@@ -220,7 +220,7 @@ namespace Artifax.Controllers
                     .ThenInclude(i => i.Product)
                         .ThenInclude(p => p!.ProductMaterial)
                 .Include(o => o.Branch)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");

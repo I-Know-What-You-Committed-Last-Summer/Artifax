@@ -1,20 +1,26 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
 namespace Artifax.Models
 {
-  
-    /// Represents a production order placed at a branch.
-    /// An order contains a list of items (products + quantities) to be crafted.
-    /// Status tracks whether the order is "Pending" or "Crafted".
-   
+    // Represents a customer order in the system
     public class Order
     {
-        public int OrderID {get; set;}
-        public int ProductID {get; set;}
-        public DateTime OrderDateTime {get; set;}
-        public bool OrderExpedite {get; set;}
-        public int BranchID {get; set;}
-        public int EmployeeID {get; set;}
+        [Key]
+        public int OrderID { get; set; }
+        
+        public DateTime OrderDateTime { get; set; }
+        public bool OrderExpedite { get; set; }
+        public int BranchID { get; set; }
+        public int EmployeeID { get; set; }
+        public string Status { get; set; } = "Pending";
 
-        //Defining the one relationship
-        public Branch Branch { get; set; }
+        // Relationships
+        public Branch? Branch { get; set; }
+        
+        // THIS is what allows an order to have many products!
+        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+
     }
 }
