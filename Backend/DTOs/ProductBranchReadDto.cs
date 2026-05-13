@@ -1,0 +1,26 @@
+using Artifax.Models;
+
+namespace Artifax.DTOs
+{
+    //DTO excluding properties for sql relationships
+    public class BranchProductReadDto
+    {
+        public int BranchProductID {get;set;}
+        public int ProductID {get;set;}
+        public int BranchID {get;set;}
+        public int ProductMaterialQuantity {get;set;}
+
+        public static BranchProductReadDto ToDto (BranchProduct incoming)
+        {
+            BranchProductReadDto _result = new()
+            {
+                BranchProductID = incoming.BranchProductID,
+                ProductID = incoming.ProductID,
+                BranchID = incoming.BranchID,
+                ProductMaterialQuantity = incoming.ProductMaterialQuantity
+            };
+
+            return _result;
+        }
+    }
+}

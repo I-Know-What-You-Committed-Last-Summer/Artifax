@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Artifax.Models;
 using Artifax.Data;
+using Artifax.DTOs;
 
 namespace Artifax.Controllers
 {
@@ -13,159 +14,147 @@ namespace Artifax.Controllers
     [Route("api/[Controller]")]
     public class ProductController : ControllerBase
     {
-        readonly ArtifaxContext context;
-
-        public ProductController(ArtifaxContext incoming)
+        private readonly ArtifaxContext _context;
+        public ProductController(ArtifaxContext context)
         {
-            context = incoming;
+            _context = context;
         }
 
-        #region GetRoutes
+        //Endpoints for general products
 
-        // GET /api/Product — Returns all products with their material recipes
-        [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        #region ProductEndpoints
+
+        //List of all products we can make
+
+        [HttpGet("AllProducts")]
+        public async Task<ActionResult<IEnumerable<ProductReadDto>>> GetAllProducts()
         {
-            var products = await context.Products
-                .Include(p => p.ProductMaterial)       // Load the recipe (join table)
-                    .ThenInclude(pm => pm.Material)    // Load the actual material details for each recipe entry
-                .ToListAsync();
-            return Ok(products);
+            return await _context.Products.Select(p => ProductReadDto.toDto(p)).ToListAsync();
         }
 
-        // GET /api/Product/{id} — Returns a single product by ID with its material recipe
+        //Specific product by ID
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProductById(int id)
+        public async Task<ActionResult<ProductReadDto>> GetProduct(int id)
         {
-            var product = await context.Products
-                .Include(p => p.ProductMaterial)
-                    .ThenInclude(pm => pm.Material)
-                .FirstOrDefaultAsync(p => p.ProductID == id);
-
-            if (product == null)
-                return NotFound($"Product with ID {id} not found.");
-
-            return Ok(product);
-        }
-
-        #endregion
-
-        #region CreateRoutes
-
-        // POST /api/Product/create — Creates a new product with optional material recipe
-        // Request body: { productName, productionDuration, productMaterial: [{ materialId, quantity }] }
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateProduct([FromBody] Product newProduct)
-        {
-            if (string.IsNullOrWhiteSpace(newProduct.ProductName))
-                return BadRequest("Product name is required.");
-
-            // Validate that every material in the recipe actually exists in the database
-            if (newProduct.ProductMaterial != null)
+            var _product = await _context.Products.FindAsync(id);
+            if (_product == null)
             {
-                foreach (var pm in newProduct.ProductMaterial)
-                {
-                    var material = await context.Materials.FindAsync(pm.MaterialId);
-                    if (material == null)
-                        return BadRequest($"Material with ID {pm.MaterialId} does not exist.");
-
-                    // Clear navigation properties so EF doesn't try to insert/track related entities
-                    pm.Product = null;
-                    pm.Material = null!;
-                }
+                return NotFound();
             }
-
-            context.Products.Add(newProduct);
-            await context.SaveChangesAsync();
-
-            // Reload with includes so the response contains full material details
-            var created = await context.Products
-                .Include(p => p.ProductMaterial)
-                    .ThenInclude(pm => pm.Material)
-                .FirstOrDefaultAsync(p => p.ProductID == newProduct.ProductID);
-
-            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProductID }, created);
+            return ProductReadDto.toDto(_product);
         }
-
-        #endregion
-
-        #region UpdateRoutes
-
-        // PUT /api/Product/{id} — Updates a product's name, duration and material recipe
-        // Uses full replacement: old recipe entries are deleted and replaced with the new ones
+        //Create a new product, we do not assign materials with this endpoint as that is done with the ProductMaterial endpoints
+        [HttpPost("")]
+        public async Task<ActionResult<Product>> CreateProduct(ProductWriteDto _incoming)
+        {
+            Product _product = new Product()
+            {
+                ProductName = _incoming.ProductName,
+                ProductionDuration = _incoming.ProductionDuration,
+                ProductImageURL = _incoming.ProductImageURL
+            };
+            _context.Products.Add(_product);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetProduct), new { id = _product.ProductID }, new ProductReadDto(){
+                ProductID = _product.ProductID,
+                ProductName = _product.ProductName,
+                ProductionDuration = _product.ProductionDuration,
+                ProductImageURL = _product.ProductImageURL
+            });
+        }
+        //Update a product
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product updatedProduct)
+        public async Task<IActionResult> UpdateProduct(int id, ProductWriteDto _incoming)
         {
-            var existing = await context.Products
-                .Include(p => p.ProductMaterial)
-                .FirstOrDefaultAsync(p => p.ProductID == id);
-
-            if (existing == null)
-                return NotFound($"Product with ID {id} not found.");
-
-            // Validate that all referenced materials exist before making changes
-            if (updatedProduct.ProductMaterial != null)
+            var _product = await _context.Products.FindAsync(id);
+            if (_product == null)
             {
-                foreach (var pm in updatedProduct.ProductMaterial)
-                {
-                    var material = await context.Materials.FindAsync(pm.MaterialId);
-                    if (material == null)
-                        return BadRequest($"Material with ID {pm.MaterialId} does not exist.");
-                }
+                return NotFound();
             }
-
-            // Update basic product fields
-            existing.ProductName = updatedProduct.ProductName;
-            existing.ProductionDuration = updatedProduct.ProductionDuration;
-
-            // Full replacement strategy: remove all old recipe entries then add the new ones
-            context.ProductMaterials.RemoveRange(existing.ProductMaterial);
-            if (updatedProduct.ProductMaterial != null)
-            {
-                foreach (var pm in updatedProduct.ProductMaterial)
-                {
-                    existing.ProductMaterial.Add(new ProductMaterial
-                    {
-                        MaterialId = pm.MaterialId,
-                        Quantity = pm.Quantity
-                    });
-                }
-            }
-
-            await context.SaveChangesAsync();
-
-            // Reload with includes for the response
-            var result = await context.Products
-                .Include(p => p.ProductMaterial)
-                    .ThenInclude(pm => pm.Material)
-                .FirstOrDefaultAsync(p => p.ProductID == id);
-
-            return Ok(result);
+            _product.ProductName = _incoming.ProductName;
+            _product.ProductionDuration = _incoming.ProductionDuration;
+            _product.ProductImageURL = _incoming.ProductImageURL;
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
-
-        #endregion
-
-        #region DeleteRoutes
-
-        // DELETE /api/Product/{id} — Deletes a product and its material recipe entries
+        //Delete a product. DB auto collapes foreign relations so no need to collapse related product materials and product branches
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await context.Products
-                .Include(p => p.ProductMaterial)
-                .FirstOrDefaultAsync(p => p.ProductID == id);
+            var _product = await _context.Products.FindAsync(id);
+            if (_product == null)
+            {
+                return NotFound();
+            }
+            _context.Products.Remove(_product);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        #endregion
 
-            if (product == null)
-                return NotFound($"Product with ID {id} not found.");
+        #region ProductMaterialEndpoints
 
-            // Remove recipe entries first (child records) then the product itself
-            context.ProductMaterials.RemoveRange(product.ProductMaterial);
-            context.Products.Remove(product);
-            await context.SaveChangesAsync();
+        //Endpoints for assigning materials to products and managing those relationships
 
-            return NoContent(); // 204 — successful deletion
+        //All product materials regardless of product
+        [HttpGet("AllProductMaterials")]
+        public async Task<ActionResult<IEnumerable<ProductMaterialReadDto>>> GetAllProductMaterials()
+        {
+            return await _context.ProductMaterials.Select(pm => ProductMaterialReadDto.ToDto(pm)).ToListAsync();
         }
 
+        // Get all materials for a specific product
+        [HttpGet("ProductMaterials/{id}")]
+        public async Task<ActionResult<IEnumerable<ProductMaterialReadDto>>> GetAllProductMaterials(int id)
+        {
+            return await _context.ProductMaterials.Where(pm => pm.ProductId == id).Select(pm => ProductMaterialReadDto.ToDto(pm)).ToListAsync();
+        }
+
+        //Create a new product material
+        [HttpPost("ProductMaterial")]
+        public async Task<ActionResult<ProductMaterialReadDto>> CreateProductMaterial(ProductMaterialWriteDto _incoming)
+        {
+            ProductMaterial _productMaterial = new ProductMaterial()
+            {
+                ProductId = _incoming.ProductId,
+                MaterialId = _incoming.MaterialId,
+                Quantity = _incoming.Quantity
+            };
+            _context.ProductMaterials.Add(_productMaterial);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAllProductMaterials), new { id = _productMaterial.ProductMaterialId }, ProductMaterialReadDto.ToDto(_productMaterial));
+        }
+        //Update a product material
+        [HttpPut("ProductMaterial/{id}")]
+        public async Task<IActionResult> UpdateProductMaterial(int id, ProductMaterialWriteDto _incoming)
+        {
+            var _productMaterial = await _context.ProductMaterials.FindAsync(id);
+            if (_productMaterial == null)
+                return NotFound();
+            _productMaterial.ProductId = _incoming.ProductId;
+            _productMaterial.MaterialId = _incoming.MaterialId;
+            _productMaterial.Quantity = _incoming.Quantity;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        //Delete a product material
+        [HttpDelete("ProductMaterial/{id}")]
+        public async Task<IActionResult> DeleteProductMaterial(int id)
+        {
+            var _productMaterial = await _context.ProductMaterials.FindAsync(id);
+            if (_productMaterial == null)
+            {
+                return NotFound();
+            }
+            _context.ProductMaterials.Remove(_productMaterial);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        #endregion
+
+        //Endpoints for assigning products to branches and managing those relationships
+        //Not yet completed, waiting on the branch controller to be completed and fully functional.
+        #region BranchProductEndpoints
         #endregion
     }
 }

@@ -7,13 +7,14 @@ namespace Artifax.Models
    
     public class Order
     {
-        public int Id { get; set; }                    // Primary key
-        public int BranchID { get; set; }              // Which branch this order is for (foreign key)
-        public int EmployeeID { get; set; }            // Which employee placed the order (foreign key)
-        public DateTime OrderDateTime { get; set; }    // When the order was placed
-        public bool OrderExpedite { get; set; }        // Whether the order is marked as urgent
-        public string Status { get; set; } = "Pending"; // "Pending" or "Crafted" set to Crafted after craft endpoint is called
-        public List<OrderItem> Items { get; set; } = new List<OrderItem>(); // The products and quantities in this order
-        public Branch? Branch { get; set; }            // Navigation property — nullable so EF resolves it via BranchID FK
+        public int OrderID {get; set;}
+        public int ProductID {get; set;}
+        public DateTime OrderDateTime {get; set;}
+        public bool OrderExpedite {get; set;}
+        public int BranchID {get; set;}
+        public int EmployeeID {get; set;}
+
+        //Defining the one relationship
+        public Branch Branch { get; set; }
     }
 }
