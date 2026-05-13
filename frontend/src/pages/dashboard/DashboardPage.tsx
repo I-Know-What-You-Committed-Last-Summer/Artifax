@@ -9,11 +9,14 @@ import {
   dashboardStats,
   inventoryPreviewRows,
 } from '../../data/mockDashboard';
+import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 function DashboardPage() {
+  const currentDate = getCurrentDateSAST();
+
   return (
     <div className="space-y-4 sm:space-y-5">
-      <PageHeader title="Inventory & Crafting" subtitle="Main Dashboard · Today, 14 Jun 2025" />
+      <PageHeader title="Inventory & Crafting" subtitle={`Main Dashboard · ${currentDate}`} />
       <AlertStrip label="Low Stock:" items={dashboardAlerts} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
