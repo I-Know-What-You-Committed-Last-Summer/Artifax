@@ -14,13 +14,11 @@ function App() {
 
 
   useEffect(() => {
-    console.log("RUNNINGGGGGG");
     
     const url = 'http://localhost:5253/api/Item/item';
     
     const fetchData = (async () => {
       try {
-        console.log("In try");
         const result = await axios.get(url);
         console.log(result);
         return result;

@@ -10,7 +10,7 @@ import CraftingItems from './components/craftingItems/craftingItems';
 import CraftingQueue from './components/craftingQueue/craftingQueue';
 import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
-import { blueprintData, Blueprint } from './components/craftingData';
+import { Blueprint } from './components/craftingData';
 import { craftingAlerts } from '../../data/mockDashboard';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
@@ -39,20 +39,93 @@ const ActiveJobsContent: FC = () => (
 );
 
 const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
-  const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>(blueprintData[0]?.id || '');
+  const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>('');
+  const [selectedBlueprint, setSelectedBlueprint] = useState<Blueprint | null>(null);
   const [amount, setAmount] = useState<number>(1);
   const [filter, setFilter] = useState<string>('all');
 
-  const selectedBlueprint: Blueprint = blueprintData.find((item) => item.id === selectedBlueprintId) || blueprintData[0];
-
-  React.useEffect(() => {
+  /**
+   * Handle blueprint selection from BlueprintPanel
+   * This is called when user clicks on a blueprint card
+   */
+  const handleSelectBlueprint = async (blueprintId: string) => {
+    setSelectedBlueprintId(blueprintId);
     setAmount(1);
-  }, [selectedBlueprintId]);
+    
+    // Extract the itemID from the blueprint ID (format: bp-{itemID})
+    const itemId = parseInt(blueprintId.replace('bp-', ''));
+    
+    // Fetch the specific blueprint data from the API
+    try {
+      const itemResponse = await fetch(`http://localhost:5253/api/Item/item/${itemId}`);
+      const ingredientsResponse = await fetch(
+        `http://localhost:5253/api/Item/itemIngredient/item/${itemId}`
+      );
+
+      if (itemResponse.ok && ingredientsResponse.ok) {
+        const item = await itemResponse.json();
+        const ingredients = await ingredientsResponse.json();
+
+        const blueprint: Blueprint = {
+          id: `bp-${item.itemID}`,
+          name: item.itemName,
+          description: `Production time: ${item.productionTime}s`,
+          category: item.itemCategory?.toLowerCase() as any || 'mechanical',
+          have: 0,
+          craft: 0,
+          materials: ingredients.map((ing: any) => ({
+            name: ing.itemName,
+            need: ing.quantity,
+            have: 0,
+          })),
+        };
+
+        setSelectedBlueprint(blueprint);
+      }
+    } catch (err) {
+      console.error('Error fetching selected blueprint:', err);
+    }
+  };
 
   const handleCraft = (): void => {
     if (!selectedBlueprint) return;
     console.log(`Crafting ${amount} ${selectedBlueprint.name}(s)`);
   };
+
+  // Show empty state if no blueprint is selected
+  if (!selectedBlueprint) {
+    return (
+      <div className="crafting-panel">
+        <HistoryStats />
+        <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
+        <div className="active-jobs-layout">
+          <div className="active-jobs-main">
+            <div className="craft-panel-card">
+              <div className="craft-panel-header">
+                <h3>Crafting</h3>
+              </div>
+              <div className="craft-panel-selected">
+                <span className="craft-panel-label">SELECT BLUEPRINT</span>
+                <h4>No Blueprint Selected</h4>
+                <p style={{ color: 'var(--muted)', marginTop: '8px' }}>
+                  Select a blueprint from the list to begin crafting
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="active-jobs-sidebar">
+            <BlueprintPanel
+              selectedBlueprintId={selectedBlueprintId}
+              filter={filter}
+              onFilterChange={setFilter}
+              onSelectBlueprint={handleSelectBlueprint}
+            />
+            <CraftingQueue />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="crafting-panel">
@@ -69,11 +142,10 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
         </div>
         <div className="active-jobs-sidebar">
           <BlueprintPanel
-            blueprints={blueprintData}
             selectedBlueprintId={selectedBlueprintId}
             filter={filter}
             onFilterChange={setFilter}
-            onSelectBlueprint={setSelectedBlueprintId}
+            onSelectBlueprint={handleSelectBlueprint}
           />
           <CraftingQueue />
         </div>
