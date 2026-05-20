@@ -1,7 +1,7 @@
 
 public class OrderReadDto
 {
-    public int OrderId { get; set; }
+    public int OrderID { get; set; }
     public DateTime OrderDate { get; set; }
     public string Status { get; set; }
     public decimal TotalAmount { get; set; }

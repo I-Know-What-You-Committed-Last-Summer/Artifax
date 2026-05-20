@@ -7,36 +7,42 @@ namespace Artifax.Data
     {
         public ArtifaxContext(DbContextOptions<ArtifaxContext> options) : base(options)
         {
-            
         }
 
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Branch> Branches { get; set; }
-        public DbSet<BranchMaterial> BranchMaterials { get; set; }
-        public DbSet<BranchProduct> BranchProducts { get; set; }
         public DbSet<Employee> Employees { get; set; }
-        public DbSet<Material> Materials { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<Product> Products { get; set; }
-        public DbSet<ProductMaterial> ProductMaterials { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; } // Your new junction table
+        
+        // Group's new tables
+        public DbSet<Item> Items { get; set; }
+        public DbSet<ItemIngredient> ItemIngredients { get; set; }
+        public DbSet<BranchItemCapacity> BranchItemCapacities { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //Model builders to define relationships within the table. E.g. Branch has many orders with orders having one branch with foreign key being orders.branchID
-
-            // modelBuilder.Entity<Order>().HasOne(o => o.Branch).WithMany().HasForeignKey(o => o.BranchID);
-            // Alternative way of writing the relationship with an empty. Advantages are not having to write the ICollection fields in the model. Seems to be just a shorthand way of writing it but unsure of cons. Wrote it the safer way how we were shown in class.
-
-            //Each branch has many orders with orders having one branch. Relationship has BranchID on orders as the foreign key. and so on...
-            modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o=> o.BranchID);
-
-            modelBuilder.Entity<Branch>().HasMany(b => b.BranchMaterials).WithOne(bm => bm.Branch).HasForeignKey(bm => bm.BranchID);
-            modelBuilder.Entity<Material>().HasMany(m => m.BranchMaterials).WithOne(bm => bm.Material).HasForeignKey(bm => bm.MaterialID);
-            modelBuilder.Entity<Material>().HasMany(m => m.ProductMaterials).WithOne(pm => pm.Material).HasForeignKey(pm => pm.MaterialId);
-            modelBuilder.Entity<Product>().HasMany(p => p.ProductMaterial).WithOne(pm => pm.Product).HasForeignKey(pm => pm.ProductId);
-            modelBuilder.Entity<Branch>().HasMany(b => b.BranchProducts).WithOne(bp => bp.Branch).HasForeignKey(bp => bp.BranchID);
-            modelBuilder.Entity<Product>().HasMany(p => p.BranchProducts).WithOne(bp => bp.Product).HasForeignKey(bp => bp.ProductID);
+            // 1. Existing Group Relationships (DO NOT REMOVE)
+            modelBuilder.Entity<Branch>().HasMany(b => b.BranchItemCapacities).WithOne(bic => bic.Branch).HasForeignKey(bic => bic.BranchID);
+            modelBuilder.Entity<Item>().HasMany(i => i.BranchItemCapacities).WithOne(bic => bic.Item).HasForeignKey(bic => bic.ItemID);
+            modelBuilder.Entity<Item>().HasMany(i => i.IngredientItemIngredients).WithOne(ig => ig.IngredientItem).HasForeignKey(ig => ig.IngredientID);
+            modelBuilder.Entity<Item>().HasMany(i => i.ProductItemIngredients).WithOne(ig => ig.ProductItem).HasForeignKey(ig => ig.ProductID);
             modelBuilder.Entity<Branch>().HasMany(b => b.Employees).WithOne(e => e.Branch).HasForeignKey(e => e.BranchId);
+
+       
+            // This links Order to OrderItems via OrderID
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.OrderItems)
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderID);
+
+            // This links the group's Item table to your OrderItems
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Item)
+                .WithMany() // Items don't necessarily need a list of every order they've been in
+                .HasForeignKey(oi => oi.ItemID);
+                
+            modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o => o.BranchID);
         }
     }
 }

@@ -1,27 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-
+#nullable enable
 namespace Artifax.Models
 {
-    // Represents a customer order in the system
     public class Order
     {
-        [Key]
         public int OrderID { get; set; }
-        
-        public DateTime OrderDateTime { get; set; }
+        public DateTime OrderDateTime { get; set; } = DateTime.UtcNow;
         public bool OrderExpedite { get; set; }
+        public string Status { get; set; } = "Pending"; // Matches group's logic
         public int BranchID { get; set; }
         public int EmployeeID { get; set; }
-        public string Status { get; set; } = "Pending";
-        public decimal TotalAmount { get; set; }
 
-        // Relationships
-        public Branch? Branch { get; set; }
-        
-        // THIS is what allows an order to have many products!
-        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
-
+       public Branch? Branch { get; set; }
+        // The bridge to the team's new Item model
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
