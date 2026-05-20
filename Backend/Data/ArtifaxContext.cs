@@ -11,15 +11,14 @@ namespace Artifax.Data
 
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Branch> Branches { get; set; }
+public DbSet<Admin> Admins { get; set; }
+        public DbSet<Branch> Branches { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; } // Your new junction table
-        
-        // Group's new tables
+        public DbSet<OrderItem> OrderItems { get; set; } 
         public DbSet<Item> Items { get; set; }
         public DbSet<ItemIngredient> ItemIngredients { get; set; }
         public DbSet<BranchItemCapacity> BranchItemCapacities { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // 1. Existing Group Relationships (DO NOT REMOVE)
@@ -29,17 +28,16 @@ namespace Artifax.Data
             modelBuilder.Entity<Item>().HasMany(i => i.ProductItemIngredients).WithOne(ig => ig.ProductItem).HasForeignKey(ig => ig.ProductID);
             modelBuilder.Entity<Branch>().HasMany(b => b.Employees).WithOne(e => e.Branch).HasForeignKey(e => e.BranchId);
 
-       
-            // This links Order to OrderItems via OrderID
+// Links Order to OrderItems
             modelBuilder.Entity<Order>()
                 .HasMany(o => o.OrderItems)
                 .WithOne(oi => oi.Order)
                 .HasForeignKey(oi => oi.OrderID);
 
-            // This links the group's Item table to your OrderItems
+            // Links the Item table to OrderItems
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Item)
-                .WithMany() // Items don't necessarily need a list of every order they've been in
+                .WithMany() 
                 .HasForeignKey(oi => oi.ItemID);
                 
             modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o => o.BranchID);

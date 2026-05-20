@@ -7,6 +7,6 @@ namespace Artifax.Models
         public string EmployeeName { get; set; } = string.Empty; // Initialize with default value
         public string EmployeePasswordHash { get; set; } = string.Empty; // Initialize with default value
         public int BranchId { get; set; }
-        public Branch Branch {get; set;}
+        public Branch? Branch { get; set; }
     }
 }

@@ -123,15 +123,19 @@ namespace Backend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemID"));
 
                     b.Property<string>("ItemCategory")
+b.Property<string>("ItemCategory")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ItemName")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("ProductionTime")
                         .HasColumnType("integer");
 
                     b.HasKey("ItemID");
+
 
                     b.ToTable("Items");
                 });
@@ -154,8 +158,7 @@ namespace Backend.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("ItemIngredientID");
-
-                    b.HasIndex("IngredientID");
+b.HasIndex("IngredientID");
 
                     b.HasIndex("ProductID");
 
@@ -207,8 +210,13 @@ namespace Backend.Migrations
                     b.Property<int>("OrderID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("OrderDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+.HasColumnType("integer");
+
+                    b.Property<DateTime>("OrderDateTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("OrderItemID");
 
@@ -279,7 +287,7 @@ namespace Backend.Migrations
                     b.Navigation("Branch");
                 });
 
-            modelBuilder.Entity("Artifax.Models.OrderItem", b =>
+modelBuilder.Entity("Artifax.Models.OrderItem", b =>
                 {
                     b.HasOne("Artifax.Models.Item", "Item")
                         .WithMany()
@@ -297,7 +305,6 @@ namespace Backend.Migrations
 
                     b.Navigation("Order");
                 });
-
             modelBuilder.Entity("Artifax.Models.Branch", b =>
                 {
                     b.Navigation("BranchItemCapacities");
@@ -310,8 +317,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Artifax.Models.Item", b =>
                 {
                     b.Navigation("BranchItemCapacities");
-
-                    b.Navigation("IngredientItemIngredients");
+b.Navigation("IngredientItemIngredients");
 
                     b.Navigation("ProductItemIngredients");
                 });

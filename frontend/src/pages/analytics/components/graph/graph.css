@@ -1,0 +1,49 @@
+.graph-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 420px;
+}
+
+.graph-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.graph-card-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.graph-card-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.graph-select {
+  min-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.graph-figure {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+}
+
+.graph-figure canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

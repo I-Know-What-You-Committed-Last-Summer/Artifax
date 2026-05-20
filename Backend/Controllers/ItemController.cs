@@ -34,6 +34,42 @@ namespace Artifax.Controllers
             }
             return ItemReadDto.ToDto(_item);
         }
+[HttpGet("item/{id}")]
+        public async Task<ActionResult<ItemReadDto>> GetItem(int id)
+        {
+            var _item = await _context.Items.FindAsync(id);
+            if (_item == null)
+            {
+                return NotFound();
+            }
+            return ItemReadDto.ToDto(_item);
+        }
+
+        [HttpGet("item/itemIngredients")]
+        public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
+        {
+            var itemsWithIngredients = await _context.ItemIngredients
+                .Join(_context.Items, ig => ig.ProductID, i => i.ItemID, (ig, i) => new { Item = i, Ingredient = ig })
+                .GroupBy(x => x.Item)
+                .Select(g => new ItemBlueprintReadDto
+                {
+                    ItemID = g.Key.ItemID,
+                    ItemName = g.Key.ItemName,
+                    ItemCategory = g.Key.ItemCategory,
+                    ProductionTime = g.Key.ProductionTime,
+                    Ingredients = g.Select(x => new IngredientBlueprintReadDto
+                    {
+                        IngredientID = x.Ingredient.IngredientID,
+                        ItemName = x.Ingredient.IngredientItem.ItemName,
+                        ItemCategory = x.Ingredient.IngredientItem.ItemCategory,
+                        Quantity = x.Ingredient.IngredientQuantity
+                    }).ToList()
+                }).ToListAsync();
+                
+            return itemsWithIngredients;
+        }
+
+        [HttpPost("item/")]
         [HttpPost("item/")]
         public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
         {
