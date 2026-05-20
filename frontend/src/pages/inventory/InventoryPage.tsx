@@ -9,8 +9,10 @@ import Tabs from '../../components/common/Tabs';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
 import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
+import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 function InventoryPage() {
+  const currentDate = getCurrentDateSAST();
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
@@ -57,7 +59,7 @@ function InventoryPage() {
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
         title="Inventory Management"
-        subtitle="Full Inventory · Today, 14 Jun 2025"
+        subtitle={`Full Inventory · ${currentDate}`}
         rightSlot={<Button>Add Item</Button>}
       />
       <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />

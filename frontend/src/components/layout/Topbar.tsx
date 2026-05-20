@@ -60,7 +60,7 @@ function Topbar() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-app/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="min-w-0">
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 md:block">
           <ol className="flex items-center gap-2 text-sm font-medium text-muted sm:text-base">
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
@@ -99,8 +99,8 @@ function Topbar() {
           </ol>
         </nav>
 
-        <div className="flex items-center gap-2">
-          <label className="relative inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <label className="relative inline-flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
             <input
               type="checkbox"
               className="theme-controller absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -140,13 +140,13 @@ function Topbar() {
               </svg>
             </span>
           </label>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
+          <button className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Warehouse A
           </button>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
+          <button className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Alerts
           </button>
-          <div className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-text">
+          <div className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
             D. Dastardly
           </div>
         </div>
