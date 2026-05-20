@@ -1,3 +1,4 @@
+// React hooks and UI components used on the inventory page
 import { useMemo, useState } from 'react';
 import Button from '../../components/common/Button';
 import FilterSelect from '../../components/common/FilterSelect';
@@ -11,33 +12,40 @@ import PageHeader from '../../components/layout/PageHeader';
 import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
 
 function InventoryPage() {
+  // Local UI state: active tab, search text, filters, sorting
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [zone, setZone] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
 
+  // Compute filtered + sorted items when dependencies change
   const filteredItems = useMemo(() => {
     const searchLower = search.toLowerCase();
 
     return inventoryItems
       .filter((item) => {
+        // Tab filter: show only items for the selected tab
         if (activeTab !== 'all' && item.tab !== activeTab) {
           return false;
         }
 
+        // Status filter (OK / LOW / ALL)
         if (status !== 'ALL' && item.status !== status) {
           return false;
         }
 
+        // Zone/location filter
         if (zone !== 'ALL' && item.location !== zone) {
           return false;
         }
 
+        // If no search text, include the item
         if (searchLower.length === 0) {
           return true;
         }
 
+        // Search across name, sku, and location
         return (
           item.name.toLowerCase().includes(searchLower) ||
           item.sku.toLowerCase().includes(searchLower) ||
@@ -45,6 +53,7 @@ function InventoryPage() {
         );
       })
       .sort((a, b) => {
+        // Optional sort by quantity or by name
         if (sortBy === 'QTY') {
           return b.quantity - a.quantity;
         }
@@ -55,21 +64,26 @@ function InventoryPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* Header with action slot on the right */}
       <PageHeader
         title="Inventory Management"
         subtitle="Full Inventory · Today, 14 Jun 2025"
         rightSlot={<Button>Add Item</Button>}
       />
+      {/* Alerts at the top */}
       <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />
 
+      {/* KPI stat cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {inventoryStats.map((stat) => (
           <StatCard key={stat.id} label={stat.label} value={stat.value} />
         ))}
       </div>
 
+      {/* Main table section with filters, tabs and results */}
       <SectionCard title="All Inventory Items" subtitle="24 items">
         <div className="space-y-3">
+          {/* Search and filter controls */}
           <div className="grid gap-2 lg:grid-cols-[2fr,auto,auto,auto]">
             <SearchInput
               value={search}
@@ -106,8 +120,10 @@ function InventoryPage() {
             />
           </div>
 
+          {/* Tabs for quick filtering */}
           <Tabs tabs={inventoryTabs} activeTab={activeTab} onChange={setActiveTab} />
 
+          {/* Results table */}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted">
@@ -133,6 +149,7 @@ function InventoryPage() {
                     <td className="py-2.5 text-muted">{item.minStock}</td>
                     <td className="py-2.5 text-muted">{item.location}</td>
                     <td className="py-2.5">
+                      {/* Status badge */}
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-2.5">
@@ -145,6 +162,7 @@ function InventoryPage() {
               </tbody>
             </table>
 
+            {/* Empty state when filters return no results */}
             {filteredItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted">No items match your current filters.</p>
             ) : null}
