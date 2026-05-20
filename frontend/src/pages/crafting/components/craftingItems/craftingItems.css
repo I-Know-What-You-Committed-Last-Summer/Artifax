@@ -1,0 +1,157 @@
+.active-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+  width: 97%;
+  margin: 0  auto;
+  perspective: 1000px;
+}
+
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.job-info-main { display: flex; gap: 12px; align-items: center; }
+
+.job-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.job-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.job-titles h3 { font-size: 16px; font-weight: 700; margin: 0; color: var(--text); }
+.job-titles p { font-size: 13px; color: var(--muted); margin: 4px 0 0 0; }
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--app);
+  color: var(--muted);
+}
+
+.status-badge.in-progress { background: var(--ok-bg); color: var(--ok-text); }
+
+.progress-section { margin-bottom: 20px; }
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.section-label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 8px; }
+
+.material-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.material-tag {
+  background: var(--app);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-cancel,
+.btn-action {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 5px 5px rgba(15, 23, 42, 0.2);
+}
+
+.btn-cancel {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--muted);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.btn-cancel:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+}
+
+.btn-action {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 5px 5px rgba(15, 23, 42, 0.2);
+}
+
+.btn-action.pause {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn-action.pause:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.16);
+}
+
+.btn-action.resume {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+}
+
+.btn-action.resume:hover {
+  background: var(--surface);
+  color: var(--primary);
+  border-color: var(--border);
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.16);
+}

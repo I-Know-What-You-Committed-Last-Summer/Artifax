@@ -1,0 +1,101 @@
+.most-crafted-card {
+  min-height: unset;
+}
+
+.most-crafted-list {
+  display: grid;
+  gap: 10px;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.most-crafted-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.most-crafted-list::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
+}
+
+.blueprint-card {
+  width: 100%;
+  background: var(--app);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, opacity 0.25s ease;
+}
+
+.blueprint-card-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.blueprint-card-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--app);
+  border-radius: 12px;
+  padding: 8px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.blueprint-card h4 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.blueprint-card p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.blueprint-card-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 84px;
+}
+
+.meta-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.most-crafted-card .blueprint-header {
+  gap: 12px;
+}
+
+.most-crafted-card .blueprint-header h3 {
+  font-size: 1.15rem;
+}
+
+.most-crafted-card .blueprint-filter select {
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}

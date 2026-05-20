@@ -1,9 +1,25 @@
 using Artifax.Data;
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
+
+// Load environment variables from .env.local file
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+//Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            // Replace with your actual React app's URL/Port
+            policy.WithOrigins("http://localhost:3000", "http://localhost:5253") 
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 builder.Services.AddControllers();
 
@@ -13,7 +29,16 @@ builder.Services.AddSwaggerGen();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("ArtifaxDatabase")));
+// Build connection string from environment variables
+var host = Environment.GetEnvironmentVariable("DATABASE_HOST");
+var port = Environment.GetEnvironmentVariable("DATABASE_PORT");
+var database = Environment.GetEnvironmentVariable("DATABASE_NAME");
+var username = Environment.GetEnvironmentVariable("DATABASE_USERNAME");
+var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
+
+var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+
+builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(option => {
@@ -31,6 +56,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.MapOpenApi();
 }
+
+app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 

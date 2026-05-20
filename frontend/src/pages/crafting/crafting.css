@@ -1,0 +1,47 @@
+.crafting-page {
+  width: 100%;
+  display: block;
+}
+
+.crafting-panel {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.active-jobs-layout {
+  display: flex;
+  width: 100%;
+  margin: 12px 0;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.active-jobs-main {
+  flex: 0 0 70%;
+}
+
+.active-jobs-sidebar {
+  flex: 0 0 30%;
+}
+
+.crafting-panel h2 {
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.crafting-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .active-jobs-layout {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .active-jobs-main,
+  .active-jobs-sidebar {
+    flex: 1 1 100%;
+  }
+}

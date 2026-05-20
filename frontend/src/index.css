@@ -1,13 +1,129 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Zen+Dots&family=Outfit:wght@600;700&family=Sora:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* app surface and chart tokens for theme-aware components */
+  --app: linear-gradient(180deg, #ffffff, #f8fafc);
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --chart-grid: #e6edf6;
+  --chart-tick: #94a3b8;
+  --chart-tooltip-bg: rgba(30,41,59,0.95);
+  --chart-accent: #0f172a;
+
+  --bg: #f2f4f8;
+  --surface: #ffffff;
+  --border: #dfe3e8;
+  --text: #1e293b;
+  --muted: #64748b;
+  --primary: #0f172a;
+  --primary-dark: #020617;
+  --on-primary: #ffffff;
+  --ok-bg: #e5f7ed;
+  --ok-text: #166534;
+  --warn-bg: #fff7dd;
+  --warn-text: #92400e;
+  --danger-bg: #fee2e2;
+  --danger-text: #991b1b;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+html[data-theme='synthwave'] {
+  /* dark/synthwave-specific tokens */
+  --app: linear-gradient(180deg, #1c3554, #274c77);
+  --surface-2: #20364e;
+  --surface-3: #163049;
+  --chart-grid: rgba(255,255,255,0.05);
+  --chart-tick: #9fbbe0;
+  --chart-tooltip-bg: rgba(8,18,30,0.85);
+  --chart-accent: #cbdcff;
+
+  --bg: #0A1C2A;
+  --surface: #1e3e62;
+  --border: #5a82ad;
+  --text: #f3f8ff;
+  --muted: #c7d9ec;
+  --primary: #297fbf;
+  --primary-dark: #1f5f92;
+  --ok-bg: #e5f7ed;
+  --ok-text: #166534;
+  --warn-bg: #fff7dd;
+  --warn-text: #92400e;
+  --danger-bg: #fee2e2;
+  --danger-text: #991b1b;
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html,
+  body,
+  #root {
+    @apply min-h-screen;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at 10% 0%, #f8fafc 0%, #f2f4f8 45%, #edf1f7 100%);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html[data-theme='synthwave'] body {
+    background: radial-gradient(circle at 10% 0%, #35628f 0%, #274c77 45%, #1c3554 100%);
+  }
+
+  .main-title-heading {
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif !important;
+    letter-spacing: 0.02em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif !important;
+    letter-spacing: 0.02em;
+  }
+
+  nav[aria-label="Breadcrumb"] span {
+    font-family: 'Outfit', 'Sora', 'Segoe UI', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  button {
+    @apply font-outfit;
+  }
+
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .nav-pill {
+    @apply font-outfit tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+  .btn-outfit {
+    @apply font-outfit tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  a[role="button"], a.btn, a.button, a[class*="btn-"], a[class*="button-"] {
+    @apply font-outfit tracking-tight;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
 }
