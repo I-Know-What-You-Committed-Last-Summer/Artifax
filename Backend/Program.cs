@@ -36,10 +36,8 @@ var database = Environment.GetEnvironmentVariable("DATABASE_NAME");
 var username = Environment.GetEnvironmentVariable("DATABASE_USERNAME");
 var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
 
-//For DotEnv
-// var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
-//For user secrets
-var connectionString = builder.Configuration.GetConnectionString("ArtifaxDatabase");
+// Build connection string from environment variables
+var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
 

@@ -34,10 +34,13 @@ namespace Artifax.Controllers
             }
             return ItemReadDto.ToDto(_item);
         }
-        [HttpGet("item/allItemBlueprints")]
+    // Keep both routes to preserve compatibility with callers from different branches
+    [HttpGet("item/allItemBlueprints")]
+    [HttpGet("item/itemIngredients")]
         public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
         {
-            var itemsWithIngredients = await _context.ItemIngredients.Join(_context.Items, ig => ig.ProductID, i => i.ItemID, (ig, i) => new { Item = i, Ingredient = ig })
+            var itemsWithIngredients = await _context.ItemIngredients
+                .Join(_context.Items, ig => ig.ProductID, i => i.ItemID, (ig, i) => new { Item = i, Ingredient = ig })
                 .GroupBy(x => x.Item)
                 .Select(g => new ItemBlueprintReadDto
                 {
@@ -53,8 +56,10 @@ namespace Artifax.Controllers
                         Quantity = x.Ingredient.IngredientQuantity
                     }).ToList()
                 }).ToListAsync();
-                return itemsWithIngredients;
+                
+            return itemsWithIngredients;
         }
+
         [HttpPost("item/")]
         public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
         {
