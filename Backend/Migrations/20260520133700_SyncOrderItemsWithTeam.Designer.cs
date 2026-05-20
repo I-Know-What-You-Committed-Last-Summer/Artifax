@@ -3,6 +3,7 @@ using System;
 using Artifax.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ArtifaxContext))]
-    partial class ArtifaxContextModelSnapshot : ModelSnapshot
+    [Migration("20260520133700_SyncOrderItemsWithTeam")]
+    partial class SyncOrderItemsWithTeam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -123,19 +126,15 @@ namespace Backend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemID"));
 
                     b.Property<string>("ItemCategory")
-b.Property<string>("ItemCategory")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ItemName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("ProductionTime")
                         .HasColumnType("integer");
 
                     b.HasKey("ItemID");
-
 
                     b.ToTable("Items");
                 });
@@ -158,7 +157,8 @@ b.Property<string>("ItemCategory")
                         .HasColumnType("integer");
 
                     b.HasKey("ItemIngredientID");
-b.HasIndex("IngredientID");
+
+                    b.HasIndex("IngredientID");
 
                     b.HasIndex("ProductID");
 
@@ -210,13 +210,8 @@ b.HasIndex("IngredientID");
                     b.Property<int>("OrderID")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("OrderDateTime")
-                        .HasColumnType("timestamp with time zone");
-
-.HasColumnType("integer");
-
-                    b.Property<DateTime>("OrderDateTime")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
 
                     b.HasKey("OrderItemID");
 
@@ -287,7 +282,7 @@ b.HasIndex("IngredientID");
                     b.Navigation("Branch");
                 });
 
-modelBuilder.Entity("Artifax.Models.OrderItem", b =>
+            modelBuilder.Entity("Artifax.Models.OrderItem", b =>
                 {
                     b.HasOne("Artifax.Models.Item", "Item")
                         .WithMany()
@@ -305,6 +300,7 @@ modelBuilder.Entity("Artifax.Models.OrderItem", b =>
 
                     b.Navigation("Order");
                 });
+
             modelBuilder.Entity("Artifax.Models.Branch", b =>
                 {
                     b.Navigation("BranchItemCapacities");
@@ -317,7 +313,8 @@ modelBuilder.Entity("Artifax.Models.OrderItem", b =>
             modelBuilder.Entity("Artifax.Models.Item", b =>
                 {
                     b.Navigation("BranchItemCapacities");
-b.Navigation("IngredientItemIngredients");
+
+                    b.Navigation("IngredientItemIngredients");
 
                     b.Navigation("ProductItemIngredients");
                 });
