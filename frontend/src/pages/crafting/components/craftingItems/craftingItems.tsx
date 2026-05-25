@@ -3,23 +3,38 @@ import './craftingItems.css';
 import { craftingData, CraftingItem } from '../craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
+// The tilt state stores a CSS transform string for each card by its id.
+// Example: { "job-1": "scale(1.02) rotateX(3deg) rotateY(-2deg)" }
 interface TiltsState {
   [key: string]: string;
 }
 
 const CraftingItems: FC = () => {
+  // `tilts` maps card ids to their current transform styles.
+  // `setTilts` updates the map when the mouse moves or leaves a card.
   const [tilts, setTilts] = useState<TiltsState>({});
 
   const activeJobs: CraftingItem[] = craftingData.filter(item => item.status !== "Queued");
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
+    // Get the bounding rectangle of the card being hovered.
     const rect = e.currentTarget.getBoundingClientRect();
+
+    // Calculate the mouse position relative to the card's top-left corner.
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    // Find the card center so the rotation is based on mouse offset from center.
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
+
+    // Convert the relative offset into rotation values.
+    // The multipliers control the strength of the tilt effect.
     const rotateX = (y - centerY) / centerY * -1.3;
     const rotateY = (x - centerX) / centerX * 1.3;
+
+    // Update the transform string for this card id.
+    // We keep previous tilt state for other cards by spreading `prev`.
     setTilts(prev => ({
       ...prev,
       [id]: `scale(1.02) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
@@ -27,6 +42,7 @@ const CraftingItems: FC = () => {
   };
 
   const handleMouseLeave = (id: string): void => {
+    // Reset the transform for the card when the mouse leaves.
     setTilts(prev => ({
       ...prev,
       [id]: ''

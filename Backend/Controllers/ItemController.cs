@@ -34,8 +34,7 @@ namespace Artifax.Controllers
             }
             return ItemReadDto.ToDto(_item);
         }
-
-        [HttpGet("item/itemIngredients")]
+        [HttpGet("item/allItemBlueprints")]
         public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
         {
             var itemsWithIngredients = await _context.ItemIngredients

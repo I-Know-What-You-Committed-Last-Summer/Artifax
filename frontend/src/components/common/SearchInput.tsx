@@ -1,3 +1,7 @@
+// Small controlled text input used for searching/filtering lists.
+// - `value`: current text
+// - `onChange`: receives new text value
+// - `placeholder`: hint text
 function SearchInput({ value, onChange, placeholder }) {
   return (
     <input
