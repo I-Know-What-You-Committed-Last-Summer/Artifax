@@ -203,7 +203,7 @@ html[data-theme='synthwave'] .logo-placeholder {
 .sidebar-logout-button {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text);
   display: flex;
@@ -230,7 +230,7 @@ html[data-theme='synthwave'] .logo-placeholder {
   height: 38px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 8px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -366,7 +366,7 @@ html[data-theme='synthwave'] .logo-placeholder {
     height: 46px;
     padding: 0;
     justify-content: center;
-    border-radius: 14px;
+    border-radius: 8px;
   }
 
   .sidebar-profile-button {

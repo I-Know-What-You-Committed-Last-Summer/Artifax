@@ -3,6 +3,7 @@ import './historyPanel.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
 import { historyData, HistoryItem } from '../historyData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import viewIcon from '../../../../assets/images/View Icon.png';
 
 interface SelectOption {
   label: string;
@@ -103,48 +104,48 @@ const HistoryPanel: FC = () => {
 
         <div className="history-controls">
           <div className="history-search">
+            <label className="history-search-label" htmlFor="history-search-input">Search:</label>
             <input
+              id="history-search-input"
               type="text"
               placeholder="Search items, SKU, location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="history-filters">
-            <div className="history-select-wrapper">
-              <label>Status:</label>
-              <FilterSelect
-                value={statusFilter}
-                onChange={setStatusFilter}
-                ariaLabel="Status filter"
-                options={[
-                  { label: 'All', value: 'All' },
-                  { label: 'Crafted', value: 'Crafted' },
-                  { label: 'Cancelled', value: 'Cancelled' },
-                ]}
-              />
-            </div>
-            <div className="history-select-wrapper">
-              <label>Type:</label>
-              <FilterSelect
-                value={typeFilter}
-                onChange={setTypeFilter}
-                ariaLabel="Type filter"
-                options={typeOptions.map((type) => ({
-                  label: type.charAt(0).toUpperCase() + type.slice(1),
-                  value: type,
-                }))}
-              />
-            </div>
-            <div className="history-select-wrapper">
-              <label>Sort:</label>
-              <FilterSelect
-                value={sortKey}
-                onChange={setSortKey}
-                ariaLabel="Sort filter"
-                options={SORT_OPTIONS}
-              />
-            </div>
+          <div className="history-select-wrapper">
+            <label>Status:</label>
+            <FilterSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              ariaLabel="Status filter"
+              options={[
+                { label: 'All', value: 'All' },
+                { label: 'Crafted', value: 'Crafted' },
+                { label: 'Cancelled', value: 'Cancelled' },
+              ]}
+            />
+          </div>
+          <div className="history-select-wrapper">
+            <label>Type:</label>
+            <FilterSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              ariaLabel="Type filter"
+              options={typeOptions.map((type) => ({
+                label: type.charAt(0).toUpperCase() + type.slice(1),
+                value: type,
+              }))}
+            />
+          </div>
+          <div className="history-select-wrapper">
+            <label>Sort:</label>
+            <FilterSelect
+              value={sortKey}
+              onChange={setSortKey}
+              ariaLabel="Sort filter"
+              options={SORT_OPTIONS}
+            />
           </div>
         </div>
       </div>
@@ -201,11 +202,8 @@ const HistoryPanel: FC = () => {
                   </span>
                 </td>
                 <td>
-                  <button type="button" className="view-button" aria-label={`View ${item.name}`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M2.8 12s3.4-6.5 9.2-6.5 9.2 6.5 9.2 6.5-3.4 6.5-9.2 6.5S2.8 12 2.8 12Z" />
-                      <circle cx="12" cy="12" r="2.8" />
-                    </svg>
+                  <button type="button" className="icon-action-button" aria-label={`View ${item.name}`}>
+                    <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
                     <span className="sr-only">View</span>
                   </button>
                 </td>

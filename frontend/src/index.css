@@ -139,7 +139,7 @@ html[data-theme='synthwave'] {
     width: 100%;
     min-height: 2.8rem;
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 8px;
     background: var(--surface);
     color: var(--text);
     padding: 0.8rem 2.35rem 0.8rem 0.95rem;
@@ -194,7 +194,7 @@ html[data-theme='synthwave'] {
     min-width: 100%;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 8px;
     background: var(--surface);
     box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
     padding: 0.35rem;
@@ -203,7 +203,7 @@ html[data-theme='synthwave'] {
   .artifax-select-option {
     width: 100%;
     border: 0;
-    border-radius: 14px;
+    border-radius: 8px;
     background: transparent;
     color: var(--text);
     padding: 0.75rem 0.95rem;
@@ -218,6 +218,35 @@ html[data-theme='synthwave'] {
   .artifax-select-option.selected {
     background: var(--bg);
     color: var(--text);
+  }
+
+  .icon-action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    padding: 0;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+
+  .icon-action-button:hover {
+    border-color: var(--primary);
+    background: var(--bg);
+    transform: translateY(-1px);
+  }
+
+  .icon-action-button-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    pointer-events: none;
   }
 
   .btn-outfit {

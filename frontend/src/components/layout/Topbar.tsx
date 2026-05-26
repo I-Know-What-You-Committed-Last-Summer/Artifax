@@ -32,19 +32,28 @@ function getBreadcrumbItems(pathname) {
 function Topbar() {
   const { pathname } = useLocation();
   // `isSynthwave` tracks whether the synthwave/dark theme is active
-  const [isSynthwave, setIsSynthwave] = useState(false);
+  const [isSynthwave, setIsSynthwave] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme !== 'light';
+  });
   const breadcrumbItems = getBreadcrumbItems(pathname);
 
   useEffect(() => {
-    // On mount, read saved theme from localStorage and apply it.
-    // The app toggles themes by setting `html[data-theme='synthwave']`.
+    // On mount, default the app to synthwave unless the user explicitly saved light mode.
     const savedTheme = localStorage.getItem('theme');
-    const shouldUseSynthwave = savedTheme === 'synthwave';
+    const shouldUseSynthwave = savedTheme !== 'light';
     setIsSynthwave(shouldUseSynthwave);
 
     if (shouldUseSynthwave) {
       // Apply synthwave theme (dark) by setting the attribute used by CSS
       document.documentElement.setAttribute('data-theme', 'synthwave');
+      if (!savedTheme) {
+        localStorage.setItem('theme', 'synthwave');
+      }
       return;
     }
 
@@ -112,7 +121,7 @@ function Topbar() {
         </nav>
 
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <label className="relative inline-flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
+          <label className="relative inline-flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
             <input
               type="checkbox"
               className="theme-controller absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -152,13 +161,13 @@ function Topbar() {
               </svg>
             </span>
           </label>
-          <button className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
+          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Warehouse A
           </button>
-          <button className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
+          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Alerts
           </button>
-          <div className="shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
+          <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
             D. Dastardly
           </div>
         </div>

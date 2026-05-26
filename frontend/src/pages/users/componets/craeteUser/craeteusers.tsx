@@ -80,6 +80,7 @@ function CraeteUsersPage() {
               value={branch}
               onChange={setBranch}
               ariaLabel="Branch selector"
+              className="createusers-select-shell"
               options={[
                 { label: 'Branch 1', value: '1' },
                 { label: 'Branch 2', value: '2' },

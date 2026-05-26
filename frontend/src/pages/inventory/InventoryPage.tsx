@@ -1,6 +1,5 @@
 // React hooks and UI components used on the inventory page
 import { useMemo, useState } from 'react';
-import Button from '../../components/common/Button';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -11,6 +10,8 @@ import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
 import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
+import editIcon from '../../assets/images/Edit Icon.png';
+import viewIcon from '../../assets/images/View Icon.png';
 
 function InventoryPage() {
   // Local UI state: active tab, search text, filters, sorting
@@ -71,7 +72,11 @@ function InventoryPage() {
       <PageHeader
         title="Inventory Management"
         subtitle={`Full Inventory · ${currentDate}`}
-        rightSlot={<Button>Add Item</Button>}
+        rightSlot={
+          <button type="button" className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary hover:bg-bg">
+            Add Item
+          </button>
+        }
       />
       {/* Alerts at the top */}
       <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />
@@ -87,7 +92,7 @@ function InventoryPage() {
       <SectionCard title="All Inventory Items" subtitle="24 items">
         <div className="space-y-3">
           {/* Search and filter controls */}
-          <div className="grid gap-2 lg:grid-cols-[2fr,auto,auto,auto]">
+          <div className="grid items-end gap-2 lg:grid-cols-[minmax(0,2.4fr),repeat(3,minmax(0,1fr))]">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -138,6 +143,7 @@ function InventoryPage() {
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Edit</th>
+                  <th className="pb-2 font-medium">View</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,17 +162,24 @@ function InventoryPage() {
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-2.5">
-                      <Button
-                        variant="secondary"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full px-0"
+                      <button
+                        type="button"
+                        className="icon-action-button"
                         aria-label={`Edit ${item.name}`}
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5" aria-hidden="true">
-                          <path d="M12 20h9" />
-                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                        </svg>
+                        <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
                         <span className="sr-only">Edit</span>
-                      </Button>
+                      </button>
+                    </td>
+                    <td className="py-2.5">
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        aria-label={`View ${item.name}`}
+                      >
+                        <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">View</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
