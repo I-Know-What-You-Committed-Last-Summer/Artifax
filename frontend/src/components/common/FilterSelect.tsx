@@ -1,3 +1,8 @@
+// Lightweight select used for small filter controls.
+// Props:
+// - `value`: current selected value
+// - `onChange`: called with the new value string
+// - `options`: array of { label, value }
 function FilterSelect({ value, onChange, options }) {
   return (
     <select

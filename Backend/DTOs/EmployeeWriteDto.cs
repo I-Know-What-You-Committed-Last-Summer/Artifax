@@ -6,5 +6,6 @@ namespace Artifax.DTOs
         public string EmployeeEmail { get; set; }
         public string EmployeeName { get; set; }
         public string EmployeePassword { get; set; }
+        public string EmployeeLevel { get; set; }
     }
 }

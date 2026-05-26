@@ -1,14 +1,19 @@
+// Hooks and navigation used by the login page
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 
 function LoginPage() {
+  // Router helper to navigate on successful login
   const navigate = useNavigate();
+
+  // Controlled form fields with example initial values
   const [name, setName] = useState('Sam');
   const [surname, setSurname] = useState('Smith');
   const [email, setEmail] = useState('Sam@gmail');
   const [password, setPassword] = useState('************');
 
+  // Simple email validation: required and must end with @gmail.com
   const emailError = useMemo(() => {
     if (!email.trim()) {
       return 'Email is required';
@@ -21,15 +26,18 @@ function LoginPage() {
     return '';
   }, [email]);
 
+  // Form-level validity used to enable/disable submit
   const isFormValid = name.trim().length > 0 && surname.trim().length > 0 && !emailError && password.trim().length >= 8;
 
+  // Handle form submit: prevent default, validate, then navigate
   const handleSubmit = (event) => {
     event.preventDefault();
 
     if (!isFormValid) {
-      return;
+      return; // abort if invalid
     }
 
+    // In a real app you'd call an auth API here
     navigate('/dashboard');
   };
 
@@ -39,6 +47,7 @@ function LoginPage() {
         <header className="login-card-header">
           <div className="login-title-row">
             <div className="login-avatar" aria-hidden="true">
+              {/* decorative avatar icon */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="8" r="3.5" />
                 <path d="M4.5 20c1.8-3.3 4.5-5 7.5-5s5.7 1.7 7.5 5" />
@@ -51,6 +60,7 @@ function LoginPage() {
         <div className="login-card-body">
           <div className="login-section-heading">Required User Information</div>
 
+          {/* Controlled form with labels, inputs and inline validation hints */}
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             <label className="login-field">
               <span className="login-label">Name</span>
@@ -106,6 +116,7 @@ function LoginPage() {
                   </svg>
                 </span>
               </div>
+              {/* Inline validation hint for email */}
               {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your admin-issued company email.</p>}
             </label>
 
@@ -128,6 +139,7 @@ function LoginPage() {
               </div>
             </label>
 
+            {/* Accessible alert region showing validation messages */}
             <div className="login-alert" role="alert" aria-live="polite">
               <div className="login-alert-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -142,6 +154,7 @@ function LoginPage() {
               </div>
             </div>
 
+            {/* Submit button disabled until form is valid */}
             <button type="submit" className="login-submit" disabled={!isFormValid}>
               Login
             </button>
