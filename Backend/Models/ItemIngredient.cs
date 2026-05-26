@@ -9,5 +9,4 @@ namespace Artifax.Models
         public Item ProductItem { get; set; }
         public Item IngredientItem { get; set; }
     }
-
 }

@@ -37,7 +37,8 @@ namespace Artifax.Controllers
         [HttpGet("item/allItemBlueprints")]
         public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
         {
-            var itemsWithIngredients = await _context.ItemIngredients.Join(_context.Items, ig => ig.ProductID, i => i.ItemID, (ig, i) => new { Item = i, Ingredient = ig })
+            var itemsWithIngredients = await _context.ItemIngredients
+                .Join(_context.Items, ig => ig.ProductID, i => i.ItemID, (ig, i) => new { Item = i, Ingredient = ig })
                 .GroupBy(x => x.Item)
                 .Select(g => new ItemBlueprintReadDto
                 {
@@ -53,8 +54,10 @@ namespace Artifax.Controllers
                         Quantity = x.Ingredient.IngredientQuantity
                     }).ToList()
                 }).ToListAsync();
-                return itemsWithIngredients;
+                
+            return itemsWithIngredients;
         }
+
         [HttpPost("item/")]
         public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
         {
