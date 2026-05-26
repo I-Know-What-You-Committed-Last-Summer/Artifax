@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './createusers.css';
+import FilterSelect from '../../../../components/common/FilterSelect';
 
 function CraeteUsersPage() {
   const navigate = useNavigate();
@@ -75,21 +76,15 @@ function CraeteUsersPage() {
 
           <label className="createusers-field">
             <span className="createusers-label">Branch</span>
-            <div className="createusers-input-shell">
-              <select
-                value={branch}
-                onChange={(event) => setBranch(event.target.value)}
-                className="createusers-input"
-              >
-                <option value="1">Branch 1</option>
-                <option value="2">Branch 2</option>
-              </select>
-              <span className="createusers-field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 7l-8.5 8.5L8 12" />
-                </svg>
-              </span>
-            </div>
+            <FilterSelect
+              value={branch}
+              onChange={setBranch}
+              ariaLabel="Branch selector"
+              options={[
+                { label: 'Branch 1', value: '1' },
+                { label: 'Branch 2', value: '2' },
+              ]}
+            />
           </label>
 
           <label className="createusers-field">

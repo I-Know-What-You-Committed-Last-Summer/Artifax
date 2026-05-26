@@ -2,6 +2,7 @@ import React, { FC, useState, useEffect } from 'react';
 import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
+import FilterSelect from '../../../../components/common/FilterSelect';
 
 interface Category {
   id: string;
@@ -122,11 +123,12 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
         <h3>Blueprints</h3>
         <div className="blueprint-filter">
           <label htmlFor="blueprintFilter">Filter Blueprints</label>
-          <select id="blueprintFilter" value={filter} onChange={(e) => onFilterChange(e.target.value)}>
-            {categories.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
-            ))}
-          </select>
+          <FilterSelect
+            value={filter}
+            onChange={onFilterChange}
+            ariaLabel="Blueprint filter"
+            options={categories.map((option) => ({ label: option.label, value: option.id }))}
+          />
         </div>
       </div>
 

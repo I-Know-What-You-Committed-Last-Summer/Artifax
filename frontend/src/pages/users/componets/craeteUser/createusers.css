@@ -101,7 +101,7 @@ html[data-theme='synthwave'] .createusers-avatar {
   display: flex;
   align-items: center;
   border: 1px solid #dfe4ec;
-  border-radius: 10px;
+  border-radius: 16px;
   background: rgba(251, 252, 254, 0.9);
   
   /* FIXED: Enforces an absolute height so no field can expand beyond 44px */
@@ -138,9 +138,13 @@ html[data-theme='synthwave'] .createusers-input-shell {
 
 .createusers-field-icon {
   position: absolute;
-  right: 12px;
+  right: 16px;
   display: inline-flex;
   color: #a6afbf;
+}
+
+.createusers-select {
+  padding-right: 2.6rem;
 }
 
 .createusers-field-icon svg {

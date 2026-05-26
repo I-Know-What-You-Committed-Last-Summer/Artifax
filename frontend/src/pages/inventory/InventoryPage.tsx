@@ -16,7 +16,6 @@ function InventoryPage() {
   // Local UI state: active tab, search text, filters, sorting
   // `getCurrentDateSAST` provides a short date string used in the header
   const currentDate = getCurrentDateSAST();
->>>>>>> mario/add-comments
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
@@ -157,8 +156,16 @@ function InventoryPage() {
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-2.5">
-                      <Button variant="secondary" className="px-3 py-1 text-xs">
-                        Edit
+                      <Button
+                        variant="secondary"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full px-0"
+                        aria-label={`Edit ${item.name}`}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5" aria-hidden="true">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                        <span className="sr-only">Edit</span>
                       </Button>
                     </td>
                   </tr>

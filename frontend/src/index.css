@@ -127,6 +127,99 @@ html[data-theme='synthwave'] {
     letter-spacing: 0.02em;
     font-weight: 600;
   }
+
+  .artifax-select-shell {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .artifax-select {
+    width: 100%;
+    min-height: 2.8rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.8rem 2.35rem 0.8rem 0.95rem;
+    font: inherit;
+    outline: none;
+    cursor: pointer;
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  }
+
+  .artifax-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+  }
+
+  html[data-theme='synthwave'] .artifax-select {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .artifax-select-icon {
+    pointer-events: none;
+    position: absolute;
+    right: 0.95rem;
+    top: 50%;
+    width: 0.9rem;
+    height: 0.9rem;
+    transform: translateY(-50%);
+    color: var(--muted);
+  }
+
+  .artifax-select-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .artifax-select-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .artifax-select-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 40;
+    min-width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+    padding: 0.35rem;
+  }
+
+  .artifax-select-option {
+    width: 100%;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text);
+    padding: 0.75rem 0.95rem;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .artifax-select-option:hover,
+  .artifax-select-option:focus-visible,
+  .artifax-select-option.selected {
+    background: var(--bg);
+    color: var(--text);
+  }
+
   .btn-outfit {
     @apply font-outfit tracking-tight;
     letter-spacing: 0.02em;
