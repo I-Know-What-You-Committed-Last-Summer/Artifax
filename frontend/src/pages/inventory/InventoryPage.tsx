@@ -16,7 +16,7 @@ function InventoryPage() {
   // Local UI state: active tab, search text, filters, sorting
   // `getCurrentDateSAST` provides a short date string used in the header
   const currentDate = getCurrentDateSAST();
->>>>>>> mario/add-comments
+// mario/add-comments
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
