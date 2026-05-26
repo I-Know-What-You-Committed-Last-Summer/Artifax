@@ -125,11 +125,20 @@ html[data-theme='synthwave'] .createusers-input-shell {
   
   /* FIXED: Removed top/bottom padding (set to 0) so text-alignment relies 
      entirely on the parent's flex alignment. Keeps side padding intact. */
-  padding: 0 44px 0 14px; 
+  padding: 0 14px; 
   
   color: var(--text);
   font-size: 0.96rem;
   box-sizing: border-box;
+}
+
+.createusers-password-field .createusers-input-shell {
+  max-width: 90%;
+}
+
+.createusers-input:disabled {
+  color: #7a8494;
+  opacity: 0.9;
 }
 
 .createusers-input::placeholder {
@@ -174,6 +183,38 @@ html[data-theme='synthwave'] .createusers-alert {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
   color: #d6e4f6;
+}
+
+.createusers-action-row {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  justify-items: center;
+}
+
+.createusers-action-row .createusers-submit,
+.createusers-action-row .createusers-secondary {
+  width: 90%;
+  max-width: 600px;
+}
+
+.createusers-secondary {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.createusers-secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.04);
 }
 
 .createusers-alert-icon {
@@ -241,9 +282,10 @@ html[data-theme='synthwave'] .createusers-alert-icon {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Forces the alert layout and action button to stretch full width across both columns */
+  /* Forces the alert layout and action buttons to stretch full width across both columns */
   .createusers-alert,
-  .createusers-submit {
+  .createusers-submit,
+  .createusers-secondary {
     grid-column: span 2;
   }
 }

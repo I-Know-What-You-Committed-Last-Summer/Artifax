@@ -1,13 +1,46 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import './createusers.css';
 
-function CraeteUsersPage() {
-  const navigate = useNavigate();
-  const [fullName, setFullName] = useState('Sam');
-  const [branch, setBranch] = useState('1');
-  const [email, setEmail] = useState('Sam@gmail');
-  const [password, setPassword] = useState('************');
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  branch: string;
+  role: string;
+  status: string;
+};
+
+interface CreateUsersPageProps {
+  user?: User;
+  onSave: (user: Omit<User, 'id'> & { id: number | null }) => void;
+  onDelete: (id: number) => void;
+}
+
+function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
+  const [fullName, setFullName] = useState('');
+  const [branch, setBranch] = useState('Warehouse A');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('Admin');
+  const [isEditing, setIsEditing] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.name);
+      setBranch(user.branch);
+      setEmail(user.email);
+      setPassword('************');
+      setRole(user.role);
+      setIsEditing(false);
+    } else {
+      setFullName('');
+      setBranch('Warehouse A');
+      setEmail('');
+      setPassword('');
+      setRole('Admin');
+      setIsEditing(true);
+    }
+  }, [user]);
 
   const emailError = useMemo(() => {
     if (!email.trim()) {
@@ -24,17 +57,26 @@ function CraeteUsersPage() {
   const isFormValid =
     fullName.trim().length > 0 &&
     branch.trim().length > 0 &&
+    role.trim().length > 0 &&
     !emailError &&
     password.trim().length >= 8;
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isFormValid) {
       return;
     }
 
-    navigate('/dashboard');
+    onSave({
+      id: user?.id ?? null,
+      name: fullName,
+      email,
+      branch,
+      role,
+      status: user?.status ?? 'Active',
+    });
+    setIsEditing(false);
   };
 
   return (
@@ -64,12 +106,8 @@ function CraeteUsersPage() {
                 type="text"
                 autoComplete="name"
                 className="createusers-input"
+                disabled={!isEditing}
               />
-              <span className="createusers-field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 7l-8.5 8.5L8 12" />
-                </svg>
-              </span>
             </div>
           </label>
 
@@ -80,15 +118,27 @@ function CraeteUsersPage() {
                 value={branch}
                 onChange={(event) => setBranch(event.target.value)}
                 className="createusers-input"
+                disabled={!isEditing}
               >
-                <option value="1">Branch 1</option>
-                <option value="2">Branch 2</option>
+                <option value="Warehouse A">Warehouse A</option>
+                <option value="Warehouse B">Warehouse B</option>
+                <option value="Warehouse C">Warehouse C</option>
               </select>
-              <span className="createusers-field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 7l-8.5 8.5L8 12" />
-                </svg>
-              </span>
+            </div>
+          </label>
+
+          <label className="createusers-field">
+            <span className="createusers-label">Role</span>
+            <div className="createusers-input-shell">
+              <select
+                value={role}
+                onChange={(event) => setRole(event.target.value)}
+                className="createusers-input"
+                disabled={!isEditing}
+              >
+                <option value="Admin">Admin</option>
+                <option value="Staff">Staff</option>
+              </select>
             </div>
           </label>
 
@@ -101,23 +151,12 @@ function CraeteUsersPage() {
                 type="email"
                 autoComplete="email"
                 className="createusers-input"
+                disabled={!isEditing}
               />
-              <span className="createusers-field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 7v5" />
-                  <circle cx="12" cy="16.5" r="0.9" />
-                  <path d="M10.3 4.5h3.4l5.8 5.8v3.4l-5.8 5.8h-3.4l-5.8-5.8v-3.4z" />
-                </svg>
-              </span>
             </div>
-            {emailError ? (
-              <p className="createusers-field-hint error">{emailError}</p>
-            ) : (
-              <p className="createusers-field-hint">Use your admin-issued company email.</p>
-            )}
           </label>
 
-          <label className="createusers-field">
+          <label className="createusers-field createusers-password-field">
             <span className="createusers-label">Password</span>
             <div className="createusers-input-shell">
               <input
@@ -126,13 +165,9 @@ function CraeteUsersPage() {
                 type="password"
                 autoComplete="new-password"
                 className="createusers-input"
+                disabled={!isEditing}
+                placeholder={user ? '••••••••••••' : 'Enter password'}
               />
-              <span className="createusers-field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-                  <rect x="5.2" y="11" width="13.6" height="9" rx="2.2" />
-                </svg>
-              </span>
             </div>
           </label>
 
@@ -150,9 +185,54 @@ function CraeteUsersPage() {
             </div>
           </div>
 
-          <button type="submit" className="createusers-submit" disabled={!isFormValid}>
-            Create User
-          </button>
+          <div className="createusers-action-row">
+            {user ? (
+              isEditing ? (
+                <>
+                  <button type="submit" className="createusers-submit" disabled={!isFormValid}>
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    className="createusers-secondary"
+                    onClick={() => {
+                      setIsEditing(false);
+                      if (user) {
+                        setFullName(user.name);
+                        setBranch(user.branch);
+                        setEmail(user.email);
+                        setPassword('************');
+                        setRole(user.role);
+                      }
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="createusers-submit"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="createusers-secondary"
+                    onClick={() => user && onDelete(user.id)}
+                  >
+                    Delete User
+                  </button>
+                </>
+              )
+            ) : (
+              <button type="submit" className="createusers-submit" disabled={!isFormValid}>
+                Create User
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </section>
