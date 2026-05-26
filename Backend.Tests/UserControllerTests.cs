@@ -7,6 +7,9 @@ using Artifax.Models;
 using Artifax.DTOs;
 using System;
 using System.Threading.Tasks; 
+using Moq;
+using Microsoft.AspNetCore.Http;
+using System.Text;
 
 namespace Backend.Tests
 {
@@ -14,14 +17,12 @@ namespace Backend.Tests
     {
 
         Employee[] testEmployees = [
-            new Employee {EmployeeEmail="employee1@artifax.com",EmployeeName="Emp1",EmployeePasswordHash="123"}, 
-            new Employee {EmployeeEmail="employee2@artifax.com",EmployeeName="Emp2",EmployeePasswordHash="123"}, 
-            new Employee {EmployeeEmail="employee3@artifax.com",EmployeeName="Emp3",EmployeePasswordHash="123"}, 
-        ];
-        Admin[] testAdmins = [
-            new Admin {AdminEmail="admin1@artifax.com",AdminName="Ad1",AdminPasswordHash="123"}, 
-            new Admin {AdminEmail="admin2@artifax.com",AdminName="Ad2",AdminPasswordHash="123"}, 
-            new Admin {AdminEmail="admin3@artifax.com",AdminName="Ad3",AdminPasswordHash="123"}, 
+            new Employee {EmployeeEmail="employee1@artifax.com",EmployeeName="Emp1",EmployeePasswordHash="123", EmployeeLevel="Employee"}, 
+            new Employee {EmployeeEmail="employee2@artifax.com",EmployeeName="Emp2",EmployeePasswordHash="123", EmployeeLevel="Employee"}, 
+            new Employee {EmployeeEmail="employee3@artifax.com",EmployeeName="Emp3",EmployeePasswordHash="123", EmployeeLevel="Employee"}, 
+            new Employee {EmployeeEmail="admin1@artifax.com",EmployeeName="Ad1",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
+            new Employee {EmployeeEmail="admin2@artifax.com",EmployeeName="Ad2",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
+            new Employee {EmployeeEmail="admin3@artifax.com",EmployeeName="Ad3",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
         ];
 
         // Helper method to build an isolated, clean in-memory database context for every test
@@ -49,12 +50,8 @@ namespace Backend.Tests
             
             foreach (var testEmployee in testEmployees)
             {
+                testEmployee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(testEmployee.EmployeePasswordHash);
                 _context.Employees.Add(testEmployee);
-            }
-
-            foreach (var testAdmin in testAdmins)
-            {
-                _context.Admins.Add(testAdmin);
             }
 
             await _context.SaveChangesAsync();
@@ -62,6 +59,21 @@ namespace Backend.Tests
 
             return _controller;
         }  
+
+        Mock<HttpContext> GetMockSession ()
+        {
+            var sessionMock = new Mock<ISession>();
+            var sessionKey = "UserSessionKey";
+            byte[] sessionBytes = Encoding.UTF8.GetBytes("my-session-value");
+
+            // Setup the TryGetValue function to return a specific byte array and return true
+            sessionMock.Setup(s => s.TryGetValue(sessionKey, out sessionBytes))
+                       .Returns(true);
+
+            var httpContextMock = new Mock<HttpContext>();
+            httpContextMock.Setup(c => c.Session).Returns(sessionMock.Object);
+            return httpContextMock;
+        }
 
         [Fact]
         public async Task GetEmployee_WhenEmployeeExists()
@@ -85,11 +97,31 @@ namespace Backend.Tests
             var _controller = await GetPopulatedDummyController();
 
             //ACT
-            var _result = await _controller.GetEmployeeByEmail("employee1@artifax.com");
+            var _result = await _controller.GetEmployeeByEmail("admin5@artifax.com");
 
             //ASSERT
             var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>>(_result);
-            var _returnedDto = Assert.IsType<EmployeeReadDto>(_actionResult.Value);
+            Assert.IsNotType<EmployeeReadDto>(_actionResult.Value);
+        }
+
+        [Fact]
+        public async Task TestName()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContextMock.Object
+            };
+        
+            // When
+            var _dto = await _controller.LoginEmployee(new (){Email="employee1@artifax.com", Password="123"});
+        
+            // Then
+            var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_dto);
+            var _returnedOk = Assert.IsType<OkObjectResult>(_actionResult.Result);
+            var _returnedDto = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
             Assert.Equal("Emp1", _returnedDto.EmployeeName);
         }
     }

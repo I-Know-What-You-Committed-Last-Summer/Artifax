@@ -7,6 +7,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import InventoryPage from './pages/inventory/InventoryPage';
 import AnalyticsPage from './pages/analytics/analytics';
 import LoginPage from './pages/auth/LoginPage';
+import UsersPage from './pages/users/users';
 import { useEffect } from 'react';
 import axios from 'axios';
 
@@ -38,7 +39,7 @@ function App() {
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="crafting" element={<CraftingPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="users" element={<PlaceholderPage title="Users" />} />
+          <Route path="users" element={<UsersPage />} />
           <Route path="profile" element={<PlaceholderPage title="Profile" />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
