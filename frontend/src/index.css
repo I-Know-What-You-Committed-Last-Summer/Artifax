@@ -5,12 +5,6 @@
 @tailwind utilities;
 
 :root {
-  /*
-    CSS custom properties (tokens) used across the app.
-    Default (light) values live on :root. Theme-aware components read
-    these variables (e.g. --bg, --surface, --text) so switching themes
-    is as simple as overriding the variables on the root element.
-  */
   /* app surface and chart tokens for theme-aware components */
   --app: linear-gradient(180deg, #ffffff, #f8fafc);
   --surface-2: #f8fafc;
@@ -37,12 +31,6 @@
 }
 
 html[data-theme='synthwave'] {
-  /*
-    Theme override: when `html` has attribute `data-theme='synthwave'`,
-    these CSS variables replace the defaults above to create the dark
-    / synthwave appearance. The Topbar component toggles this attribute
-    and persists the selection to localStorage.
-  */
   /* dark/synthwave-specific tokens */
   --app: linear-gradient(180deg, #1c3554, #274c77);
   --surface-2: #20364e;

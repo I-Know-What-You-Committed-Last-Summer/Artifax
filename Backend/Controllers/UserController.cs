@@ -11,11 +11,8 @@ namespace Artifax.Controllers
     [Route("api/[Controller]")]
     public class UserController : ControllerBase
     {
-        internal enum EmployeeLevels
-        {
-            Employee,
-            Admin
-        }
+        const string adminLevel = "Admin";
+        const string employeeLevel = "Employee";
 
         readonly ArtifaxContext context;
 
@@ -26,22 +23,17 @@ namespace Artifax.Controllers
 
         #region GetRoutes
             //Get All Employees
-            [HttpGet]
-            public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllUsers ()
+            [HttpGet("employee")]
+            public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllEmployees ()
             {
                 return await context.Employees.Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
             }
-            
-            [HttpGet("employees")]
-            public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllEmployees ()
-            {
-                return await context.Employees.Where(employee => employee.EmployeeLevel == EmployeeLevels.Employee.ToString()).Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
-            }
 
-            [HttpGet("admins")]
-            public async Task<ActionResult<IEnumerable<EmployeeReadDto>>> GetAllAdmins ()
+            //Get All Admins
+            [HttpGet("admin")]
+            public async Task<ActionResult<IEnumerable<AdminReadDto>>> GetAllAdmins ()
             {
-                return await context.Employees.Where(employee => employee.EmployeeLevel == EmployeeLevels.Admin.ToString()).Select(employee => EmployeeReadDto.ToDto(employee)).ToListAsync();
+                return await context.Admins.Select(admin => AdminReadDto.ToDto(admin)).ToListAsync();
             }
 
             //Get All Employee by Id
@@ -51,6 +43,15 @@ namespace Artifax.Controllers
                 var _result = await context.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == email);
                 if (_result == null) return NotFound();
                 return EmployeeReadDto.ToDto(_result);
+            }
+
+            //Get All Admin by Id
+            [HttpGet("admin/{email}")]
+            public async Task<ActionResult<AdminReadDto>> GetAdminById (string email)
+            {
+                var _result = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == email);
+                if (_result == null) return NotFound();
+                return AdminReadDto.ToDto(_result);
             }
 
             [HttpGet("me")]
@@ -85,7 +86,7 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
             {
                 //Authentication Test
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
                 {
                     return Unauthorized("Creation attempted by non-admin!");
                 }
@@ -100,8 +101,7 @@ namespace Artifax.Controllers
                     BranchId = incoming.BranchID,
                     EmployeeEmail = incoming.EmployeeEmail,
                     EmployeeName = incoming.EmployeeName,
-                    EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword),
-                    EmployeeLevel = incoming.EmployeeLevel
+                    EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword)
                 };
 
                 //Save new employee to database
@@ -113,6 +113,46 @@ namespace Artifax.Controllers
 
                 return CreatedAtAction("GetAllEmployeeById", new { id = _employee.EmployeeId}, _dto);
             }
+
+
+            // summary
+            // Registers a new administrator in the system and hashes their password.
+            
+            [HttpPost("admin")]
+            public async Task<ActionResult<AdminReadDto>> CreateAdmin (AdminWriteDto incoming)
+            {
+                //Authentication Test
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
+                {
+                    return Unauthorized("Creation attempted by non-admin!");
+                }
+
+                //Check whether admin with incoming details already exists to prevent duplicate emails for login
+                var _testAdmin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == incoming.AdminEmail);
+                
+                if (_testAdmin != null) return Unauthorized ("Email Already Exists");
+
+                //Creates new admin from incoming details
+                Admin _admin = new ()
+                {
+                    AdminEmail = incoming.AdminEmail,
+                    AdminName = incoming.AdminName,
+                    AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword)
+                };
+
+                //Save new admin to database
+                context.Admins.Add(_admin);
+                await context.SaveChangesAsync();
+
+                //Convert new admin to Read DTO using static function in AdminReadDto class
+                AdminReadDto _dto = AdminReadDto.ToDto(_admin);
+
+                return CreatedAtAction("GetAllAdminById", new { id = _admin.AdminId}, _dto);
+            }
+
+
+            // summary
+            // Authenticates an employee based on their email and password credentials. 
 
             [HttpPost("employees/login")]
             public async Task<ActionResult<EmployeeReadDto>> LoginEmployee (LoginDto incoming)
@@ -126,13 +166,35 @@ namespace Artifax.Controllers
                 {
                     return Unauthorized("Incorrect Password");
                 }
-                HttpContext.Session.SetString("UserLevel", _employee.EmployeeLevel);
-                HttpContext.Session.SetString("UserEmail", incoming.Email);
+                HttpContext.Session.SetString("UserLevel", employeeLevel);
+                HttpContext.Session.SetString("UserEmail",incoming.Email);
                 HttpContext.Session.SetString("Username", _employee.EmployeeName);
 
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
 
+
+            // summary
+            // Authenticates an administrator based on their email and password credentials. 
+
+            [HttpPost("admins/login")]
+            public async Task<ActionResult<AdminReadDto>> LoginAdmin (LoginDto incoming)
+            {
+                //Find admin by email
+                var _admin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == incoming.Email);
+                if (_admin == null) return Unauthorized ("Admin Not Found");
+
+                //Verify admin password
+                if (!BCrypt.Net.BCrypt.Verify(incoming.Password, _admin.AdminPasswordHash))
+                {
+                    return Unauthorized("Incorrect Password");
+                }
+                HttpContext.Session.SetString("UserLevel",adminLevel);
+                HttpContext.Session.SetString("UserEmail",incoming.Email);
+                HttpContext.Session.SetString("Username", _admin.AdminName);
+                
+                return Ok(AdminReadDto.ToDto(_admin));
+            }
         #endregion
         
         #region UpdateRoutes
@@ -144,7 +206,7 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (string EmployeeEmail, int BranchId)
             {
                 //Authentication Check
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
                 {
                     return Unauthorized("Update attempted by non-admin!");
                 }
@@ -178,7 +240,7 @@ namespace Artifax.Controllers
                 if (_employee == null) return NotFound($"Employee with email: [{EmployeeEmail}] could not be found");
 
                 //Authentication Check
-                bool _isAdmin = HttpContext.Session.GetString("UserLevel") == EmployeeLevels.Admin.ToString();
+                bool _isAdmin = HttpContext.Session.GetString("UserLevel") == adminLevel;
 
                 if (!_isAdmin)
                 {
@@ -194,17 +256,72 @@ namespace Artifax.Controllers
                 await context.SaveChangesAsync();
                 return Ok(EmployeeReadDto.ToDto(_employee));
             }
-    
+
+
+            // summary
+            // Updates the profile information of an existing administrator.
+
+            [HttpPatch("admin")]
+            public async Task<ActionResult<EmployeeReadDto>> ChangeAdminDetails (string adminEmail, AdminWriteDto incoming)
+            {
+
+                //Check for existing admin
+                var _admin = await context.Admins.FirstOrDefaultAsync(admin => admin.AdminEmail == adminEmail);
+
+                if (_admin == null) return NotFound($"Admin with email: [{adminEmail}] could not be found");
+
+                //Authentication Check
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel || HttpContext.Session.GetString("UserEmail") != _admin.AdminEmail)
+                {
+                    return Unauthorized("Update attempted by user with incorrect credentials!");
+                }
+
+                //Update details
+                _admin.AdminEmail = incoming.AdminEmail;
+                _admin.AdminName = incoming.AdminName;
+                _admin.AdminPasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.AdminPassword);
+
+                //Save changes
+                await context.SaveChangesAsync();
+                return Ok(AdminReadDto.ToDto(_admin));
+            }
         #endregion
 
         #region DeleteRoutes
+
+            // summary
+            // Permanently removes an administrator from the system.
+            [HttpDelete("admin")]
+            public async Task<IActionResult> DeleteAdmin (int id)
+            {
+                //Check for existing admin
+                var _admin = await context.Admins.FindAsync(id);
+                if (_admin == null) return NotFound($"Admin with ID: {id.ToString()} could not be found");
+                //Authentication Check
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
+                {
+                    return Unauthorized("Delete attempted by non-admin!");
+                }
+                //Remove admin from list
+                context.Admins.Remove(_admin);
+                //Save changes
+                await context.SaveChangesAsync();
+
+                //Clear Session Cookie is Admin deleting self
+                if (HttpContext.Session.GetString("UserEmail") == _admin.AdminEmail) HttpContext.Session.Clear();
+
+                return NoContent();
+            }
+
+
+            // summary
             // Permanently removes an employee from the system.
             
             [HttpDelete("employee")]
             public async Task<IActionResult> DeleteEmployee (int id)
             {
                 //Authentication Check
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (HttpContext.Session.GetString("UserLevel") != adminLevel)
                 {
                     return Unauthorized("Delete attempted by non-admin!");
                 }

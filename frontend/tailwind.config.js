@@ -32,9 +32,6 @@ module.exports = {
     },
   },
   plugins: [require('daisyui')],
-  // daisyUI plugin is used to provide additional UI themes.
-  // The `themes` array declares the available theme names. The app controls
-  // which theme is active by setting `html[data-theme='...']` in JS (see Topbar).
   daisyui: {
     themes: ['light', 'dark', 'synthwave'],
   },

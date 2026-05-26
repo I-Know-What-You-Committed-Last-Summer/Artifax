@@ -8,11 +8,6 @@ type SectionCardProps = {
   className?: string;
 };
 
-// Generic section card that wraps content with a header area.
-// Props:
-// - `title` / `subtitle`: displayed on the left of the header
-// - `rightSlot`: optional control (e.g., button) shown on the right
-// - `children`: main content of the card
 function SectionCard({ title, subtitle, rightSlot, children, className = '' }: SectionCardProps) {
   return (
     <section className={`rounded-2xl border border-border bg-surface p-4 shadow-card sm:p-5 ${className}`}>

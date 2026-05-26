@@ -1,5 +1,3 @@
-// Small card showing a single statistic: label + value.
-// Used in dashboards for KPI summaries.
 function StatCard({ label, value }) {
   return (
     <div className="rounded-xl border border-border bg-surface px-4 py-3 shadow-card">

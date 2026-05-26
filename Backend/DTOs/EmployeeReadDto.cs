@@ -8,7 +8,6 @@ namespace Artifax.DTOs
         public string EmployeeEmail { get; set; }
         public string EmployeeName { get; set; }
         public int BranchId { get; set; }
-        internal string EmployeeLevel { get; set; }
 
         public static EmployeeReadDto ToDto (Employee incoming)
         {
@@ -17,8 +16,7 @@ namespace Artifax.DTOs
                 BranchId = incoming.BranchId,
                 EmployeeEmail = incoming.EmployeeEmail,
                 EmployeeId = incoming.EmployeeId,
-                EmployeeName = incoming.EmployeeName,
-                EmployeeLevel = incoming.EmployeeLevel
+                EmployeeName = incoming.EmployeeName
             };
             return _result;
         }

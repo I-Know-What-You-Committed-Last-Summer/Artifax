@@ -1,33 +1,31 @@
-using System;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+using Artifax.DTOs;
+using Artifax.Models;
+using Artifax.Data;
 
-namespace Artifax.DTOs
+namespace Artifax.Controllers
 {
-    public class OrderCreateDto 
+    [ApiController]
+    [Route("api/[Controller]")]
+    public class OrderController : ControllerBase
     {
-        public int BranchID { get; set; }
-        public int EmployeeID { get; set; }
-        public bool OrderExpedite { get; set; }
-        public List<OrderItemCreateDto> Items { get; set; } = new List<OrderItemCreateDto>();
-    }
+        readonly ArtifaxContext context;
 
-    public class OrderItemCreateDto 
-    {
-        public int ItemID { get; set; }
-        public int Quantity { get; set; }
-    }
+        public OrderController (ArtifaxContext incoming)
+        {
+            context = incoming;
+        }
 
-    public class OrderReadDto 
-    {
-        public int OrderID { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public DateTime OrderDateTime { get; set; }
-        public List<OrderItemReadDto> OrderItems { get; set; } = new List<OrderItemReadDto>();
-    }
+        #region GetRoutes
+        #endregion
 
-    public class OrderItemReadDto 
-    {
-        public string ItemName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        #region CreateRoutes
+        #endregion
+
+        #region CreateRoutes
+        #endregion
+
+        #region DeleteRoutes
+        #endregion
     }
 }

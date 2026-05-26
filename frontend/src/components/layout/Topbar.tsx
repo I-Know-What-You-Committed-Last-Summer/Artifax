@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-// Mapping route segments to friendly breadcrumb labels
 const ROUTE_LABELS = {
   dashboard: 'Dashboard',
   inventory: 'Inventory',
@@ -11,16 +10,13 @@ const ROUTE_LABELS = {
   profile: 'Profile',
 };
 
-// Build breadcrumb items from the current pathname
 function getBreadcrumbItems(pathname) {
   const segments = pathname.split('/').filter(Boolean);
 
-  // Root path -> single Dashboard breadcrumb
   if (segments.length === 0) {
     return [{ label: 'Dashboard', isHome: true }];
   }
 
-  // Prepend app name and map segments to readable labels
   return [
     { label: 'Artifax', isHome: true },
     ...segments.map((segment) => ({
@@ -31,40 +27,32 @@ function getBreadcrumbItems(pathname) {
 
 function Topbar() {
   const { pathname } = useLocation();
-  // `isSynthwave` tracks whether the synthwave/dark theme is active
   const [isSynthwave, setIsSynthwave] = useState(false);
   const breadcrumbItems = getBreadcrumbItems(pathname);
 
   useEffect(() => {
-    // On mount, read saved theme from localStorage and apply it.
-    // The app toggles themes by setting `html[data-theme='synthwave']`.
     const savedTheme = localStorage.getItem('theme');
     const shouldUseSynthwave = savedTheme === 'synthwave';
     setIsSynthwave(shouldUseSynthwave);
 
     if (shouldUseSynthwave) {
-      // Apply synthwave theme (dark) by setting the attribute used by CSS
       document.documentElement.setAttribute('data-theme', 'synthwave');
       return;
     }
 
-    // Remove theme attribute to fall back to the default (light) tokens
     document.documentElement.removeAttribute('data-theme');
   }, []);
 
-  // Toggle handler for theme checkbox: flip synthwave/dark theme on or off
   const handleThemeToggle = (event) => {
     const checked = event.target.checked;
     setIsSynthwave(checked);
 
     if (checked) {
-      // enable synthwave theme and persist preference
       document.documentElement.setAttribute('data-theme', 'synthwave');
       localStorage.setItem('theme', 'synthwave');
       return;
     }
 
-    // disable theme and remove saved preference
     document.documentElement.removeAttribute('data-theme');
     localStorage.removeItem('theme');
   };

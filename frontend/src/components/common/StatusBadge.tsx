@@ -1,4 +1,3 @@
-// Mapping of status text to visual styles (background, text color, border)
 const statusMap = {
   OK: 'bg-okBg text-okText border border-okText/20',
   LOW: 'bg-warnBg text-warnText border border-warnText/20',
@@ -9,7 +8,6 @@ const statusMap = {
   CANCELLED: 'bg-dangerBg text-dangerText border border-dangerText/20',
 };
 
-// Small badge that displays an uppercase status label with corresponding colors
 function StatusBadge({ status }) {
   return (
     <span
