@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import './graph.css';
+import FilterSelect from '../../../../components/common/FilterSelect';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler, Legend);
 
@@ -72,11 +73,17 @@ const GraphCard: React.FC = () => {
           <h3>Crafted item each month</h3>
           <p>Monthly craft volume by warehouse and blueprint.</p>
         </div>
-        <select className="graph-select" defaultValue="month">
-          <option value="month">Last 8 months</option>
-          <option value="quarter">This quarter</option>
-          <option value="year">This year</option>
-        </select>
+        <FilterSelect
+          value="month"
+          onChange={() => undefined}
+          ariaLabel="Graph time range"
+          options={[
+            { label: 'Last 8 months', value: 'month' },
+            { label: 'This quarter', value: 'quarter' },
+            { label: 'This year', value: 'year' },
+          ]}
+          className="graph-select-shell"
+        />
       </div>
 
       <div className="graph-figure">
