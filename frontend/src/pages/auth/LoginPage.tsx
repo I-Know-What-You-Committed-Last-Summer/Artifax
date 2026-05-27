@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import { setCurrentUser } from '../../utils/currentUser';
 
 function LoginPage() {
   // Router helper to navigate on successful login
@@ -12,6 +13,7 @@ function LoginPage() {
   const [surname, setSurname] = useState('Smith');
   const [email, setEmail] = useState('Sam@gmail');
   const [password, setPassword] = useState('************');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Simple email validation: required and must end with @gmail.com
   const emailError = useMemo(() => {
@@ -36,6 +38,12 @@ function LoginPage() {
     if (!isFormValid) {
       return; // abort if invalid
     }
+
+    setCurrentUser({
+      name: `${name.trim()} ${surname.trim()}`.trim(),
+      role: 'Admin',
+      email: email.trim(),
+    });
 
     // In a real app you'd call an auth API here
     navigate('/dashboard');
@@ -126,16 +134,31 @@ function LoginPage() {
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   className="login-input"
                 />
-                <span className="login-field-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-                    <rect x="5.2" y="11" width="13.6" height="9" rx="2.2" />
-                  </svg>
-                </span>
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() => setShowPassword((previous) => !previous)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+                      <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.8 0 9.7 4.9 10.8 6.5a1.4 1.4 0 0 1 0 1.5c-.6.9-1.6 2.3-3.1 3.7" />
+                      <path d="M6.6 6.6C4.3 8.2 2.8 10.1 2 11.5a1.4 1.4 0 0 0 0 1.5C3.1 14.7 7 19.6 12.8 19.6c1.2 0 2.4-.2 3.5-.6" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2.8 12C4 10.1 7.6 5.4 12 5.4S20 10.1 21.2 12c-1.2 1.9-4.8 6.6-9.2 6.6S4 13.9 2.8 12Z" />
+                      <circle cx="12" cy="12" r="2.8" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </label>
 

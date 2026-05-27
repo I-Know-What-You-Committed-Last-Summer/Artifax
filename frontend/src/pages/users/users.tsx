@@ -3,6 +3,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
+import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
 
 type User = {
   id: number;
@@ -43,15 +44,18 @@ const Users: React.FC = () => {
       const nextId = Math.max(0, ...users.map((item) => item.id)) + 1;
       setUsers((prev) => [...prev, { ...user, id: nextId }]);
       setSelectedUserId(nextId);
+      setCurrentUser({ name: user.name, role: user.role, email: user.email });
       return;
     }
 
     setUsers((prev) => prev.map((existing) => (existing.id === user.id ? { ...existing, ...user } : existing)));
+    setCurrentUser({ name: user.name, role: user.role, email: user.email });
   };
 
   const handleDeleteUser = (id: number) => {
     setUsers((prev) => prev.filter((user) => user.id !== id));
     setSelectedUserId(null);
+    clearCurrentUser();
   };
 
   return (

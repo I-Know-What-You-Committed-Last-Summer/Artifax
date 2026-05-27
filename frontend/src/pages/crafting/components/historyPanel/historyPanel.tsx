@@ -167,7 +167,6 @@ const HistoryPanel: FC = () => {
         <table className="history-table">
           <thead>
             <tr>
-              <th className="history-arrow-column" />
               <th>ITEM</th>
               <th>DATE</th>
               <th>QTY</th>
@@ -180,9 +179,6 @@ const HistoryPanel: FC = () => {
           <tbody>
             {paginatedData.map((item) => (
               <tr key={`${item.id}-${item.operator}`}>
-                <td className="history-arrow-column">
-                  <span className="history-row-arrow">›</span>
-                </td>
                 <td>
                   <div className="history-item-cell">
                     <img src={unitIcon} alt="item icon" className="table-item-icon" />

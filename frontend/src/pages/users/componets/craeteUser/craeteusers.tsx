@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { clearCurrentUser, setCurrentUser } from '../../../../utils/currentUser';
 
 type User = {
   id: number;
@@ -24,6 +25,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Admin');
   const [isEditing, setIsEditing] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -33,6 +35,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       setPassword('************');
       setRole(user.role);
       setIsEditing(false);
+      setShowPassword(false);
     } else {
       setFullName('');
       setBranch('Warehouse A');
@@ -40,6 +43,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       setPassword('');
       setRole('Admin');
       setIsEditing(true);
+      setShowPassword(false);
     }
   }, [user]);
 
@@ -77,6 +81,13 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       role,
       status: user?.status ?? 'Active',
     });
+
+    setCurrentUser({
+      name: fullName.trim(),
+      role,
+      email: email.trim(),
+    });
+
     setIsEditing(false);
   };
 
@@ -163,12 +174,34 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 className="createusers-input"
                 disabled={!isEditing}
                 placeholder={user ? '••••••••••••' : 'Enter password'}
               />
+              <button
+                type="button"
+                className="createusers-password-toggle"
+                onClick={() => setShowPassword((previous) => !previous)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                disabled={!isEditing}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+                    <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.8 0 9.7 4.9 10.8 6.5a1.4 1.4 0 0 1 0 1.5c-.6.9-1.6 2.3-3.1 3.7" />
+                    <path d="M6.6 6.6C4.3 8.2 2.8 10.1 2 11.5a1.4 1.4 0 0 0 0 1.5C3.1 14.7 7 19.6 12.8 19.6c1.2 0 2.4-.2 3.5-.6" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2.8 12C4 10.1 7.6 5.4 12 5.4S20 10.1 21.2 12c-1.2 1.9-4.8 6.6-9.2 6.6S4 13.9 2.8 12Z" />
+                    <circle cx="12" cy="12" r="2.8" />
+                  </svg>
+                )}
+              </button>
             </div>
           </label>
 
@@ -204,6 +237,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                         setEmail(user.email);
                         setPassword('************');
                         setRole(user.role);
+                        setShowPassword(false);
                       }
                     }}
                   >
@@ -222,7 +256,12 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                   <button
                     type="button"
                     className="createusers-secondary"
-                    onClick={() => user && onDelete(user.id)}
+                    onClick={() => {
+                      if (user) {
+                        clearCurrentUser();
+                        onDelete(user.id);
+                      }
+                    }}
                   >
                     Delete User
                   </button>
