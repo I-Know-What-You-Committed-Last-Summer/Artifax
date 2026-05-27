@@ -12,6 +12,8 @@ import { useEffect } from 'react';
 import axios from 'axios';
 
 function App() {
+  // Backend integration commented out - requires .NET SDK installation
+  // TODO: Uncomment when backend is running on localhost:5253
 
 
   useEffect(() => {
