@@ -40,12 +40,12 @@ function DashboardPage() {
         {/* Inventory preview table */}
         <SectionCard title="Inventory" subtitle="24 items">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] text-left text-sm">
+            <table className="w-full min-w-[620px] border-collapse text-left text-sm">
               <thead className="font-outfit text-xs uppercase tracking-wide text-muted">
                 <tr className="border-b border-border">
-                  <th className="pb-2 font-medium">Material</th>
-                  <th className="qty-column pb-2 font-medium">Qty</th>
-                  <th className="dashboard-location-column pb-2 font-medium">Location</th>
+                  <th className="dashboard-material-column pb-2 font-medium">Material</th>
+                  <th className="qty-column pb-2 font-medium"><span className="qty-header">Qty</span></th>
+                  <th className="dashboard-location-column pb-2 font-medium"><span className="location-header">Location</span></th>
                   <th className="pb-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -53,9 +53,9 @@ function DashboardPage() {
                 {/* Each preview row maps to a sample inventory item */}
                 {inventoryPreviewRows.map((row) => (
                   <tr key={row.id} className="border-b border-border/70">
-                    <td className="py-2.5 font-medium text-text">{row.name}</td>
-                    <td className="qty-column py-2.5 text-text">{row.qty}</td>
-                    <td className="dashboard-location-column py-2.5 text-muted">{row.location}</td>
+                    <td className="dashboard-material-column py-2.5 font-medium text-text">{row.name}</td>
+                    <td className="qty-column py-2.5 text-text"><span className="qty-value">{row.qty}</span></td>
+                    <td className="dashboard-location-column py-2.5 text-muted"><span className="location-value">{row.location}</span></td>
                     <td className="py-2.5">
                       {/* Status badge shows OK/Low/etc. */}
                       <StatusBadge status={row.status} />

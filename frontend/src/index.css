@@ -258,14 +258,32 @@ html[data-theme='synthwave'] {
   }
 
   .qty-column {
-    width: 76px;
-    min-width: 76px;
+    width: 68px;
+    min-width: 68px;
     text-align: left;
-    padding-right: 2rem;
+    padding-right: 5.5rem;
+  }
+
+  .dashboard-material-column {
+    width: 360px;
+    min-width: 360px;
   }
 
   .dashboard-location-column {
-    padding-left: 1rem;
+    padding-left: 4rem;
+  }
+
+  /* Visual nudges for dashboard preview content only */
+  .qty-header,
+  .qty-value {
+    display: inline-block;
+    transform: translateX(-12px);
+  }
+
+  .location-header,
+  .location-value {
+    display: inline-block;
+    transform: translateX(12px);
   }
 
   .btn-outfit {
