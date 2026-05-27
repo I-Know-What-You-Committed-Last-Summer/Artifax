@@ -6,6 +6,8 @@ import craftingIcon from '../../assets/images/craftingIcon.png';
 import analyticsIcon from '../../assets/images/analyticsIcon.png';
 import usersIcon from '../../assets/images/usersIcon.png';
 import { useCurrentUser } from '../../utils/currentUser';
+import { clearCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken } from '../../utils/authToken';
 
 const MENU_DATA = {
   logo: {
@@ -63,6 +65,8 @@ function Sidebar() {
 
   const handleLogout = () => {
     sessionStorage.clear();
+    clearAuthToken();
+    clearCurrentUser();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('session');

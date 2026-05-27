@@ -17,7 +17,8 @@ builder.Services.AddCors(options =>
             // Replace with your actual React app's URL/Port
             policy.WithOrigins("http://localhost:3000", "http://localhost:5253") 
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
 });
 

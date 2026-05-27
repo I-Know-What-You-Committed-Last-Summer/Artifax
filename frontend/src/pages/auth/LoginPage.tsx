@@ -1,52 +1,80 @@
 // Hooks and navigation used by the login page
-import { useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 import { setCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken, setAuthToken } from '../../utils/authToken';
+import { getCurrentUserFromSession, loginEmployee } from '../../services/authApi';
 
 function LoginPage() {
   // Router helper to navigate on successful login
   const navigate = useNavigate();
 
-  // Controlled form fields with example initial values
-  const [name, setName] = useState('Sam');
-  const [surname, setSurname] = useState('Smith');
-  const [email, setEmail] = useState('Sam@gmail');
-  const [password, setPassword] = useState('************');
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Simple email validation: required and must end with @gmail.com
+  // Basic email validation only
   const emailError = useMemo(() => {
     if (!email.trim()) {
       return 'Email is required';
     }
 
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      return 'Email error: end with @gmail.com';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return 'Enter a valid email address';
     }
 
     return '';
   }, [email]);
 
-  // Form-level validity used to enable/disable submit
-  const isFormValid = name.trim().length > 0 && surname.trim().length > 0 && !emailError && password.trim().length >= 8;
+  const isFormValid = !emailError && password.trim().length >= 8;
 
-  // Handle form submit: prevent default, validate, then navigate
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isFormValid) {
-      return; // abort if invalid
+      return;
     }
 
-    setCurrentUser({
-      name: `${name.trim()} ${surname.trim()}`.trim(),
-      role: 'Admin',
-      email: email.trim(),
-    });
+    setSubmitError('');
+    setIsSubmitting(true);
 
-    // In a real app you'd call an auth API here
-    navigate('/dashboard');
+    try {
+      const loginResponse = await loginEmployee({
+        email: email.trim(),
+        password,
+      });
+
+      const serverToken = loginResponse.accessToken || loginResponse.token || '';
+
+      if (serverToken) {
+        setAuthToken(serverToken);
+      } else {
+        // Current backend authenticates with secure session cookies.
+        clearAuthToken();
+      }
+
+      const sessionUser = await getCurrentUserFromSession();
+
+      const fallbackName = [name.trim(), surname.trim()].filter(Boolean).join(' ').trim();
+
+      setCurrentUser({
+        name: sessionUser.Username || loginResponse.employeeName || fallbackName || email.trim(),
+        role: sessionUser.UserLevel || 'Employee',
+        email: sessionUser.UserEmail || loginResponse.employeeEmail || email.trim(),
+      });
+
+      navigate('/dashboard');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -125,7 +153,7 @@ function LoginPage() {
                 </span>
               </div>
               {/* Inline validation hint for email */}
-              {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your admin-issued company email.</p>}
+              {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your company email address.</p>}
             </label>
 
             <label className="login-field">
@@ -172,14 +200,14 @@ function LoginPage() {
                 </svg>
               </div>
               <div>
-                <strong>Wrong input</strong>
-                <p>{emailError || 'Email error: end with @gmail.com'}</p>
+                <strong>{submitError ? 'Login error' : 'Input required'}</strong>
+                <p>{submitError || emailError || 'Enter email and password to continue.'}</p>
               </div>
             </div>
 
             {/* Submit button disabled until form is valid */}
-            <button type="submit" className="login-submit" disabled={!isFormValid}>
-              Login
+            <button type="submit" className="login-submit" disabled={!isFormValid || isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Login'}
             </button>
           </form>
         </div>
