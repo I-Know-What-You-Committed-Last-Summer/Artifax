@@ -22,28 +22,6 @@ namespace Backend.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Artifax.Models.Admin", b =>
-                {
-                    b.Property<int>("AdminId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AdminId"));
-
-                    b.Property<string>("AdminEmail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AdminName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AdminPasswordHash")
-                        .HasColumnType("text");
-
-                    b.HasKey("AdminId");
-
-                    b.ToTable("Admins");
-                });
-
             modelBuilder.Entity("Artifax.Models.Branch", b =>
                 {
                     b.Property<int>("BranchID")
@@ -101,6 +79,9 @@ namespace Backend.Migrations
                     b.Property<string>("EmployeeEmail")
                         .HasColumnType("text");
 
+                    b.Property<string>("EmployeeLevel")
+                        .HasColumnType("text");
+
                     b.Property<string>("EmployeeName")
                         .HasColumnType("text");
 
@@ -123,19 +104,15 @@ namespace Backend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemID"));
 
                     b.Property<string>("ItemCategory")
-b.Property<string>("ItemCategory")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ItemName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("ProductionTime")
                         .HasColumnType("integer");
 
                     b.HasKey("ItemID");
-
 
                     b.ToTable("Items");
                 });
@@ -158,7 +135,8 @@ b.Property<string>("ItemCategory")
                         .HasColumnType("integer");
 
                     b.HasKey("ItemIngredientID");
-b.HasIndex("IngredientID");
+
+                    b.HasIndex("IngredientID");
 
                     b.HasIndex("ProductID");
 
@@ -210,13 +188,8 @@ b.HasIndex("IngredientID");
                     b.Property<int>("OrderID")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("OrderDateTime")
-                        .HasColumnType("timestamp with time zone");
-
-.HasColumnType("integer");
-
-                    b.Property<DateTime>("OrderDateTime")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
 
                     b.HasKey("OrderItemID");
 
@@ -287,7 +260,7 @@ b.HasIndex("IngredientID");
                     b.Navigation("Branch");
                 });
 
-modelBuilder.Entity("Artifax.Models.OrderItem", b =>
+            modelBuilder.Entity("Artifax.Models.OrderItem", b =>
                 {
                     b.HasOne("Artifax.Models.Item", "Item")
                         .WithMany()
@@ -305,6 +278,7 @@ modelBuilder.Entity("Artifax.Models.OrderItem", b =>
 
                     b.Navigation("Order");
                 });
+
             modelBuilder.Entity("Artifax.Models.Branch", b =>
                 {
                     b.Navigation("BranchItemCapacities");
@@ -317,7 +291,8 @@ modelBuilder.Entity("Artifax.Models.OrderItem", b =>
             modelBuilder.Entity("Artifax.Models.Item", b =>
                 {
                     b.Navigation("BranchItemCapacities");
-b.Navigation("IngredientItemIngredients");
+
+                    b.Navigation("IngredientItemIngredients");
 
                     b.Navigation("ProductItemIngredients");
                 });

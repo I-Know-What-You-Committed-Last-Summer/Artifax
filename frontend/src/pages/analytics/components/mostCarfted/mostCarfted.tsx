@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import './mostCarfted.css';
 import { blueprintData } from '../../../../pages/crafting/components/craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import FilterSelect from '../../../../components/common/FilterSelect';
 
 type SortOrder = 'high' | 'low';
 
@@ -43,17 +44,12 @@ const MostCrafted: React.FC = () => {
         </div>
         <div className="blueprint-filter">
           <label htmlFor="mostCraftedSort">Filter Blueprints</label>
-          <select
-            id="mostCraftedSort"
+          <FilterSelect
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-          >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onChange={(nextValue) => setSortOrder(nextValue as SortOrder)}
+            ariaLabel="Most crafted sort order"
+            options={sortOptions}
+          />
         </div>
       </div>
 

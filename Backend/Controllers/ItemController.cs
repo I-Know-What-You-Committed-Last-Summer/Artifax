@@ -34,18 +34,7 @@ namespace Artifax.Controllers
             }
             return ItemReadDto.ToDto(_item);
         }
-[HttpGet("item/{id}")]
-        public async Task<ActionResult<ItemReadDto>> GetItem(int id)
-        {
-            var _item = await _context.Items.FindAsync(id);
-            if (_item == null)
-            {
-                return NotFound();
-            }
-            return ItemReadDto.ToDto(_item);
-        }
-
-        [HttpGet("item/itemIngredients")]
+        [HttpGet("item/allItemBlueprints")]
         public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
         {
             var itemsWithIngredients = await _context.ItemIngredients
@@ -69,7 +58,6 @@ namespace Artifax.Controllers
             return itemsWithIngredients;
         }
 
-        [HttpPost("item/")]
         [HttpPost("item/")]
         public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
         {

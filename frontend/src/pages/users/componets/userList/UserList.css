@@ -1,0 +1,249 @@
+.userlist-card {
+  width: 97%;
+  max-width: 720px;
+  margin: 0 auto;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+html[data-theme='synthwave'] .userlist-card {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(29, 52, 79, 0.96);
+  box-shadow: 0 22px 60px rgba(8, 18, 30, 0.36);
+}
+
+.userlist-card-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme='synthwave'] .userlist-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.userlist-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.userlist-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userlist-avatar {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #222a38;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+html[data-theme='synthwave'] .userlist-avatar {
+  color: #d7e6fb;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.userlist-label {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.userlist-title {
+  margin: 0;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.userlist-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.userlist-button:hover {
+  transform: translateY(-1px);
+}
+
+.userlist-search-shell {
+  margin-top: 18px;
+}
+
+.userlist-search {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #dfe4ec;
+  border-radius: 12px;
+  padding: 0 16px;
+  background: rgba(251, 252, 254, 0.95);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+html[data-theme='synthwave'] .userlist-search {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.userlist-items {
+  display: grid;
+  gap: 14px;
+  padding: 20px 24px 16px;
+}
+
+.userlist-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: stretch;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme='synthwave'] .userlist-item {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.userlist-avatar-shell {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme='synthwave'] .userlist-avatar-shell {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.userlist-avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.userlist-info {
+  display: grid;
+  gap: 8px;
+  justify-content: start;
+}
+
+.userlist-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.userlist-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.userlist-role-tag,
+.userlist-branch-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.userlist-role-tag {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.userlist-role-tag.role-staff {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.userlist-branch-tag.branch-a {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.userlist-branch-tag.branch-b {
+  color: #9a3412;
+  background: #fee2d3;
+}
+
+.userlist-email {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.userlist-card-meta {
+  display: grid;
+  gap: 8px;
+  justify-content: end;
+  align-items: stretch;
+}
+
+.userlist-role-tag {
+  justify-self: end;
+}
+
+.userlist-branch-tag {
+  justify-self: end;
+}
+
+.userlist-item.selected {
+  background: rgba(226, 232, 240, 0.9);
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme='synthwave'] .userlist-item.selected {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.userlist-footer {
+  padding: 0 24px 24px;
+}
+
+.userlist-footer .userlist-button {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .userlist-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .userlist-item {
+    grid-template-columns: auto;
+  }
+}
