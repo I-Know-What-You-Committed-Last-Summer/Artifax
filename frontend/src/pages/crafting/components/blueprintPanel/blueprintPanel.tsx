@@ -3,6 +3,7 @@ import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { useApi } from '../../../../hooks';
 
 interface Category {
   id: string;
@@ -45,6 +46,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   onSelectBlueprint,
   onCreateBlueprint,
 }) => {
+  const api = useApi();
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,36 +78,29 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
     try {
       // Fetch all blueprint items from the backend endpoint.
       // The backend returns items and their ingredients together.
-      const response = await fetch('http://localhost:5253/api/Item/item/allItemBlueprints');
-      if (!response.ok) {
-        throw new Error(`Unable to load blueprints: ${response.statusText}`);
-      }
-
-      // Parse JSON returned by the API.
-      const apiBlueprints = await response.json();
+      const response = await api.get('/Item/item/allItemBlueprints');
+      const apiBlueprints = response.data;
 
       // Also fetch inventory (items + branch quantities) so we can populate "have" values
       const [itemsResp, branchResp] = await Promise.all([
-        fetch('http://localhost:5253/api/Item/item'),
-        fetch('http://localhost:5253/api/Item/Branch')
+        api.get('/Item/item'),
+        api.get('/Item/Branch')
       ]);
 
       let inventoryMap: Record<string, number> = {};
-      if (itemsResp.ok && branchResp.ok) {
-        const items = await itemsResp.json();
-        const branchItems = await branchResp.json();
+      const items = itemsResp.data;
+      const branchItems = branchResp.data;
 
-        // map itemID -> itemName
-        const idToName: Record<number, string> = {};
-        items.forEach((it: any) => { idToName[it.itemID] = it.itemName; });
+      // map itemID -> itemName
+      const idToName: Record<number, string> = {};
+      items.forEach((it: any) => { idToName[it.itemID] = it.itemName; });
 
-        // sum quantities by itemName across branches
-        branchItems.forEach((bic: any) => {
-          const name = idToName[bic.itemID];
-          if (!name) return;
-          inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
-        });
-      }
+      // sum quantities by itemName across branches
+      branchItems.forEach((bic: any) => {
+        const name = idToName[bic.itemID];
+        if (!name) return;
+        inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
+      });
 
       // Map API shape into our local Blueprint type.
       const blueprints: Blueprint[] = apiBlueprints.map((item: any) => {
