@@ -1,5 +1,6 @@
 import React, { FC, useMemo, useState, useEffect } from 'react';
 import './historyPanel.css';
+import SearchInput from '../../../../components/common/SearchInput';
 import FilterSelect from '../../../../components/common/FilterSelect';
 import { historyData, HistoryItem } from '../historyData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
@@ -105,12 +106,11 @@ const HistoryPanel: FC = () => {
         <div className="history-controls">
           <div className="history-search">
             <label className="history-search-label" htmlFor="history-search-input">Search:</label>
-            <input
+            <SearchInput
               id="history-search-input"
-              type="text"
               placeholder="Search items, SKU, location..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
             />
           </div>
           <div className="history-select-wrapper">

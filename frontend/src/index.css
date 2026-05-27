@@ -137,12 +137,13 @@ html[data-theme='synthwave'] {
 
   .artifax-select {
     width: 100%;
-    min-height: 2.8rem;
+    height: 3rem;
+    min-height: 3rem;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
     color: var(--text);
-    padding: 0.8rem 2.35rem 0.8rem 0.95rem;
+    padding: 0 2.35rem 0 0.95rem;
     font: inherit;
     outline: none;
     cursor: pointer;
@@ -150,6 +151,7 @@ html[data-theme='synthwave'] {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
+    line-height: 1;
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
   }
 

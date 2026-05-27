@@ -51,21 +51,6 @@
   color: var(--muted);
 }
 
-.history-search input {
-  width: 100%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  border-radius: 16px;
-  min-height: 48px;
-  padding: 0 16px;
-  font-size: 14px;
-}
-
-.history-search input::placeholder {
-  color: var(--muted);
-}
-
 .history-filters {
   display: contents;
 }
