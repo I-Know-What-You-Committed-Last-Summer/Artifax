@@ -57,6 +57,16 @@ namespace Artifax.Controllers
                 
             return itemsWithIngredients;
         }
+        [HttpGet("item/allInventoryItems")]
+        public async Task<ActionResult<IEnumerable<InventoryItemReadDto>>> GetAllInventoryItems()
+        {
+            var inventoryItems = await _context.BranchItemCapacities
+                .Join(_context.Items, c => c.ItemID, i => i.ItemID, (c, i) => new { Capacity = c, Item = i })
+                .Join(_context.Branches, x => x.Capacity.BranchID, b => b.BranchID, (x, b) => new { x.Capacity, x.Item, Branch = b })
+                .Select(x => new InventoryItemReadDto(x.Item, x.Branch, x.Capacity))
+                .ToListAsync();
+            return inventoryItems;
+        }
 
         [HttpPost("item/")]
         public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
