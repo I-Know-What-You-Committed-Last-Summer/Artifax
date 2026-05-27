@@ -141,6 +141,8 @@ html[data-theme='synthwave'] .createusers-input-shell {
   min-height: 48px;
   display: flex;
   align-items: center;
+}
+
 .createusers-password-field .createusers-input-shell {
   max-width: 90%;
 }
