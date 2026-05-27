@@ -5,9 +5,7 @@
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^29.5.5",
     "@types/node": "^20.11.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -49,6 +47,10 @@
     ]
   },
   "devDependencies": {
-    "daisyui": "^4.12.22"
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
+    "daisyui": "^4.12.22",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11"
   }
 }
