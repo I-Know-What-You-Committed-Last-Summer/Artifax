@@ -13,6 +13,7 @@
 .sidebar-container {
   width: var(--collapsed-width);
   min-height: 100vh;
+  max-height: 100vh;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   display: flex;
