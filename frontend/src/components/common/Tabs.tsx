@@ -1,3 +1,7 @@
+// Simple tab bar component.
+// - `tabs`: array of { id, label }
+// - `activeTab`: id of the currently active tab
+// - `onChange`: callback when a tab is selected
 function Tabs({ tabs, activeTab, onChange }) {
   return (
     <div className="flex flex-wrap gap-2 border-b border-border pb-3">

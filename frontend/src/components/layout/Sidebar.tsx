@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 import dashboardIcon from '../../assets/images/dashboardIcon.png';
 import inventoryIcon from '../../assets/images/inventoryIcon.png';
@@ -55,6 +55,16 @@ function SidebarNavGroup({ title, items }) {
 }
 
 function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('session');
+    navigate('/login', { replace: true });
+  };
+
   return (
     <aside className="sidebar-container">
       <div className="sidebar-header">
@@ -70,12 +80,27 @@ function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <div className="user-avatar" />
-        <div className="user-info nav-text">
-          <p className="user-name">{MENU_DATA.user.name}</p>
-          <p className="user-role">{MENU_DATA.user.role}</p>
-        </div>
-        <div className="logout-icon nav-text">⭢</div>
+        <button type="button" className="sidebar-profile-button" aria-label={`${MENU_DATA.user.name} profile`}>
+          <span className="user-avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="3.4" />
+              <path d="M4.5 20c1.8-3.2 4.5-5 7.5-5s5.7 1.8 7.5 5" />
+            </svg>
+          </span>
+          <span className="user-info nav-text">
+            <span className="user-name">{MENU_DATA.user.name}</span>
+            <span className="user-role">{MENU_DATA.user.role}</span>
+          </span>
+        </button>
+
+        <button type="button" className="sidebar-logout-button" onClick={handleLogout} aria-label="Logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M10 17l5-5-5-5" />
+            <path d="M15 12H3" />
+            <path d="M21 4v16" />
+          </svg>
+          <span className="nav-text">Logout</span>
+        </button>
       </div>
     </aside>
   );

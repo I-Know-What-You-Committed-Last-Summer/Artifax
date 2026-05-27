@@ -53,7 +53,11 @@
   color: var(--muted);
 }
 
-.status-badge.in-progress { background: var(--ok-bg); color: var(--ok-text); }
+.status-badge.in-progress {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  border: 1px solid rgba(22, 101, 52, 0.18);
+}
 
 .progress-section { margin-bottom: 20px; }
 .progress-text {
