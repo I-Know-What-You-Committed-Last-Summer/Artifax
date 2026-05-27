@@ -10,6 +10,7 @@ interface NavItem {
 interface CraftingNavProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  onCreateBlueprint: () => void;
 }
 
 const navData: NavItem[] = [
@@ -18,7 +19,7 @@ const navData: NavItem[] = [
   { id: 'history', label: 'History', badge: null },
 ];
 
-const CraftingNav: FC<CraftingNavProps> = ({ activeTab, onTabChange }) => {
+const CraftingNav: FC<CraftingNavProps> = ({ activeTab, onTabChange, onCreateBlueprint }) => {
   return (
     <div className="nav-container">
       {/* Tab Group */}
@@ -38,7 +39,7 @@ const CraftingNav: FC<CraftingNavProps> = ({ activeTab, onTabChange }) => {
       </div>
 
       {/* Action Button */}
-      <button className="new-craft-btn">
+      <button className="new-craft-btn" type="button" onClick={onCreateBlueprint}>
         <svg 
           viewBox="0 0 24 24" 
           width="18" 

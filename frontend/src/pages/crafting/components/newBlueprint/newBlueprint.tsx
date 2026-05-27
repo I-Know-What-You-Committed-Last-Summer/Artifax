@@ -1,0 +1,190 @@
+import React, { FC, useState } from 'react';
+import Button from '../../../../components/common/Button';
+import './newBlueprint.css';
+import unitIcon from '../../../../assets/images/uniitIcon.png';
+
+interface MaterialRow {
+  id: string;
+  item: string;
+  amount: number;
+}
+
+interface NewBlueprintProps {
+  onCancel: () => void;
+}
+
+const categoryOptions = [
+  { value: 'metal', label: 'Metal' },
+  { value: 'mechanical', label: 'Mechanical' },
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'furniture', label: 'Furniture' },
+  { value: 'other', label: 'Other' },
+];
+
+const materialOptions = [
+  { value: 'Metal', label: 'Metal' },
+  { value: 'Copper Wire', label: 'Copper Wire' },
+  { value: 'Steel Rod', label: 'Steel Rod' },
+  { value: 'Plastic Sheet', label: 'Plastic Sheet' },
+  { value: 'Wood Handle', label: 'Wood Handle' },
+  { value: 'Glass Panel', label: 'Glass Panel' },
+];
+
+const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
+  const [blueprintName, setBlueprintName] = useState('');
+  const [category, setCategory] = useState('metal');
+  const [materials, setMaterials] = useState<MaterialRow[]>([
+    { id: 'mat-1', item: 'Metal', amount: 1 },
+    { id: 'mat-2', item: '', amount: 1 },
+    { id: 'mat-3', item: '', amount: 1 },
+  ]);
+
+  const handleMaterialChange = (id: string, field: 'item' | 'amount', value: string | number) => {
+    setMaterials((current) =>
+      current.map((material) =>
+        material.id === id
+          ? {
+              ...material,
+              [field]: field === 'amount' ? Number(value) : String(value),
+            }
+          : material
+      )
+    );
+  };
+
+  const addMaterialRow = () => {
+    setMaterials((current) => [
+      ...current,
+      { id: `mat-${current.length + 1}-${Date.now()}`, item: '', amount: 1 },
+    ]);
+  };
+
+  const removeMaterialRow = (id: string) => {
+    setMaterials((current) => current.filter((material) => material.id !== id));
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const validMaterials = materials.filter((material) => material.item.trim());
+    const payload = {
+      name: blueprintName.trim(),
+      category,
+      materials: validMaterials,
+    };
+
+    console.log('Create blueprint', payload);
+    alert('Blueprint created! (placeholder)');
+    onCancel();
+  };
+
+  const hasValidName = blueprintName.trim().length > 0;
+
+  return (
+    <div className="new-blueprint-panel">
+      <div className="new-blueprint-header">
+        <div className="new-blueprint-heading">
+          <img src={unitIcon} alt="Blueprint icon" className="new-blueprint-icon" />
+          <span className="new-blueprint-tag">New Blueprint</span>
+        </div>
+      </div>
+
+      <form className="new-blueprint-form" onSubmit={handleSubmit}>
+        <div className="field-row">
+          <div className="field-group">
+            <label htmlFor="blueprintName">Blueprint Name</label>
+            <input
+              id="blueprintName"
+              type="text"
+              value={blueprintName}
+              onChange={(event) => setBlueprintName(event.target.value)}
+              placeholder="Name"
+              className="field-input"
+            />
+          </div>
+
+          <div className="field-group field-group--category">
+            <label htmlFor="blueprintCategory">Category of Blueprint</label>
+            <select
+              id="blueprintCategory"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="field-select"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+ <label htmlFor="blueprintCategory">Required materials</label>
+        <div className="material-list">
+          {materials.map((material) => (
+            <div key={material.id} className="materials-row">
+              <select
+                value={material.item}
+                onChange={(event) => handleMaterialChange(material.id, 'item', event.target.value)}
+                className="field-select material-select"
+              >
+                <option value="">None selected</option>
+                {materialOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="amount-line">
+                <button
+                  type="button"
+                  className="amount-button"
+                  onClick={() =>
+                    handleMaterialChange(material.id, 'amount', Math.max(1, material.amount - 1))
+                  }
+                >
+                  -
+                </button>
+                <span className="amount-value">{material.amount}</span>
+                <button
+                  type="button"
+                  className="amount-button"
+                  onClick={() => handleMaterialChange(material.id, 'amount', material.amount + 1)}
+                >
+                  +
+                </button>
+                <span className="amount-caption">Amount Needed</span>
+              </div>
+
+              {materials.length > 1 && (
+                <button
+                  type="button"
+                  className="remove-material"
+                  onClick={() => removeMaterialRow(material.id)}
+                  aria-label="Remove material"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button type="button" className="add-material-button" onClick={addMaterialRow}>
+          + Add material to blueprint
+        </button>
+
+        <div className="new-blueprint-actions">
+            <Button type="submit" disabled={!hasValidName}>
+            Add Blueprint
+          </Button>
+          <Button variant="secondary" type="button" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default NewBlueprint;
