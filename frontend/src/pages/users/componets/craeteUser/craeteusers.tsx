@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
 
@@ -114,33 +114,33 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
 
           <label className="createusers-field">
             <span className="createusers-label">Branch</span>
-            <div className="createusers-input-shell">
-              <select
-                value={branch}
-                onChange={(event) => setBranch(event.target.value)}
-                className="createusers-input"
-                disabled={!isEditing}
-              >
-                <option value="Warehouse A">Warehouse A</option>
-                <option value="Warehouse B">Warehouse B</option>
-                <option value="Warehouse C">Warehouse C</option>
-              </select>
-            </div>
+            <FilterSelect
+              value={branch}
+              onChange={setBranch}
+              ariaLabel="Branch selector"
+              className="createusers-select-shell"
+              disabled={!isEditing}
+              options={[
+                { label: 'Warehouse A', value: 'Warehouse A' },
+                { label: 'Warehouse B', value: 'Warehouse B' },
+                { label: 'Warehouse C', value: 'Warehouse C' },
+              ]}
+            />
           </label>
 
           <label className="createusers-field">
             <span className="createusers-label">Role</span>
-            <div className="createusers-input-shell">
-              <select
-                value={role}
-                onChange={(event) => setRole(event.target.value)}
-                className="createusers-input"
-                disabled={!isEditing}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Staff">Staff</option>
-              </select>
-            </div>
+            <FilterSelect
+              value={role}
+              onChange={setRole}
+              ariaLabel="Role selector"
+              className="createusers-select-shell"
+              disabled={!isEditing}
+              options={[
+                { label: 'Admin', value: 'Admin' },
+                { label: 'Staff', value: 'Staff' },
+              ]}
+            />
           </label>
 
           <label className="createusers-field">
