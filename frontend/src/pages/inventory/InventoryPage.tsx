@@ -1,5 +1,5 @@
 // React hooks and UI components used on the inventory page
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -8,7 +8,8 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Tabs from '../../components/common/Tabs';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
-import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
+import { inventoryAlerts, inventoryItems as inventoryItemsMock, inventoryStats, inventoryTabs } from '../../data/mockInventory';
+import { getInventoryItems, InventoryItem } from '../../services/inventoryApi';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
@@ -24,10 +25,28 @@ function InventoryPage() {
   const [sortBy, setSortBy] = useState('NAME');
 
   // Compute filtered + sorted items when dependencies change
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[] | null>(inventoryItemsMock);
+
+  useEffect(() => {
+    let mounted = true;
+    getInventoryItems()
+      .then((rows) => {
+        if (mounted) setInventoryItems(rows);
+      })
+      .catch((err) => {
+        console.error('Failed to load inventory items, using mock', err);
+        if (mounted) setInventoryItems(inventoryItemsMock as any);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const filteredItems = useMemo(() => {
+    const items = inventoryItems ?? [];
     const searchLower = search.toLowerCase();
 
-    return inventoryItems
+    return items
       .filter((item) => {
         // Tab filter: show only items for the selected tab
         if (activeTab !== 'all' && item.tab !== activeTab) {
@@ -64,7 +83,7 @@ function InventoryPage() {
 
         return a.name.localeCompare(b.name);
       });
-  }, [activeTab, search, sortBy, status, zone]);
+  }, [activeTab, search, sortBy, status, zone, inventoryItems]);
 
   return (
     <div className="space-y-4 sm:space-y-5">

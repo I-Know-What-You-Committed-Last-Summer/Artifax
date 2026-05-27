@@ -55,4 +55,59 @@ export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
   return rows;
 }
 
-export default { getItems, getBranchItems, getBranches, getDashboardPreview };
+export type InventoryItem = {
+  id: string | number;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  minStock: number;
+  location: string;
+  status: string;
+  tab?: string;
+};
+
+export async function getInventoryItems(): Promise<InventoryItem[]> {
+  const [items, branchItems, branches] = await Promise.all([getItems(), getBranchItems(), getBranches()]);
+
+  const itemById = new Map<number, ItemDto>();
+  items.forEach((i) => itemById.set(i.ItemID, i));
+
+  const branchById = new Map<number, BranchDto>();
+  branches.forEach((b) => branchById.set(b.BranchID, b));
+
+  // Collapse branchItems to per-item totals and pick primary branch name
+  const collapsed = new Map<number, { quantity: number; branchName?: string }>();
+  branchItems.forEach((bic) => {
+    const existing = collapsed.get(bic.ItemID) ?? { quantity: 0 };
+    existing.quantity += bic.ItemQuantity ?? 0;
+    if (!existing.branchName) existing.branchName = branchById.get(bic.BranchID)?.BranchName;
+    collapsed.set(bic.ItemID, existing);
+  });
+
+  const result: InventoryItem[] = [];
+  itemById.forEach((item, id) => {
+    const collapsedEntry = collapsed.get(id);
+    const quantity = collapsedEntry?.quantity ?? 0;
+    const location = collapsedEntry?.branchName ?? 'Main';
+    const minStock = 5; // sensible default until backend provides this
+    const status = quantity <= minStock ? 'LOW' : 'OK';
+    result.push({
+      id: item.ItemID,
+      name: item.ItemName,
+      sku: `ITM-${item.ItemID}`,
+      category: item.ItemCategory ?? 'Misc',
+      quantity,
+      minStock,
+      location,
+      status,
+      tab: 'all',
+    });
+  });
+
+  // Stable sort by name
+  result.sort((a, b) => a.name.localeCompare(b.name));
+  return result;
+}
+
+export default { getItems, getBranchItems, getBranches, getDashboardPreview, getInventoryItems };
