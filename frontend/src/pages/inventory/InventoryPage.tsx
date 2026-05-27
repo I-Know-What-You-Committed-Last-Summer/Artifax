@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import Button from '../../components/common/Button';
+// React hooks and UI components used on the inventory page
+import { useMemo, useState, useEffect } from 'react';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -8,36 +8,67 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Tabs from '../../components/common/Tabs';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
-import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
+import { inventoryAlerts, inventoryItems as inventoryItemsMock, inventoryStats, inventoryTabs } from '../../data/mockInventory';
+import { getInventoryItems, InventoryItem } from '../../services/inventoryApi';
+import { getCurrentDateSAST } from '../../Date/dateUtils';
+import editIcon from '../../assets/images/Edit Icon.png';
+import viewIcon from '../../assets/images/View Icon.png';
 
 function InventoryPage() {
+  // Local UI state: active tab, search text, filters, sorting
+  // `getCurrentDateSAST` provides a short date string used in the header
+  const currentDate = getCurrentDateSAST();
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [zone, setZone] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
 
+  // Compute filtered + sorted items when dependencies change
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[] | null>(inventoryItemsMock);
+
+  useEffect(() => {
+    let mounted = true;
+    getInventoryItems()
+      .then((rows) => {
+        if (mounted) setInventoryItems(rows);
+      })
+      .catch((err) => {
+        console.error('Failed to load inventory items, using mock', err);
+        if (mounted) setInventoryItems(inventoryItemsMock as any);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const filteredItems = useMemo(() => {
+    const items = inventoryItems ?? [];
     const searchLower = search.toLowerCase();
 
-    return inventoryItems
+    return items
       .filter((item) => {
+        // Tab filter: show only items for the selected tab
         if (activeTab !== 'all' && item.tab !== activeTab) {
           return false;
         }
 
+        // Status filter (OK / LOW / ALL)
         if (status !== 'ALL' && item.status !== status) {
           return false;
         }
 
+        // Zone/location filter
         if (zone !== 'ALL' && item.location !== zone) {
           return false;
         }
 
+        // If no search text, include the item
         if (searchLower.length === 0) {
           return true;
         }
 
+        // Search across name, sku, and location
         return (
           item.name.toLowerCase().includes(searchLower) ||
           item.sku.toLowerCase().includes(searchLower) ||
@@ -45,32 +76,42 @@ function InventoryPage() {
         );
       })
       .sort((a, b) => {
+        // Optional sort by quantity or by name
         if (sortBy === 'QTY') {
           return b.quantity - a.quantity;
         }
 
         return a.name.localeCompare(b.name);
       });
-  }, [activeTab, search, sortBy, status, zone]);
+  }, [activeTab, search, sortBy, status, zone, inventoryItems]);
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* Header with action slot on the right */}
       <PageHeader
         title="Inventory Management"
-        subtitle="Full Inventory · Today, 14 Jun 2025"
-        rightSlot={<Button>Add Item</Button>}
+        subtitle={`Full Inventory · ${currentDate}`}
+        rightSlot={
+          <button type="button" className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary hover:bg-bg">
+            Add Item
+          </button>
+        }
       />
+      {/* Alerts at the top */}
       <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />
 
+      {/* KPI stat cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {inventoryStats.map((stat) => (
           <StatCard key={stat.id} label={stat.label} value={stat.value} />
         ))}
       </div>
 
+      {/* Main table section with filters, tabs and results */}
       <SectionCard title="All Inventory Items" subtitle="24 items">
         <div className="space-y-3">
-          <div className="grid gap-2 lg:grid-cols-[2fr,auto,auto,auto]">
+          {/* Search and filter controls */}
+          <div className="grid items-end gap-2 lg:grid-cols-[minmax(0,2.4fr),repeat(3,minmax(0,1fr))]">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -106,8 +147,10 @@ function InventoryPage() {
             />
           </div>
 
+          {/* Tabs for quick filtering */}
           <Tabs tabs={inventoryTabs} activeTab={activeTab} onChange={setActiveTab} />
 
+          {/* Results table */}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted">
@@ -119,6 +162,7 @@ function InventoryPage() {
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Edit</th>
+                  <th className="pb-2 font-medium">View</th>
                 </tr>
               </thead>
               <tbody>
@@ -133,18 +177,35 @@ function InventoryPage() {
                     <td className="py-2.5 text-muted">{item.minStock}</td>
                     <td className="py-2.5 text-muted">{item.location}</td>
                     <td className="py-2.5">
+                      {/* Status badge */}
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-2.5">
-                      <Button variant="secondary" className="px-3 py-1 text-xs">
-                        Edit
-                      </Button>
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        aria-label={`Edit ${item.name}`}
+                      >
+                        <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">Edit</span>
+                      </button>
+                    </td>
+                    <td className="py-2.5">
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        aria-label={`View ${item.name}`}
+                      >
+                        <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">View</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
+            {/* Empty state when filters return no results */}
             {filteredItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted">No items match your current filters.</p>
             ) : null}

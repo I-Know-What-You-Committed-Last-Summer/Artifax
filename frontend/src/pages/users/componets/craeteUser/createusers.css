@@ -1,0 +1,347 @@
+/* ==========================================================================
+   CARD STRUCTURE (Updated for 97% Width & Responsiveness)
+   ========================================================================== */
+.createusers-card {
+  width: 97%; /* Covers 97% of its given parent space */
+  max-width: 1200px; /* Prevents it from becoming too stretched out on ultra-wide monitors */
+  margin: 0 auto; /* Centers the card horizontally */
+  min-height: auto; /* Changed from 681px to auto so height adapts naturally to content */
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+html[data-theme='synthwave'] .createusers-card {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(29, 52, 79, 0.96);
+  box-shadow: 0 22px 60px rgba(8, 18, 30, 0.36);
+}
+
+.createusers-card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme='synthwave'] .createusers-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.createusers-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.createusers-avatar {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #222a38;
+}
+
+html[data-theme='synthwave'] .createusers-avatar {
+  color: #d7e6fb;
+}
+
+.createusers-avatar svg {
+  width: 100%;
+  height: 100%;
+}
+
+.createusers-title-row h1 {
+  margin: 0;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+/* ==========================================================================
+   FORM LAYOUT (Responsive Grid)
+   ========================================================================== */
+.createusers-card-body {
+  padding: 24px;
+}
+
+.createusers-section-heading {
+  margin-bottom: 20px;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Base Form Style (Mobile First: Single Column) */
+.createusers-form {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr; 
+  align-items: start;
+}
+
+.createusers-field {
+  display: grid;
+  gap: 6px;
+  align-self: start;
+}
+
+.createusers-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.createusers-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  background: rgba(251, 252, 254, 0.9);
+  height: 48px;
+  box-sizing: border-box;
+}
+
+.createusers-select-shell {
+  width: 100%;
+}
+
+.createusers-select-shell .artifax-select {
+  min-height: 48px;
+  border-radius: 8px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+html[data-theme='synthwave'] .createusers-input-shell {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.createusers-input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 0 44px 0 14px;
+  color: var(--text);
+  font-size: 0.96rem;
+  box-sizing: border-box;
+}
+
+.createusers-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7a8494;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.createusers-password-toggle:hover,
+.createusers-password-toggle:focus-visible {
+  color: var(--text);
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.createusers-password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: transparent;
+}
+
+.createusers-password-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.createusers-input-shell {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.createusers-input:disabled {
+  color: #7a8494;
+  opacity: 0.9;
+}
+
+.createusers-input::placeholder {
+  color: #8b95a8;
+}
+
+.createusers-field-icon {
+  position: absolute;
+  right: 16px;
+  display: inline-flex;
+  color: #a6afbf;
+}
+
+.createusers-select {
+  padding-right: 2.6rem;
+}
+
+.createusers-field-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.createusers-field-hint {
+  margin: 0 0 0 12px;
+  font-size: 0.86rem;
+  color: #7a8494;
+}
+
+.createusers-field-hint.error {
+  margin-left: 0;
+  color: #6d7584;
+}
+
+.createusers-alert {
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(248, 250, 252, 0.95);
+  color: #364153;
+}
+
+html[data-theme='synthwave'] .createusers-alert {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d6e4f6;
+}
+
+.createusers-action-row {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  justify-items: center;
+}
+
+.createusers-action-row .createusers-submit,
+.createusers-action-row .createusers-secondary {
+  width: 90%;
+  max-width: 600px;
+}
+
+.createusers-secondary {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.createusers-secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.createusers-alert-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #5f6776;
+}
+
+html[data-theme='synthwave'] .createusers-alert-icon {
+  color: #c3d8f6;
+}
+
+.createusers-alert-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.createusers-alert strong {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.createusers-alert p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: inherit;
+}
+
+.createusers-submit {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  min-height: 48px;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5d6678;
+  background: #d2d7df;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.createusers-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.createusers-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.94;
+}
+
+.createusers-submit:not(:disabled) {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* ==========================================================================
+   MEDIA QUERIES (Responsive Layout Shifts)
+   ========================================================================== */
+@media (min-width: 768px) {
+  /* Shifts form inputs into 2 side-by-side columns on tablets and desktops */
+  .createusers-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    grid-auto-rows: minmax(48px, auto);
+  }
+
+  /* Forces the alert layout and action buttons to stretch full width across both columns */
+  .createusers-alert,
+  .createusers-submit,
+  .createusers-secondary {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .createusers-card-header,
+  .createusers-card-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

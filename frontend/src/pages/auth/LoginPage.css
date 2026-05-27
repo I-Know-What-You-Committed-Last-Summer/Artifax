@@ -132,6 +132,35 @@ html[data-theme='synthwave'] .login-input-shell {
   font-size: 0.96rem;
 }
 
+.login-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7a8494;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.login-password-toggle:hover,
+.login-password-toggle:focus-visible {
+  color: var(--text);
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.login-password-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
 .login-input::placeholder {
   color: #8b95a8;
 }

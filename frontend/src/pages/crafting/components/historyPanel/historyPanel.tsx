@@ -1,7 +1,10 @@
 import React, { FC, useMemo, useState, useEffect } from 'react';
 import './historyPanel.css';
+import SearchInput from '../../../../components/common/SearchInput';
+import FilterSelect from '../../../../components/common/FilterSelect';
 import { historyData, HistoryItem } from '../historyData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import viewIcon from '../../../../assets/images/View Icon.png';
 
 interface SelectOption {
   label: string;
@@ -102,42 +105,47 @@ const HistoryPanel: FC = () => {
 
         <div className="history-controls">
           <div className="history-search">
-            <input
-              type="text"
+            <label className="history-search-label" htmlFor="history-search-input">Search:</label>
+            <SearchInput
+              id="history-search-input"
               placeholder="Search items, SKU, location..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
             />
           </div>
-          <div className="history-filters">
-            <div className="history-select-wrapper">
-              <label>Status:</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="Crafted">Crafted</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div className="history-select-wrapper">
-              <label>Type:</label>
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="history-select-wrapper">
-              <label>Sort:</label>
-              <select value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="history-select-wrapper">
+            <label>Status:</label>
+            <FilterSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              ariaLabel="Status filter"
+              options={[
+                { label: 'All', value: 'All' },
+                { label: 'Crafted', value: 'Crafted' },
+                { label: 'Cancelled', value: 'Cancelled' },
+              ]}
+            />
+          </div>
+          <div className="history-select-wrapper">
+            <label>Type:</label>
+            <FilterSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              ariaLabel="Type filter"
+              options={typeOptions.map((type) => ({
+                label: type.charAt(0).toUpperCase() + type.slice(1),
+                value: type,
+              }))}
+            />
+          </div>
+          <div className="history-select-wrapper">
+            <label>Sort:</label>
+            <FilterSelect
+              value={sortKey}
+              onChange={setSortKey}
+              ariaLabel="Sort filter"
+              options={SORT_OPTIONS}
+            />
           </div>
         </div>
       </div>
@@ -159,7 +167,6 @@ const HistoryPanel: FC = () => {
         <table className="history-table">
           <thead>
             <tr>
-              <th className="history-arrow-column" />
               <th>ITEM</th>
               <th>DATE</th>
               <th>QTY</th>
@@ -172,9 +179,6 @@ const HistoryPanel: FC = () => {
           <tbody>
             {paginatedData.map((item) => (
               <tr key={`${item.id}-${item.operator}`}>
-                <td className="history-arrow-column">
-                  <span className="history-row-arrow">›</span>
-                </td>
                 <td>
                   <div className="history-item-cell">
                     <img src={unitIcon} alt="item icon" className="table-item-icon" />
@@ -194,8 +198,9 @@ const HistoryPanel: FC = () => {
                   </span>
                 </td>
                 <td>
-                  <button type="button" className="view-button">
-                    View
+                  <button type="button" className="icon-action-button" aria-label={`View ${item.name}`}>
+                    <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                    <span className="sr-only">View</span>
                   </button>
                 </td>
               </tr>

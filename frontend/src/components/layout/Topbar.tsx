@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useCurrentUser } from '../../utils/currentUser';
 
+// Mapping route segments to friendly breadcrumb labels
 const ROUTE_LABELS = {
   dashboard: 'Dashboard',
   inventory: 'Inventory',
@@ -10,13 +12,16 @@ const ROUTE_LABELS = {
   profile: 'Profile',
 };
 
+// Build breadcrumb items from the current pathname
 function getBreadcrumbItems(pathname) {
   const segments = pathname.split('/').filter(Boolean);
 
+  // Root path -> single Dashboard breadcrumb
   if (segments.length === 0) {
     return [{ label: 'Dashboard', isHome: true }];
   }
 
+  // Prepend app name and map segments to readable labels
   return [
     { label: 'Artifax', isHome: true },
     ...segments.map((segment) => ({
@@ -27,32 +32,50 @@ function getBreadcrumbItems(pathname) {
 
 function Topbar() {
   const { pathname } = useLocation();
-  const [isSynthwave, setIsSynthwave] = useState(false);
+  const currentUser = useCurrentUser();
+  // `isSynthwave` tracks whether the synthwave/dark theme is active
+  const [isSynthwave, setIsSynthwave] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme !== 'light';
+  });
   const breadcrumbItems = getBreadcrumbItems(pathname);
 
   useEffect(() => {
+    // On mount, default the app to synthwave unless the user explicitly saved light mode.
     const savedTheme = localStorage.getItem('theme');
-    const shouldUseSynthwave = savedTheme === 'synthwave';
+    const shouldUseSynthwave = savedTheme !== 'light';
     setIsSynthwave(shouldUseSynthwave);
 
     if (shouldUseSynthwave) {
+      // Apply synthwave theme (dark) by setting the attribute used by CSS
       document.documentElement.setAttribute('data-theme', 'synthwave');
+      if (!savedTheme) {
+        localStorage.setItem('theme', 'synthwave');
+      }
       return;
     }
 
+    // Remove theme attribute to fall back to the default (light) tokens
     document.documentElement.removeAttribute('data-theme');
   }, []);
 
+  // Toggle handler for theme checkbox: flip synthwave/dark theme on or off
   const handleThemeToggle = (event) => {
     const checked = event.target.checked;
     setIsSynthwave(checked);
 
     if (checked) {
+      // enable synthwave theme and persist preference
       document.documentElement.setAttribute('data-theme', 'synthwave');
       localStorage.setItem('theme', 'synthwave');
       return;
     }
 
+    // disable theme and remove saved preference
     document.documentElement.removeAttribute('data-theme');
     localStorage.removeItem('theme');
   };
@@ -60,7 +83,7 @@ function Topbar() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-app/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="min-w-0">
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 md:block">
           <ol className="flex items-center gap-2 text-sm font-medium text-muted sm:text-base">
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1;
@@ -99,8 +122,8 @@ function Topbar() {
           </ol>
         </nav>
 
-        <div className="flex items-center gap-2">
-          <label className="relative inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <label className="relative inline-flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border border-border bg-surface text-muted transition hover:border-primary hover:text-text">
             <input
               type="checkbox"
               className="theme-controller absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -140,14 +163,14 @@ function Topbar() {
               </svg>
             </span>
           </label>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
+          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Warehouse A
           </button>
-          <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-muted transition hover:border-primary hover:text-text">
+          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Alerts
           </button>
-          <div className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium nav-pill text-text">
-            D. Dastardly
+          <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
+            {currentUser?.name ?? 'D. Dastardly'}
           </div>
         </div>
       </div>

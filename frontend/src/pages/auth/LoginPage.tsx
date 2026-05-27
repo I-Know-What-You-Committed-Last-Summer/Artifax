@@ -1,36 +1,80 @@
-import { useMemo, useState } from 'react';
+// Hooks and navigation used by the login page
+import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import { setCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken, setAuthToken } from '../../utils/authToken';
+import { getCurrentUserFromSession, loginEmployee } from '../../services/authApi';
 
 function LoginPage() {
+  // Router helper to navigate on successful login
   const navigate = useNavigate();
-  const [name, setName] = useState('Sam');
-  const [surname, setSurname] = useState('Smith');
-  const [email, setEmail] = useState('Sam@gmail');
-  const [password, setPassword] = useState('************');
 
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Basic email validation only
   const emailError = useMemo(() => {
     if (!email.trim()) {
       return 'Email is required';
     }
 
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      return 'Email error: end with @gmail.com';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return 'Enter a valid email address';
     }
 
     return '';
   }, [email]);
 
-  const isFormValid = name.trim().length > 0 && surname.trim().length > 0 && !emailError && password.trim().length >= 8;
+  const isFormValid = !emailError && password.trim().length >= 8;
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isFormValid) {
       return;
     }
 
-    navigate('/dashboard');
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      const loginResponse = await loginEmployee({
+        email: email.trim(),
+        password,
+      });
+
+      const serverToken = loginResponse.accessToken || loginResponse.token || '';
+
+      if (serverToken) {
+        setAuthToken(serverToken);
+      } else {
+        // Current backend authenticates with secure session cookies.
+        clearAuthToken();
+      }
+
+      const sessionUser = await getCurrentUserFromSession();
+
+      const fallbackName = [name.trim(), surname.trim()].filter(Boolean).join(' ').trim();
+
+      setCurrentUser({
+        name: sessionUser.Username || loginResponse.employeeName || fallbackName || email.trim(),
+        role: sessionUser.UserLevel || 'Employee',
+        email: sessionUser.UserEmail || loginResponse.employeeEmail || email.trim(),
+      });
+
+      navigate('/dashboard');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -39,6 +83,7 @@ function LoginPage() {
         <header className="login-card-header">
           <div className="login-title-row">
             <div className="login-avatar" aria-hidden="true">
+              {/* decorative avatar icon */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="8" r="3.5" />
                 <path d="M4.5 20c1.8-3.3 4.5-5 7.5-5s5.7 1.7 7.5 5" />
@@ -51,6 +96,7 @@ function LoginPage() {
         <div className="login-card-body">
           <div className="login-section-heading">Required User Information</div>
 
+          {/* Controlled form with labels, inputs and inline validation hints */}
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             <label className="login-field">
               <span className="login-label">Name</span>
@@ -106,7 +152,8 @@ function LoginPage() {
                   </svg>
                 </span>
               </div>
-              {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your admin-issued company email.</p>}
+              {/* Inline validation hint for email */}
+              {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your company email address.</p>}
             </label>
 
             <label className="login-field">
@@ -115,19 +162,35 @@ function LoginPage() {
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   className="login-input"
                 />
-                <span className="login-field-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-                    <rect x="5.2" y="11" width="13.6" height="9" rx="2.2" />
-                  </svg>
-                </span>
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() => setShowPassword((previous) => !previous)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+                      <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.8 0 9.7 4.9 10.8 6.5a1.4 1.4 0 0 1 0 1.5c-.6.9-1.6 2.3-3.1 3.7" />
+                      <path d="M6.6 6.6C4.3 8.2 2.8 10.1 2 11.5a1.4 1.4 0 0 0 0 1.5C3.1 14.7 7 19.6 12.8 19.6c1.2 0 2.4-.2 3.5-.6" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2.8 12C4 10.1 7.6 5.4 12 5.4S20 10.1 21.2 12c-1.2 1.9-4.8 6.6-9.2 6.6S4 13.9 2.8 12Z" />
+                      <circle cx="12" cy="12" r="2.8" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </label>
 
+            {/* Accessible alert region showing validation messages */}
             <div className="login-alert" role="alert" aria-live="polite">
               <div className="login-alert-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -137,13 +200,14 @@ function LoginPage() {
                 </svg>
               </div>
               <div>
-                <strong>Wrong input</strong>
-                <p>{emailError || 'Email error: end with @gmail.com'}</p>
+                <strong>{submitError ? 'Login error' : 'Input required'}</strong>
+                <p>{submitError || emailError || 'Enter email and password to continue.'}</p>
               </div>
             </div>
 
-            <button type="submit" className="login-submit" disabled={!isFormValid}>
-              Login
+            {/* Submit button disabled until form is valid */}
+            <button type="submit" className="login-submit" disabled={!isFormValid || isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Login'}
             </button>
           </form>
         </div>

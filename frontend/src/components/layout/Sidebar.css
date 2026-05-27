@@ -13,6 +13,7 @@
 .sidebar-container {
   width: var(--collapsed-width);
   min-height: 100vh;
+  max-height: 100vh;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   display: flex;
@@ -51,7 +52,7 @@
   width: 100%;
   padding: 0;
   margin-bottom: 36px;
-  height: 44px;
+  height: 56px;
   transition: padding var(--transition-speed);
 }
 
@@ -61,40 +62,47 @@
 }
 
 .logo-placeholder {
-  width: 38px;
-  height: 38px;
+  width: 56px;
+  height: 56px;
   border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--surface);
   border: 1px solid var(--border);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
   overflow: hidden;
   flex-shrink: 0;
   margin: 0 auto;
-  transition: width var(--transition-speed), height var(--transition-speed), border-color var(--transition-speed);
+  transition: width var(--transition-speed), height var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed), background-color var(--transition-speed);
 }
 
 .sidebar-container:hover .logo-placeholder {
-  width: 36px;
-  height: 36px;
+  width: 56px;
+  height: 56px;
 }
 
 .logo-mark-image {
   width: 100%;
   height: 100%;
-  padding: 3px;
+  padding: 1px;
   box-sizing: border-box;
   object-fit: contain;
   object-position: center;
   display: block;
 }
 
+html[data-theme='synthwave'] .logo-placeholder {
+  background: #153249;
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(3, 10, 20, 0.48);
+}
+
 .logo-text {
   display: inline-block;
   font-family: 'Zen Dots', 'Outfit', 'Sora', 'Segoe UI', sans-serif;
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.55rem;
   color: var(--text);
   line-height: 1;
   margin-left: 0;
@@ -186,40 +194,112 @@
 .sidebar-footer {
   margin-top: auto;
   border-top: 1px solid var(--sidebar-border);
-  padding: 20px 15px;
+  padding: 18px 15px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-profile-button,
+.sidebar-logout-button {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar-profile-button {
+  justify-content: center;
+  gap: 0;
+}
+
+.sidebar-profile-button:hover,
+.sidebar-logout-button:hover {
+  border-color: var(--primary);
+  background: var(--bg);
 }
 
 .user-avatar {
-  width: 35px;
-  height: 35px;
+  width: 38px;
+  height: 38px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 8px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.user-avatar svg {
+  width: 22px;
+  height: 22px;
 }
 
 .user-info {
-  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   flex-grow: 1;
 }
 
 .user-name {
+  display: block;
   font-size: 13px;
   font-weight: 600;
   margin: 0;
 }
 
 .user-role {
+  display: block;
   font-size: 11px;
   color: var(--inactive-text);
   margin: 0;
 }
 
-.logout-icon {
+.sidebar-logout-button {
+  justify-content: center;
   color: var(--inactive-text);
-  cursor: pointer;
+}
+
+.sidebar-logout-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-logout-button span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-profile-button .user-info,
+.sidebar-logout-button .nav-text {
+  display: none;
+}
+
+.sidebar-container:hover .sidebar-profile-button {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.sidebar-container:hover .sidebar-profile-button .user-info,
+.sidebar-container:hover .sidebar-logout-button .nav-text {
+  display: flex;
+}
+
+.sidebar-container:hover .sidebar-logout-button {
+  justify-content: center;
+  gap: 12px;
 }
 
 @media (max-width: 1024px) {
@@ -250,8 +330,64 @@
 
   .logo-placeholder,
   .sidebar-container:hover .logo-placeholder {
-    width: 36px;
-    height: 36px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .sidebar-content {
+    align-items: center;
+  }
+
+  .nav-item {
+    width: 46px;
+    height: 46px;
+    margin: 4px auto;
+    padding: 0;
+    justify-content: center;
+    border-radius: 14px;
+  }
+
+  .nav-icon {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .nav-icon-image {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar-footer {
+    align-items: center;
+  }
+
+  .sidebar-profile-button,
+  .sidebar-logout-button {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .sidebar-profile-button {
+    gap: 0;
+  }
+
+  .sidebar-profile-button .user-info,
+  .sidebar-logout-button .nav-text {
+    display: none;
+  }
+
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .user-avatar svg,
+  .sidebar-logout-button svg {
+    width: 18px;
+    height: 18px;
   }
 
   .nav-item::after {
