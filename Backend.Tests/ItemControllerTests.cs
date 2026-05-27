@@ -165,6 +165,7 @@ namespace Backend.Tests
             Assert.IsType<NotFoundResult>(result);
             Assert.Equal(2, await context.Items.CountAsync()); 
         }
+        //Blueprint tests
         [Fact]
         public async Task GetAllItemsWithIngredients_WhenDataExists_ReturnsItemBlueprints()
         {
@@ -202,6 +203,134 @@ namespace Backend.Tests
             Assert.Equal("Stick", blueprint.Ingredients[1].ItemName);
             Assert.Equal(1, blueprint.Ingredients[1].Quantity);
         }
+        //Item ingredient tests
+        [Fact]
+        public async Task GetItemIngredient_WhenItemIngredientExists_ReturnsItemIngredientReadDto()
+        {
+            //ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            var testItemIngredient = new ItemIngredient {ItemIngredientID = 1, ProductID = 1, IngredientID = 2, IngredientQuantity = 3};
+            context.ItemIngredients.Add(testItemIngredient);
+            await context.SaveChangesAsync();
+            var controller = new ItemController(context);
 
+            //ACT
+            var result = await controller.GetItemIngredient(1);
+
+            //ASSERT
+            var actionResult = Assert.IsType<ActionResult<ItemIngredientReadDto>>(result);
+            var returnedDto = Assert.IsType<ItemIngredientReadDto>(actionResult.Value);
+            Assert.Equal(3, returnedDto.IngredientQuantity);
+        }
+
+        [Fact]
+        public async Task GetItemIngredient_WhenItemIngredientDoesNotExist_ReturnsNotFound()
+        {
+            //ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            var testItemIngredient = new ItemIngredient {ItemIngredientID = 1, ProductID = 1, IngredientID = 2, IngredientQuantity = 3};
+            context.ItemIngredients.Add(testItemIngredient);
+            await context.SaveChangesAsync();
+            var controller = new ItemController(context);
+
+            //ACT
+            var result = await controller.GetItemIngredient(2);
+
+            //ASSERT
+            Assert.IsType<NotFoundResult>(result.Result);
+        }
+        [Fact]
+        public async Task CreateItemIngredient_ValidObjectCreated_ReturnsCreatedResponse()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var controller = new ItemController(context);
+
+            var newItemIngredientDto = new ItemIngredientWriteDto
+            {
+                ProductID = 1,
+                IngredientID = 2,
+                IngredientQuantity = 3
+            };
+
+            // ACT
+            var result = await controller.CreateItemIngredient(newItemIngredientDto);
+
+            // ASSERT
+            var actionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var returnedDto = Assert.IsType<ItemIngredientReadDto>(actionResult.Value);
+            Assert.Equal(3, returnedDto.IngredientQuantity);
+            Assert.Equal(1, await context.ItemIngredients.CountAsync());
+        }
+        [Fact]
+        public async Task UpdateItemIngredient_ExistingItemIngredientPassed_ReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var existingItem = new ItemIngredient {ItemIngredientID = 1, ProductID = 1, IngredientID = 2, IngredientQuantity = 3 };
+            context.ItemIngredients.Add(existingItem);
+            await context.SaveChangesAsync();
+            var controller = new ItemController(context);
+            var updateDto = new ItemIngredientWriteDto { IngredientQuantity = 5 };
+
+            // ACT
+            var result = await controller.UpdateItemIngredient(1, updateDto);
+
+            // ASSERT
+            Assert.IsType<NoContentResult>(result);
+            var updatedItem = await context.ItemIngredients.FindAsync(1);
+            Assert.Equal(5, updatedItem.IngredientQuantity);
+        }
+        [Fact]
+        public async Task DeleteItemIngredient_ExistingItemIngredient_ReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            var existingItemIngredient = new ItemIngredient {ItemIngredientID = 1, ProductID = 1, IngredientID = 2, IngredientQuantity = 3 };
+            context.ItemIngredients.Add(existingItemIngredient);
+            await context.SaveChangesAsync();
+
+            var controller = new ItemController(context);
+
+            // ACT
+            var result = await controller.DeleteItemIngredient(1);
+
+            // ASSERT
+            Assert.IsType<NoContentResult>(result);
+            Assert.Equal(0, await context.ItemIngredients.CountAsync()); 
+        }
+        [Fact]
+        public async Task DeleteItemIngredient_NonExistingItemIngredient_ReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            var ItemIngredients = new List<ItemIngredient>
+            {
+                new ItemIngredient {ItemIngredientID = 1, ProductID = 1, IngredientID = 2, IngredientQuantity = 3 },
+                new ItemIngredient {ItemIngredientID = 2, ProductID = 1, IngredientID = 3, IngredientQuantity = 4 }
+            };
+            context.ItemIngredients.AddRange(ItemIngredients);
+            await context.SaveChangesAsync();
+
+            var controller = new ItemController(context);
+
+            // ACT
+            var result = await controller.DeleteItemIngredient(3);
+
+            // ASSERT
+            Assert.IsType<NotFoundResult>(result);
+            Assert.Equal(2, await context.ItemIngredients.CountAsync()); 
+        }
+        
     }
 }
