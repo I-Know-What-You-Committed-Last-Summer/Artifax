@@ -10,14 +10,35 @@ import {
   craftQueueItems,
   dashboardAlerts,
   dashboardStats,
-  inventoryPreviewRows,
+  inventoryPreviewRows as inventoryPreviewMock,
 } from '../../data/mockDashboard';
+import { getDashboardPreview, DashboardPreviewRow } from '../../services/inventoryApi';
+import { useEffect, useState } from 'react';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 function DashboardPage() {
   // Combine dynamic date with concise in-file comments.
   // `getCurrentDateSAST` produces a short date string for the header.
   const currentDate = getCurrentDateSAST();
+  const [inventoryPreviewRows, setInventoryPreviewRows] = useState<DashboardPreviewRow[] | null>(inventoryPreviewMock);
+  const useMocks = process.env.REACT_APP_USE_MOCKS === 'true';
+
+  useEffect(() => {
+    if (useMocks) return;
+    let mounted = true;
+    getDashboardPreview()
+      .then((rows) => {
+        if (mounted) setInventoryPreviewRows(rows);
+      })
+      .catch((err) => {
+        // Fall back to mock data on error
+        console.error('Failed to load dashboard preview, using mock data', err);
+        if (mounted) setInventoryPreviewRows(inventoryPreviewMock);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Page shell: vertical spacing between main sections
   return (
@@ -51,7 +72,7 @@ function DashboardPage() {
               </thead>
               <tbody>
                 {/* Each preview row maps to a sample inventory item */}
-                {inventoryPreviewRows.map((row) => (
+                {inventoryPreviewRows?.map((row) => (
                   <tr key={row.id} className="border-b border-border/70">
                     <td className="dashboard-material-column py-2.5 font-medium text-text">{row.name}</td>
                     <td className="qty-column py-2.5 text-text"><span className="qty-value">{row.qty}</span></td>
