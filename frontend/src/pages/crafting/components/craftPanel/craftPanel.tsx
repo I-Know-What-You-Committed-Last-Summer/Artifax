@@ -20,6 +20,16 @@ const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, on
     onAmountChange(amount + 1);
   };
 
+  const handleAmountInputChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const nextAmount = Number(event.target.value);
+
+    if (Number.isNaN(nextAmount)) {
+      return;
+    }
+
+    onAmountChange(Math.max(1, nextAmount));
+  };
+
   return (
     <div className="craft-panel-card">
       <div className="craft-panel-header">
@@ -35,7 +45,15 @@ const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, on
           <p className="section-label">Craft Amount</p>
           <div className="amount-control">
             <button type="button" className="amount-btn" onClick={handleDecrement}>-</button>
-            <span>{amount}</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={amount}
+              onChange={handleAmountInputChange}
+              className="amount-input"
+              aria-label="Craft amount"
+            />
             <button type="button" className="amount-btn" onClick={handleIncrement}>+</button>
           </div>
         </div>
