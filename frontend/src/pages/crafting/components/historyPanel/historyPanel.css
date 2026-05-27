@@ -31,20 +31,34 @@
 }
 
 .history-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) repeat(3, minmax(0, 1fr));
   gap: 12px;
-  align-items: center;
+  align-items: flex-end;
+}
+
+.history-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-search-label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
 }
 
 .history-search input {
-  width: 320px;
-  max-width: 100%;
+  width: 100%;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
   border-radius: 16px;
-  padding: 14px 16px;
+  min-height: 48px;
+  padding: 0 16px;
   font-size: 14px;
 }
 
@@ -53,31 +67,21 @@
 }
 
 .history-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: contents;
 }
 
 .history-select-wrapper {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   font-size: 13px;
   color: var(--muted);
+  min-width: 0;
 }
 
 .history-select-wrapper label {
   font-weight: 600;
-}
-
-.history-select-wrapper select {
-  min-width: 140px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--text);
-  padding: 10px 12px;
-  font-size: 14px;
 }
 
 .history-tabs {
@@ -196,19 +200,14 @@
   color: var(--ok-text);
 }
 
+.status-pill.in-progress {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
 .status-pill.cancelled {
   background: var(--danger-bg);
   color: var(--danger-text);
-}
-
-.view-button {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 10px 16px;
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 600;
 }
 
 .history-footer {
@@ -258,6 +257,7 @@
 @media (max-width: 900px) {
   .history-panel-top,
   .history-controls {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
   }
@@ -267,6 +267,9 @@
   }
 
   .history-filters {
+    display: flex;
     width: 100%;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }

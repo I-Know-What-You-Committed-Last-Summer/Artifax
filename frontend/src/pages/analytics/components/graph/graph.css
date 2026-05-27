@@ -37,6 +37,10 @@
   font-size: 0.95rem;
 }
 
+.graph-select-shell {
+  width: 190px;
+}
+
 .graph-figure {
   position: relative;
   width: 100%;

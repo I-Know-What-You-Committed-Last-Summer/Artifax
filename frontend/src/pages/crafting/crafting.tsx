@@ -10,6 +10,7 @@ import CraftingItems from './components/craftingItems/craftingItems';
 import CraftingQueue from './components/craftingQueue/craftingQueue';
 import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
+import NewBlueprint from './components/newBlueprint/newBlueprint';
 import { Blueprint } from './components/craftingData';
 import { craftingAlerts } from '../../data/mockDashboard';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
@@ -52,10 +53,12 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
     setSelectedBlueprintId(blueprintId);
     setAmount(1);
     
-    // Extract the itemID from the blueprint ID (format: bp-{itemID})
+    // Extract the itemID from the selected blueprint card ID.
+    // The blueprint IDs are stored as bp-{itemID}.
     const itemId = parseInt(blueprintId.replace('bp-', ''));
     
-    // Fetch the specific blueprint data from the API
+    // Fetch the selected item details and its ingredient list.
+    // This is used to populate the craft panel with the full blueprint data.
     try {
       const itemResponse = await fetch(`http://localhost:5253/api/Item/item/${itemId}`);
       const ingredientsResponse = await fetch(
@@ -97,7 +100,11 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
     return (
       <div className="crafting-panel">
         <HistoryStats />
-        <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
+        <CraftingNav
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          onCreateBlueprint={() => onTabChange('new')}
+        />
         <div className="active-jobs-layout">
           <div className="active-jobs-main">
             <div className="craft-panel-card">
@@ -119,6 +126,7 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
               filter={filter}
               onFilterChange={setFilter}
               onSelectBlueprint={handleSelectBlueprint}
+              onCreateBlueprint={() => onTabChange('new')}
             />
             <CraftingQueue />
           </div>
@@ -130,7 +138,11 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
   return (
     <div className="crafting-panel">
       <HistoryStats />
-      <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
+      <CraftingNav
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        onCreateBlueprint={() => onTabChange('new')}
+      />
       <div className="active-jobs-layout">
         <div className="active-jobs-main">
           <CraftPanel
@@ -146,6 +158,7 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
             filter={filter}
             onFilterChange={setFilter}
             onSelectBlueprint={handleSelectBlueprint}
+            onCreateBlueprint={() => onTabChange('new')}
           />
           <CraftingQueue />
         </div>
@@ -157,8 +170,26 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
 const HistoryPage: FC<PageProps> = ({ activeTab, onTabChange }) => (
   <div className="crafting-panel">
     <HistoryStats />
-    <CraftingNav activeTab={activeTab} onTabChange={onTabChange} />
+    <CraftingNav
+      activeTab={activeTab}
+      onTabChange={onTabChange}
+      onCreateBlueprint={() => onTabChange('new')}
+    />
     <HistoryPanel />
+  </div>
+);
+
+const NewBlueprintPage: FC<PageProps & { onCancel: () => void }> = ({ activeTab, onTabChange, onCancel }) => (
+  <div className="crafting-panel">
+    <HistoryStats />
+    <CraftingNav
+      activeTab={activeTab}
+      onTabChange={onTabChange}
+      onCreateBlueprint={() => onTabChange('new')}
+    />
+    <div className="new-blueprint-page">
+      <NewBlueprint onCancel={onCancel} />
+    </div>
   </div>
 );
 
@@ -179,7 +210,14 @@ const Crafting: FC = () => {
           {activeTab === 'active' && <ActiveJobsPage />}
           {activeTab === 'history' && <HistoryPage activeTab={activeTab} onTabChange={setActiveTab} />}
           {activeTab === 'craft' && <CraftPage activeTab={activeTab} onTabChange={setActiveTab} />}
-          {activeTab === 'active' && <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} />}
+          {activeTab === 'new' && (
+            <NewBlueprintPage
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onCancel={() => setActiveTab('active')}
+            />
+          )}
+          {activeTab === 'active' && <CraftingNav activeTab={activeTab} onTabChange={setActiveTab} onCreateBlueprint={() => setActiveTab('new')} />}
           {activeTab === 'active' && <ActiveJobsContent />}
         </div>
       </div>

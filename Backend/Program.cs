@@ -29,15 +29,25 @@ builder.Services.AddSwaggerGen();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Build connection string from environment variables
-var host = Environment.GetEnvironmentVariable("DATABASE_HOST");
-var port = Environment.GetEnvironmentVariable("DATABASE_PORT");
-var database = Environment.GetEnvironmentVariable("DATABASE_NAME");
-var username = Environment.GetEnvironmentVariable("DATABASE_USERNAME");
-var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
+// Prefer configured connection string (appsettings/user-secrets), then fall back to DATABASE_* vars.
+var connectionString = builder.Configuration.GetConnectionString("ArtifaxDatabase");
 
-// Build connection string from environment variables
-var connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    var host = Environment.GetEnvironmentVariable("DATABASE_HOST");
+    var port = Environment.GetEnvironmentVariable("DATABASE_PORT");
+    var database = Environment.GetEnvironmentVariable("DATABASE_NAME");
+    var username = Environment.GetEnvironmentVariable("DATABASE_USERNAME");
+    var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
+
+    connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+}
+
+if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Host=;"))
+{
+    throw new InvalidOperationException(
+        "Database connection is not configured. Set ConnectionStrings:ArtifaxDatabase (user-secrets) or DATABASE_* environment variables.");
+}
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
 
