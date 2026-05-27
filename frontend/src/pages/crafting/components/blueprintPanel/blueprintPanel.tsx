@@ -20,6 +20,7 @@ interface BlueprintPanelProps {
   filter: string;
   onFilterChange: (filter: string) => void;
   onSelectBlueprint: (blueprintId: string) => void;
+  onCreateBlueprint: () => void;
 }
 
 const categories: Category[] = [
@@ -40,7 +41,8 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   selectedBlueprintId, 
   filter, 
   onFilterChange, 
-  onSelectBlueprint
+  onSelectBlueprint,
+  onCreateBlueprint,
 }) => {
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
       </div>
 
       <div className="blueprint-actions">
-        <button type="button" className="blueprint-new-btn">New Blueprint</button>
+        <button type="button" className="blueprint-new-btn" onClick={onCreateBlueprint}>New Blueprint</button>
       </div>
     </div>
   );
