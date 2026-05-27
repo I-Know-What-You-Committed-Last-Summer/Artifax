@@ -44,8 +44,8 @@ function DashboardPage() {
               <thead className="font-outfit text-xs uppercase tracking-wide text-muted">
                 <tr className="border-b border-border">
                   <th className="pb-2 font-medium">Material</th>
-                  <th className="pb-2 font-medium">Qty</th>
-                  <th className="pb-2 font-medium">Location</th>
+                  <th className="qty-column pb-2 font-medium">Qty</th>
+                  <th className="dashboard-location-column pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -54,8 +54,8 @@ function DashboardPage() {
                 {inventoryPreviewRows.map((row) => (
                   <tr key={row.id} className="border-b border-border/70">
                     <td className="py-2.5 font-medium text-text">{row.name}</td>
-                    <td className="py-2.5 text-text">{row.qty}</td>
-                    <td className="py-2.5 text-muted">{row.location}</td>
+                    <td className="qty-column py-2.5 text-text">{row.qty}</td>
+                    <td className="dashboard-location-column py-2.5 text-muted">{row.location}</td>
                     <td className="py-2.5">
                       {/* Status badge shows OK/Low/etc. */}
                       <StatusBadge status={row.status} />

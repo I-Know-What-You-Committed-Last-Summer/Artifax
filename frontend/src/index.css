@@ -257,6 +257,17 @@ html[data-theme='synthwave'] {
     pointer-events: none;
   }
 
+  .qty-column {
+    width: 76px;
+    min-width: 76px;
+    text-align: left;
+    padding-right: 2rem;
+  }
+
+  .dashboard-location-column {
+    padding-left: 1rem;
+  }
+
   .btn-outfit {
     @apply font-outfit tracking-tight;
     letter-spacing: 0.02em;
