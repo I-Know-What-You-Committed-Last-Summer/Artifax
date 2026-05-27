@@ -1,11 +1,16 @@
-public class OrderCreateDto
+namespace Artifax.DTOs
 {
-    public int CustomerId { get; set; }
-    public List<OrderItemCreateDto> Items { get; set; }
-}
+    public class OrderCreateDto
+    {
+        public int BranchID { get; set; }
+        public int EmployeeID { get; set; }
+        public bool OrderExpedite { get; set; }
+        public List<OrderItemCreateDto> Items { get; set; } = new List<OrderItemCreateDto>();
+    }
 
-public class OrderItemCreateDto
-{
-    public int ProductId { get; set; }
-    public int Quantity { get; set; }
+    public class OrderItemCreateDto
+    {
+        public int ItemID { get; set; }
+        public int Quantity { get; set; }
+    }
 }
