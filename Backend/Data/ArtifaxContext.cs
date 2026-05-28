@@ -12,7 +12,7 @@ namespace Artifax.Data
         public DbSet<Branch> Branches { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; } 
+        public DbSet<OrderHistory> OrderHistories { get; set; }
         public DbSet<Item> Items { get; set; }
         public DbSet<ItemIngredient> ItemIngredients { get; set; }
         public DbSet<BranchItemCapacity> BranchItemCapacities { get; set; }
@@ -24,20 +24,15 @@ namespace Artifax.Data
             modelBuilder.Entity<Item>().HasMany(i => i.IngredientItemIngredients).WithOne(ig => ig.IngredientItem).HasForeignKey(ig => ig.IngredientID);
             modelBuilder.Entity<Item>().HasMany(i => i.ProductItemIngredients).WithOne(ig => ig.ProductItem).HasForeignKey(ig => ig.ProductID);
             modelBuilder.Entity<Branch>().HasMany(b => b.Employees).WithOne(e => e.Branch).HasForeignKey(e => e.BranchId);
-
-// Links Order to OrderItems
-            modelBuilder.Entity<Order>()
-                .HasMany(o => o.OrderItems)
-                .WithOne(oi => oi.Order)
-                .HasForeignKey(oi => oi.OrderID);
-
-            // Links the Item table to OrderItems
-            modelBuilder.Entity<OrderItem>()
-                .HasOne(oi => oi.Item)
-                .WithMany() 
-                .HasForeignKey(oi => oi.ItemID);
-                
             modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o => o.BranchID);
+            
+            // Order relationships
+            modelBuilder.Entity<Order>().HasOne(o => o.Item).WithMany().HasForeignKey(o => o.ItemID);
+            modelBuilder.Entity<Order>().HasOne(o => o.Employee).WithMany().HasForeignKey(o => o.EmployeeID);
+            
+            // OrderHistory relationships
+            modelBuilder.Entity<OrderHistory>().HasOne(oh => oh.Order).WithMany(o => o.OrderHistories).HasForeignKey(oh => oh.OrderID);
+            modelBuilder.Entity<OrderHistory>().HasOne(oh => oh.ChangedByEmployee).WithMany().HasForeignKey(oh => oh.ChangedByEmployeeID).IsRequired(false);
         }
     }
 }
