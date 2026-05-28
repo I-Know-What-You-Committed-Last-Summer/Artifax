@@ -66,6 +66,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Pending",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -106,6 +107,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Pending",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -143,13 +145,10 @@ namespace Backend.Tests
             // Arrange
             var orderDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 1,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>
-                {
-                    new OrderItemCreateDto { ItemID = 1, Quantity = 5 }
-                }
+                OrderExpedite = false
             };
 
             // Act
@@ -166,13 +165,10 @@ namespace Backend.Tests
             // Arrange
             var orderDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 999,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>
-                {
-                    new OrderItemCreateDto { ItemID = 1, Quantity = 5 }
-                }
+                OrderExpedite = false
             };
 
             // Act
@@ -184,15 +180,15 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public async Task CreateOrder_WithNoItems_ReturnsBadRequest()
+        public async Task CreateOrder_WithInvalidItem_ReturnsBadRequest()
         {
             // Arrange
             var orderDto = new OrderCreateDto
             {
+                ItemID = 999,
                 BranchID = 1,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>()
+                OrderExpedite = false
             };
 
             // Act
@@ -204,18 +200,15 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public async Task CreateOrder_WithZeroQuantity_ReturnsBadRequest()
+        public async Task CreateOrder_WithInvalidEmployee_ReturnsBadRequest()
         {
             // Arrange
             var orderDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 1,
-                EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>
-                {
-                    new OrderItemCreateDto { ItemID = 1, Quantity = 0 }
-                }
+                EmployeeID = 999,
+                OrderExpedite = false
             };
 
             // Act
@@ -237,6 +230,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Pending",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -247,13 +241,10 @@ namespace Backend.Tests
 
             var updateDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 1,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>
-                {
-                    new OrderItemCreateDto { ItemID = 1, Quantity = 10 }
-                }
+                OrderExpedite = false
             };
 
             // Act
@@ -271,6 +262,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Completed",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -281,13 +273,10 @@ namespace Backend.Tests
 
             var updateDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 1,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>
-                {
-                    new OrderItemCreateDto { ItemID = 1, Quantity = 10 }
-                }
+                OrderExpedite = false
             };
 
             // Act
@@ -304,10 +293,10 @@ namespace Backend.Tests
             // Arrange
             var updateDto = new OrderCreateDto
             {
+                ItemID = 1,
                 BranchID = 1,
                 EmployeeID = 1,
-                OrderExpedite = false,
-                Items = new List<OrderItemCreateDto>()
+                OrderExpedite = false
             };
 
             // Act
@@ -328,6 +317,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Pending",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -370,6 +360,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Pending",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
@@ -392,6 +383,7 @@ namespace Backend.Tests
             var order = new Order
             {
                 OrderID = 1,
+                ItemID = 1,
                 Status = "Completed",
                 OrderDateTime = DateTime.UtcNow,
                 BranchID = 1,
