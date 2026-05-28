@@ -7,6 +7,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 
 import { buildInventoryOverview, getInventoryItems, InventoryItem, DashboardPreviewRow } from '../../services/inventoryApi';
 import { getActiveAndQueuedJobs, CraftingJob } from '../../services/orderApi';
+import '../crafting/components/craftingItems/craftingItems.css';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
@@ -123,17 +124,43 @@ function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     {activeJobs.map((job) => (
-                      <div key={job.id} className="rounded-xl border border-border bg-app p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">{job.name}</div>
-                          <div className="text-sm text-muted">{job.timeLeft}</div>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="text-sm text-muted">{job.location}</div>
-                          <div className="text-sm">{job.qty} pcs</div>
-                        </div>
-                      </div>
-                    ))}
+                          <div key={job.id} className="job-card p-3">
+                            <div className="card-header">
+                              <div className="job-info-main">
+                                <div className="job-titles">
+                                  <h3 className="text-sm font-medium">{job.name}</h3>
+                                  <p className="text-xs text-muted">ID: {job.id} · Qty: {job.qty}</p>
+                                </div>
+                              </div>
+                              <span className={`status-badge ${job.status.toUpperCase().replace(' ', '-')}`}>{job.status}</span>
+                            </div>
+
+                            <div className="progress-section mt-2">
+                              <div className="progress-text flex justify-between text-xs text-muted">
+                                <span>{job.progress}% Complete</span>
+                                <span>{job.timeLeft}</span>
+                              </div>
+                              <div className="progress-bar-bg mt-2">
+                                <div className="progress-bar-fill" style={{ width: `${job.progress}%` }}></div>
+                              </div>
+                            </div>
+
+                            <div className="materials-section mt-3">
+                              <p className="section-label text-[11px] text-muted">MATERIALS</p>
+                              <div className="material-tags mt-2">
+                                {job.materials.slice(0, 6).map((m, i) => (
+                                  <span key={i} className="material-tag">{m}</span>
+                                ))}
+                                {job.materials.length > 6 && <span className="material-tag">+{job.materials.length - 6} more</span>}
+                              </div>
+                            </div>
+
+                            <div className="card-actions mt-3 flex gap-2">
+                              <button className="btn-cancel">Cancel</button>
+                              <button className={`btn-action ${job.status === 'Paused' ? 'resume' : 'pause'}`}>{job.status === 'Paused' ? 'Resume' : 'Pause'}</button>
+                            </div>
+                          </div>
+                        ))}
                   </div>
                 )}
               </div>
@@ -145,14 +172,20 @@ function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     {queuedJobs.map((job) => (
-                      <div key={job.id} className="rounded-xl border border-border bg-app p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">{job.name}</div>
-                          <div className="text-sm text-muted">{job.timeLeft}</div>
+                      <div key={job.id} className="job-card p-3">
+                        <div className="card-header">
+                          <div className="job-info-main">
+                            <div className="job-titles">
+                              <h3 className="text-sm font-medium">{job.name}</h3>
+                              <p className="text-xs text-muted">ID: {job.id} · Qty: {job.qty}</p>
+                            </div>
+                          </div>
+                          <span className={`status-badge ${job.status.toUpperCase().replace(' ', '-')}`}>{job.status}</span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="text-sm text-muted">{job.location}</div>
-                          <div className="text-sm">{job.qty} pcs</div>
+
+                        <div className="mt-2 flex items-center justify-between text-xs text-muted">
+                          <div>{job.location}</div>
+                          <div>{job.timeLeft}</div>
                         </div>
                       </div>
                     ))}
