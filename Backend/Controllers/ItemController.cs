@@ -83,7 +83,8 @@ namespace Artifax.Controllers
             {
                 ItemID = _item.ItemID,
                 ItemName = _item.ItemName,
-                ItemCategory = _item.ItemCategory
+                ItemCategory = _item.ItemCategory,
+                ProductionTime = _item.ProductionTime
             });
         }
         [HttpPut("{id}")]

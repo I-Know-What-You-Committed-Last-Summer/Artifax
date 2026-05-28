@@ -6,16 +6,22 @@ import StatCard from '../../components/common/StatCard';
 import StatusBadge from '../../components/common/StatusBadge';
 
 import { buildInventoryOverview, getInventoryItems, InventoryItem, DashboardPreviewRow } from '../../services/inventoryApi';
-import { useEffect, useMemo, useState } from 'react';
+import { getActiveAndQueuedJobs, CraftingJob } from '../../services/orderApi';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 function DashboardPage() {
   const currentDate = getCurrentDateSAST();
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
+  const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
+    // load inventory once
     getInventoryItems()
       .then((rows) => {
         if (mounted) setInventoryItems(rows);
@@ -24,8 +30,35 @@ function DashboardPage() {
         console.error('Failed to load dashboard inventory data', err);
         if (mounted) setInventoryItems([]);
       });
+
+    // guarded job loader to avoid overlapping requests
+    const loadJobs = async () => {
+      if (!mounted) return;
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+      try {
+        const { activeItems, queuedItems } = await getActiveAndQueuedJobs();
+        if (!mounted) return;
+        setActiveJobs(activeItems);
+        setQueuedJobs(queuedItems);
+      } catch (err) {
+        console.error('Failed to load crafting jobs', err);
+        if (mounted) {
+          setActiveJobs([]);
+          setQueuedJobs([]);
+        }
+      } finally {
+        isFetchingRef.current = false;
+      }
+    };
+
+    // initial load and interval
+    loadJobs();
+    intervalId = setInterval(loadJobs, 10000);
+
     return () => {
       mounted = false;
+      if (intervalId) clearInterval(intervalId);
     };
   }, []);
 
@@ -80,12 +113,54 @@ function DashboardPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Crafting Queue" subtitle="Deferred until backend order updates">
-          <div className="rounded-xl border border-border bg-app p-4 text-sm text-muted">
-            Crafting queue data is intentionally deferred until the backend team confirms the order workflow shape.
-            Inventory-backed sections above remain live and database-driven.
-          </div>
-        </SectionCard>
+        
+          <SectionCard title="Crafting Queue" subtitle="Live from Orders">
+            <div className="space-y-3">
+              <div>
+                <h4 className="mb-2 text-sm font-medium">Active Jobs</h4>
+                {activeJobs.length === 0 ? (
+                  <div className="rounded-xl border border-border bg-app p-3 text-sm text-muted">No active jobs</div>
+                ) : (
+                  <div className="space-y-2">
+                    {activeJobs.map((job) => (
+                      <div key={job.id} className="rounded-xl border border-border bg-app p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{job.name}</div>
+                          <div className="text-sm text-muted">{job.timeLeft}</div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <div className="text-sm text-muted">{job.location}</div>
+                          <div className="text-sm">{job.qty} pcs</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h4 className="mb-2 text-sm font-medium">Queued Jobs</h4>
+                {queuedJobs.length === 0 ? (
+                  <div className="rounded-xl border border-border bg-app p-3 text-sm text-muted">No queued jobs</div>
+                ) : (
+                  <div className="space-y-2">
+                    {queuedJobs.map((job) => (
+                      <div key={job.id} className="rounded-xl border border-border bg-app p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{job.name}</div>
+                          <div className="text-sm text-muted">{job.timeLeft}</div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <div className="text-sm text-muted">{job.location}</div>
+                          <div className="text-sm">{job.qty} pcs</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </SectionCard>
       </div>
     </div>
   );
