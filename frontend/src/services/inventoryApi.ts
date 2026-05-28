@@ -89,6 +89,23 @@ export type InventoryTab = {
   label: string;
 };
 
+type InventoryCategoryDefinition = {
+  label: string;
+  aliases: string[];
+};
+
+const INVENTORY_CATEGORY_DEFINITIONS: InventoryCategoryDefinition[] = [
+  { label: 'Furniture', aliases: ['furniture'] },
+  { label: 'Stationery', aliases: ['stationery'] },
+  { label: 'Metals', aliases: ['metal', 'metals'] },
+  { label: 'Fasteners', aliases: ['fastener', 'fasteners'] },
+  { label: 'Plastic', aliases: ['plastic', 'plastics', 'polymer', 'polymers'] },
+  { label: 'Electronics', aliases: ['electronics', 'electronic'] },
+  { label: 'Textile', aliases: ['textile', 'textiles', 'fabric', 'fabrics'] },
+  { label: 'Glass', aliases: ['glass'] },
+  { label: 'Others', aliases: ['other', 'others', 'misc', 'miscellaneous', 'uncategorized'] },
+];
+
 export type InventoryOverview = {
   items: InventoryItem[];
   previewRows: DashboardPreviewRow[];
@@ -123,6 +140,10 @@ function slugifyCategory(category: string): string {
   return category.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'misc';
 }
 
+function normalizeCategoryKey(category: string | null | undefined): string {
+  return normalizeCategory(category).trim().toLowerCase();
+}
+
 function normalizeCategory(category: string | null | undefined): string {
   return category?.trim() || 'Misc';
 }
@@ -151,7 +172,8 @@ export function buildInventoryOverview(items: InventoryItem[]): InventoryOvervie
   const lowStockItems = items.filter((item) => item.status === 'LOW');
 
   items.forEach((item) => {
-    categoryCounts.set(item.category, (categoryCounts.get(item.category) ?? 0) + 1);
+    const categoryKey = normalizeCategoryKey(item.category);
+    categoryCounts.set(categoryKey, (categoryCounts.get(categoryKey) ?? 0) + 1);
   });
 
   const previewRows: DashboardPreviewRow[] = items.slice(0, 8).map((item) => ({
@@ -164,13 +186,25 @@ export function buildInventoryOverview(items: InventoryItem[]): InventoryOvervie
 
   const tabs: InventoryTab[] = [
     { id: 'all', label: `All (${items.length})` },
-    ...Array.from(categoryCounts.entries())
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([category, count]) => ({
-        id: slugifyCategory(category),
-        label: `${category} (${count})`,
-      })),
+    ...INVENTORY_CATEGORY_DEFINITIONS.map((definition) => {
+      const count = definition.aliases.reduce((sum, alias) => sum + (categoryCounts.get(alias) ?? 0), 0);
+      return {
+        id: slugifyCategory(definition.label),
+        label: `${definition.label} (${count})`,
+      };
+    }),
   ];
+
+  const knownCategoryKeys = new Set(INVENTORY_CATEGORY_DEFINITIONS.flatMap((definition) => definition.aliases));
+  const extraTabs = Array.from(categoryCounts.entries())
+    .filter(([category]) => !knownCategoryKeys.has(category))
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([category, count]) => ({
+      id: slugifyCategory(category),
+      label: `${category} (${count})`,
+    }));
+
+  tabs.push(...extraTabs);
 
   const alerts = lowStockItems.slice(0, 3).map((item) => `${item.name} (${item.quantity} remaining)`);
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -183,7 +217,7 @@ export function buildInventoryOverview(items: InventoryItem[]): InventoryOvervie
       { id: 'totalItems', label: 'Total Items', value: items.length },
       { id: 'lowStock', label: 'Low Stock', value: lowStockItems.length },
       { id: 'totalUnits', label: 'Total Units', value: totalUnits.toLocaleString('en-ZA') },
-      { id: 'categories', label: 'Categories', value: categoryCounts.size },
+      { id: 'categories', label: 'Categories', value: tabs.length - 1 },
     ],
     tabs,
   };

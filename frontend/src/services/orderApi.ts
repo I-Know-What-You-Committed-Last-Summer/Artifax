@@ -12,6 +12,10 @@ type OrderDto = {
   orderItems: OrderItemDto[];
 };
 
+type OrderStatusUpdateDto = {
+  status: string;
+};
+
 export type CraftingJobStatus = 'In Progress' | 'Paused' | 'Queued';
 
 export type CraftingJob = {
@@ -120,10 +124,38 @@ export async function getActiveAndQueuedJobs(): Promise<{ activeItems: CraftingJ
   };
 }
 
+export async function updateOrderStatus(orderId: number, status: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/Order/${orderId}/status`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status } satisfies OrderStatusUpdateDto),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+}
+
+export async function deleteOrder(orderId: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/Order/${orderId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+}
+
 const orderApi = {
   getOrders,
   getCraftingJobs,
   getActiveAndQueuedJobs,
+  updateOrderStatus,
+  deleteOrder,
 };
 
 export default orderApi;

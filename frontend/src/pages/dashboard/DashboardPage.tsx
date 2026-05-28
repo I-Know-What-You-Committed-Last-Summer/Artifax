@@ -6,9 +6,9 @@ import StatCard from '../../components/common/StatCard';
 import StatusBadge from '../../components/common/StatusBadge';
 
 import { buildInventoryOverview, getInventoryItems, InventoryItem, DashboardPreviewRow } from '../../services/inventoryApi';
-import { getActiveAndQueuedJobs, CraftingJob } from '../../services/orderApi';
+import { deleteOrder, getActiveAndQueuedJobs, updateOrderStatus, CraftingJob } from '../../services/orderApi';
 import '../crafting/components/craftingItems/craftingItems.css';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 function DashboardPage() {
@@ -17,51 +17,98 @@ function DashboardPage() {
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
   const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
   const isFetchingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  const refreshJobs = useCallback(async () => {
+    if (!mountedRef.current || isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+
+    try {
+      const { activeItems, queuedItems } = await getActiveAndQueuedJobs();
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setActiveJobs(activeItems);
+      setQueuedJobs(queuedItems);
+    } catch (err) {
+      console.error('Failed to load crafting jobs', err);
+
+      if (mountedRef.current) {
+        setActiveJobs([]);
+        setQueuedJobs([]);
+      }
+    } finally {
+      isFetchingRef.current = false;
+    }
+  }, []);
+
+  const getOrderIdFromJobId = (jobId: string): number => {
+    const numeric = Number(jobId.replace(/^order-/, ''));
+    return Number.isNaN(numeric) ? 0 : numeric;
+  };
+
+  const handlePauseResume = async (job: CraftingJob): Promise<void> => {
+    const orderId = getOrderIdFromJobId(job.id);
+
+    if (!orderId) {
+      return;
+    }
+
+    const nextStatus = job.status === 'Paused' ? 'In Progress' : 'Pending';
+
+    try {
+      await updateOrderStatus(orderId, nextStatus);
+      await refreshJobs();
+    } catch (err) {
+      console.error(`Failed to update order ${orderId}`, err);
+    }
+  };
+
+  const handleCancel = async (job: CraftingJob): Promise<void> => {
+    const orderId = getOrderIdFromJobId(job.id);
+
+    if (!orderId) {
+      return;
+    }
+
+    try {
+      await deleteOrder(orderId);
+      await refreshJobs();
+    } catch (err) {
+      console.error(`Failed to delete order ${orderId}`, err);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    mountedRef.current = true;
 
     // load inventory once
     getInventoryItems()
       .then((rows) => {
-        if (mounted) setInventoryItems(rows);
+        if (mountedRef.current) setInventoryItems(rows);
       })
       .catch((err) => {
         console.error('Failed to load dashboard inventory data', err);
-        if (mounted) setInventoryItems([]);
+        if (mountedRef.current) setInventoryItems([]);
       });
 
-    // guarded job loader to avoid overlapping requests
-    const loadJobs = async () => {
-      if (!mounted) return;
-      if (isFetchingRef.current) return;
-      isFetchingRef.current = true;
-      try {
-        const { activeItems, queuedItems } = await getActiveAndQueuedJobs();
-        if (!mounted) return;
-        setActiveJobs(activeItems);
-        setQueuedJobs(queuedItems);
-      } catch (err) {
-        console.error('Failed to load crafting jobs', err);
-        if (mounted) {
-          setActiveJobs([]);
-          setQueuedJobs([]);
-        }
-      } finally {
-        isFetchingRef.current = false;
-      }
-    };
-
     // initial load and interval
-    loadJobs();
-    intervalId = setInterval(loadJobs, 10000);
+    void refreshJobs();
+    intervalId = setInterval(() => {
+      void refreshJobs();
+    }, 10000);
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       if (intervalId) clearInterval(intervalId);
     };
-  }, []);
+  }, [refreshJobs]);
 
   const inventoryOverview = useMemo(() => buildInventoryOverview(inventoryItems), [inventoryItems]);
 
@@ -124,42 +171,43 @@ function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     {activeJobs.map((job) => (
-                          <div key={job.id} className="job-card p-3">
-                            <div className="card-header">
-                              <div className="job-info-main">
-                                <div className="job-titles">
-                                  <h3 className="text-sm font-medium">{job.name}</h3>
-                                  <p className="text-xs text-muted">ID: {job.id} · Qty: {job.qty}</p>
-                                </div>
-                              </div>
-                              <span className={`status-badge ${job.status.toUpperCase().replace(' ', '-')}`}>{job.status}</span>
-                            </div>
-
-                            <div className="progress-section mt-2">
-                              <div className="progress-text flex justify-between text-xs text-muted">
-                                <span>{job.progress}% Complete</span>
-                                <span>{job.timeLeft}</span>
-                              </div>
-                              <div className="progress-bar-bg mt-2">
-                                <div className="progress-bar-fill" style={{ width: `${job.progress}%` }}></div>
-                              </div>
-                            </div>
-
-                            <div className="materials-section mt-3">
-                              <p className="section-label text-[11px] text-muted">MATERIALS</p>
-                              <div className="material-tags mt-2">
-                                {job.materials.slice(0, 6).map((m, i) => (
-                                  <span key={i} className="material-tag">{m}</span>
-                                ))}
-                                {job.materials.length > 6 && <span className="material-tag">+{job.materials.length - 6} more</span>}
-                              </div>
-                            </div>
-
-                            <div className="card-actions mt-3 flex gap-2">
-                              <button className="btn-cancel">Cancel</button>
-                              <button className={`btn-action ${job.status === 'Paused' ? 'resume' : 'pause'}`}>{job.status === 'Paused' ? 'Resume' : 'Pause'}</button>
+                      <div key={job.id} className="job-card p-3">
+                        <div className="card-header">
+                          <div className="job-info-main">
+                            <div className="job-titles">
+                              <h3 className="text-sm font-medium">{job.name}</h3>
+                              <p className="text-xs text-muted">ID: {job.id} · Qty: {job.qty}</p>
                             </div>
                           </div>
+                          <span className={`status-badge ${job.status.toLowerCase().replace(/\s+/g, '-')}`}>{job.status}</span>
+                        </div>
+
+                        <div className="progress-section mt-2">
+                          <div className="progress-text flex justify-between text-xs text-muted">
+                            <span>{job.progress}% Complete</span>
+                            <span>{job.timeLeft}</span>
+                          </div>
+                          <div className="progress-bar-bg mt-2">
+                            <div className="progress-bar-fill" style={{ width: `${job.progress}%` }}></div>
+                          </div>
+                        </div>
+
+                        <div className="materials-section mt-3">
+                          <p className="section-label text-[11px] text-muted">MATERIALS</p>
+                          <div className="material-tags mt-2">
+                            {job.materials.slice(0, 6).map((m, i) => (
+                              <span key={i} className="material-tag">{m}</span>
+                            ))}
+                            {job.materials.length > 6 && <span className="material-tag">+{job.materials.length - 6} more</span>}
+                          </div>
+                        </div>
+
+                        <div className="card-actions mt-3 flex gap-2">
+                          <button type="button" className="btn-action pause" onClick={() => { void handlePauseResume(job); }}>
+                            {job.status === 'Paused' ? 'Resume' : 'Pause'}
+                          </button>
+                        </div>
+                      </div>
                         ))}
                   </div>
                 )}
@@ -180,12 +228,18 @@ function DashboardPage() {
                               <p className="text-xs text-muted">ID: {job.id} · Qty: {job.qty}</p>
                             </div>
                           </div>
-                          <span className={`status-badge ${job.status.toUpperCase().replace(' ', '-')}`}>{job.status}</span>
+                          <span className={`status-badge ${job.status.toLowerCase().replace(/\s+/g, '-')}`}>{job.status}</span>
                         </div>
 
                         <div className="mt-2 flex items-center justify-between text-xs text-muted">
                           <div>{job.location}</div>
                           <div>{job.timeLeft}</div>
+                        </div>
+
+                        <div className="card-actions mt-3 flex gap-2">
+                          <button type="button" className="btn-cancel" onClick={() => { void handleCancel(job); }}>
+                            Cancel
+                          </button>
                         </div>
                       </div>
                     ))}
