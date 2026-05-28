@@ -12,7 +12,7 @@ import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import { Blueprint } from './components/craftingData';
-import { craftingAlerts } from '../../data/mockDashboard';
+import { craftingAlerts } from '../../data/fallback';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 interface PageProps {

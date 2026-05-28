@@ -6,7 +6,7 @@ import GraphCard from './components/graph/graph';
 import MostCrafted from './components/mostCarfted/mostCarfted';
 import StatsGrid from '../crafting/components/stats/stats';
 import './analytics.css';
-import { analyticsAlerts } from '../../data/mockDashboard';
+import { analyticsAlerts } from '../../data/fallback';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 const AnalyticsPage: React.FC = () => {
