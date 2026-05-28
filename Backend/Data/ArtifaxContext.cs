@@ -36,6 +36,8 @@ namespace Artifax.Data
                 .HasOne(oi => oi.Item)
                 .WithMany() 
                 .HasForeignKey(oi => oi.ItemID);
+
+            modelBuilder.Entity<Order>().Ignore(o => o.Status);
                 
             modelBuilder.Entity<Branch>().HasMany(b => b.Orders).WithOne(o => o.Branch).HasForeignKey(o => o.BranchID);
         }

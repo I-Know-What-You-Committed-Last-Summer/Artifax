@@ -1,4 +1,10 @@
-jest.mock('../../../services/inventoryApi');
+jest.mock('../../../services/inventoryApi', () => {
+  const actual = jest.requireActual('../../../services/inventoryApi');
+  return {
+    ...actual,
+    getInventoryItems: jest.fn(),
+  };
+});
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import InventoryPage from '../InventoryPage';

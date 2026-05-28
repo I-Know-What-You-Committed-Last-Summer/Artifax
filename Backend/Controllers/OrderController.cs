@@ -35,7 +35,7 @@ namespace Artifax.Controllers
             var orderDtos = orders.Select(o => new OrderReadDto
             {
                 OrderID = o.OrderID,
-                Status = o.Status,
+                Status = o.OrderExpedite ? "In Progress" : "Pending",
                 OrderDateTime = o.OrderDateTime,
                 OrderItems = o.OrderItems.Select(oi => new OrderItemReadDto
                 {
@@ -63,7 +63,7 @@ namespace Artifax.Controllers
             var orderDto = new OrderReadDto
             {
                 OrderID = order.OrderID,
-                Status = order.Status,
+                Status = order.OrderExpedite ? "In Progress" : "Pending",
                 OrderDateTime = order.OrderDateTime,
                 OrderItems = order.OrderItems.Select(oi => new OrderItemReadDto
                 {
@@ -115,7 +115,7 @@ namespace Artifax.Controllers
                 BranchID = newOrderDto.BranchID,
                 EmployeeID = newOrderDto.EmployeeID,
                 OrderExpedite = newOrderDto.OrderExpedite,
-                Status = "Pending",
+                ProductID = newOrderDto.Items.FirstOrDefault()?.ItemID ?? 0,
                 OrderDateTime = DateTime.UtcNow,
                 Branch = null // EF will resolve via FK
             };
@@ -147,7 +147,7 @@ namespace Artifax.Controllers
             var createdDto = new OrderReadDto
             {
                 OrderID = created.OrderID,
-                Status = created.Status,
+                Status = created.OrderExpedite ? "In Progress" : "Pending",
                 OrderDateTime = created.OrderDateTime,
                 OrderItems = created.OrderItems.Select(oi => new OrderItemReadDto
                 {
@@ -175,7 +175,7 @@ namespace Artifax.Controllers
                 return NotFound($"Order with ID {id} not found.");
 
             // Prevent updates to completed orders
-            if (existingOrder.Status == "Completed" || existingOrder.Status == "Crafted")
+            if (existingOrder.OrderExpedite)
                 return BadRequest("Cannot update a completed order.");
 
             // Validate the branch exists
@@ -198,6 +198,7 @@ namespace Artifax.Controllers
             existingOrder.BranchID = updatedOrderDto.BranchID;
             existingOrder.EmployeeID = updatedOrderDto.EmployeeID;
             existingOrder.OrderExpedite = updatedOrderDto.OrderExpedite;
+            existingOrder.ProductID = updatedOrderDto.Items.FirstOrDefault()?.ItemID ?? existingOrder.ProductID;
 
             // Remove old items and add new ones
             context.OrderItems.RemoveRange(existingOrder.OrderItems);
@@ -225,7 +226,7 @@ namespace Artifax.Controllers
             var resultDto = new OrderReadDto
             {
                 OrderID = result.OrderID,
-                Status = result.Status,
+                Status = result.OrderExpedite ? "In Progress" : "Pending",
                 OrderDateTime = result.OrderDateTime,
                 OrderItems = result.OrderItems.Select(oi => new OrderItemReadDto
                 {
@@ -245,7 +246,7 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
-            order.Status = statusDto.Status;
+            order.OrderExpedite = statusDto.Status.Equals("In Progress", StringComparison.OrdinalIgnoreCase);
             await context.SaveChangesAsync();
 
             return Ok(new { message = "Order status updated successfully." });
@@ -267,7 +268,7 @@ namespace Artifax.Controllers
                 return NotFound($"Order with ID {id} not found.");
 
             // Prevent deletion of completed orders
-            if (order.Status == "Completed" || order.Status == "Crafted")
+            if (order.OrderExpedite)
                 return BadRequest("Cannot delete a completed order.");
 
             // Remove order items first, then order

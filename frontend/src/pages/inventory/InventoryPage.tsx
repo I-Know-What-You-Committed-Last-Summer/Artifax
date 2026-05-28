@@ -8,130 +8,95 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Tabs from '../../components/common/Tabs';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
-import { inventoryAlerts, inventoryItems as inventoryItemsMock, inventoryStats, inventoryTabs } from '../../data/mockInventory';
-import { getInventoryItems, InventoryItem } from '../../services/inventoryApi';
+import { buildInventoryOverview, getInventoryItems, getInventoryOverview, InventoryItem, InventoryOverview } from '../../services/inventoryApi';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
-import axios from 'axios';
 
 function InventoryPage() {
-  // Local UI state: active tab, search text, filters, sorting
-  // `getCurrentDateSAST` provides a short date string used in the header
   const currentDate = getCurrentDateSAST();
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [zone, setZone] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
-  const [inventoryData, setInventoryData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-
-
-useEffect(() => {
-    
-    const fetchInventory = async () => {
-      try {
-        
-        const response = await axios.get('http://localhost:5253/api/Item/item/allInventoryItems');
-        console.log('Fetched inventory data:', response.data);
-        setInventoryData(response.data);
-      } catch (error) {
-        console.error('Error fetching inventory data:', error);
-      } finally {
-        setIsLoading(false); 
-      }
-    };
-
-    
-    fetchInventory();
-  }, []);
-
-
-
-//   inventoryItemBranchName
-// : 
-// "Johannesburg"
-// inventoryItemCategory
-// : 
-// "Metals"
-// inventoryItemId
-// : 
-// 1
-// inventoryItemName
-// : 
-// "Stainless Steel"
-// inventoryItemProductionTime
-// : 
-// 5
-// inventoryItemQuantity
-// : 
-// 5
-  // Compute filtered + sorted items when dependencies change
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[] | null>(inventoryItemsMock);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [inventoryOverview, setInventoryOverview] = useState<InventoryOverview>({ items: [], previewRows: [], alerts: [], stats: [], tabs: [] });
 
   useEffect(() => {
     let mounted = true;
-    getInventoryItems()
-      .then((rows) => {
-        if (mounted) setInventoryItems(rows);
+
+    // Prefer fetching the overview (aggregated items + stats) so UI stays consistent
+    getInventoryOverview()
+      .then((overview) => {
+        if (mounted) {
+          setInventoryItems(overview.items);
+          setInventoryOverview(overview);
+        }
       })
-      .catch((err) => {
-        console.error('Failed to load inventory items, using mock', err);
-        if (mounted) setInventoryItems(inventoryItemsMock as any);
+      .catch((error) => {
+        console.error('Failed to load inventory items', error);
+        if (mounted) setInventoryItems([]);
       });
+
     return () => {
       mounted = false;
     };
   }, []);
 
+  // keep a local overview state (populated from the server) to avoid recomputing from potentially stale data
+  // inventoryOverview is set when `getInventoryOverview()` resolves on mount
+
+  // prefer server-provided overview items, fall back to per-item list
+  const sourceItems = inventoryOverview.items && inventoryOverview.items.length ? inventoryOverview.items : inventoryItems;
+
+  const locationOptions = useMemo(() => {
+    const locations = Array.from(new Set(sourceItems.map((item) => item.location))).sort((left, right) => left.localeCompare(right));
+
+    return [
+      { label: 'Location: All', value: 'ALL' },
+      ...locations.map((location) => ({ label: `Location: ${location}`, value: location })),
+    ];
+  }, [sourceItems]);
+
   const filteredItems = useMemo(() => {
-    const items = inventoryItems ?? [];
     const searchLower = search.toLowerCase();
 
-    return inventoryData
+    return sourceItems
       .filter((item) => {
-        // Tab filter: show only items for the selected tab
-        if (activeTab !== 'all' && item.inventoryItemCategory !== activeTab) {
+        if (activeTab !== 'all' && item.tab !== activeTab) {
           return false;
         }
-        // Status filter (OK / LOW / ALL)
+
         if (status !== 'ALL' && item.status !== status) {
-          //FIXME: Bypassing, pls fix
-          return true;
+          return false;
         }
 
-        // Zone/location filter
-        if (zone !== 'ALL' && item.inventoryItemBranchName !== zone) {
-          return true;
+        if (zone !== 'ALL' && item.location !== zone) {
+          return false;
         }
 
-        // If no search text, include the item
         if (searchLower.length === 0) {
           return true;
         }
 
-        // Search across name, sku, and location
         return (
-          item.inventoryItemName.toLowerCase().includes(searchLower) ||
-          item.inventoryItemSKU.toLowerCase().includes(searchLower) ||
-          item.inventoryItemBranchName.toLowerCase().includes(searchLower)
+          item.name.toLowerCase().includes(searchLower) ||
+          item.sku.toLowerCase().includes(searchLower) ||
+          item.location.toLowerCase().includes(searchLower)
         );
       })
-      .sort((a, b) => {
-        // Optional sort by quantity or by name
+      .sort((left, right) => {
         if (sortBy === 'QTY') {
-          return b.inventoryItemQuantity - a.inventoryItemQuantity;
+          return right.quantity - left.quantity;
         }
 
-        return a.inventoryItemName.localeCompare(b.inventoryItemName);
+        return left.name.localeCompare(right.name);
       });
-  }, [activeTab, search, sortBy, status, zone, inventoryItems]);
+  }, [activeTab, sourceItems, search, sortBy, status, zone]);
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Header with action slot on the right */}
       <PageHeader
         title="Inventory Management"
         subtitle={`Full Inventory · ${currentDate}`}
@@ -141,26 +106,19 @@ useEffect(() => {
           </button>
         }
       />
-      {/* Alerts at the top */}
-      <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />
 
-      {/* KPI stat cards */}
+      <AlertStrip label={`Low Stock: ${inventoryOverview.alerts.length}`} items={inventoryOverview.alerts} />
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {inventoryStats.map((stat) => (
+        {inventoryOverview.stats.map((stat) => (
           <StatCard key={stat.id} label={stat.label} value={stat.value} />
         ))}
       </div>
 
-      {/* Main table section with filters, tabs and results */}
-      <SectionCard title="All Inventory Items" subtitle="24 items">
+      <SectionCard title="All Inventory Items" subtitle={`${inventoryItems.length} items`}>
         <div className="space-y-3">
-          {/* Search and filter controls */}
           <div className="grid items-end gap-2 lg:grid-cols-[minmax(0,2.4fr),repeat(3,minmax(0,1fr))]">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search items, SKU, location..."
-            />
+            <SearchInput value={search} onChange={setSearch} placeholder="Search items, SKU, location..." />
             <FilterSelect
               value={status}
               onChange={setStatus}
@@ -170,17 +128,7 @@ useEffect(() => {
                 { label: 'Status: Low', value: 'LOW' },
               ]}
             />
-            <FilterSelect
-              value={zone}
-              onChange={setZone}
-              options={[
-                { label: 'Zone: All', value: 'ALL' },
-                { label: 'Zone: A', value: 'Zone A' },
-                { label: 'Zone: B', value: 'Zone B' },
-                { label: 'Zone: C', value: 'Zone C' },
-                { label: 'Zone: D', value: 'Zone D' },
-              ]}
-            />
+            <FilterSelect value={zone} onChange={setZone} options={locationOptions} />
             <FilterSelect
               value={sortBy}
               onChange={setSortBy}
@@ -191,10 +139,8 @@ useEffect(() => {
             />
           </div>
 
-          {/* Tabs for quick filtering */}
-          <Tabs tabs={inventoryTabs} activeTab={activeTab} onChange={setActiveTab} />
+          <Tabs tabs={inventoryOverview.tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-          {/* Results table */}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted">
@@ -211,35 +157,26 @@ useEffect(() => {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.inventoryItemId} className="border-b border-border/70">
+                  <tr key={item.id} className="border-b border-border/70">
                     <td className="py-2.5">
-                      <p className="font-semibold text-text">{item.inventoryItemName}</p>
-                      <p className="text-xs text-muted">{item.inventoryItemCategory.slice(0, 3) + "-" + item.inventoryItemId}</p>
+                      <p className="font-semibold text-text">{item.name}</p>
+                      <p className="text-xs text-muted">{item.sku}</p>
                     </td>
-                    <td className="py-2.5 text-muted">{item.inventoryItemCategory}</td>
-                    <td className="py-2.5 font-semibold text-text">{item.inventoryItemQuantity}</td>
-                    <td className="py-2.5 text-muted">{item.inventoryItemProductionTime}</td>
-                    <td className="py-2.5 text-muted">{item.inventoryItemBranchName}</td>
+                    <td className="py-2.5 text-muted">{item.category}</td>
+                    <td className="py-2.5 font-semibold text-text">{item.quantity}</td>
+                    <td className="py-2.5 text-muted">{item.minStock}</td>
+                    <td className="py-2.5 text-muted">{item.location}</td>
                     <td className="py-2.5">
-                      {/* Status badge */}
-                      <StatusBadge status={item.inventoryItemQuantity < 10 ? 'LOW' : 'OK'} />
+                      <StatusBadge status={item.status} />
                     </td>
                     <td className="py-2.5">
-                      <button
-                        type="button"
-                        className="icon-action-button"
-                        aria-label={`Edit ${item.inventoryItemId}`}
-                      >
+                      <button type="button" className="icon-action-button" aria-label={`Edit ${item.name}`}>
                         <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
                         <span className="sr-only">Edit</span>
                       </button>
                     </td>
                     <td className="py-2.5">
-                      <button
-                        type="button"
-                        className="icon-action-button"
-                        aria-label={`View ${item.name}`}
-                      >
+                      <button type="button" className="icon-action-button" aria-label={`View ${item.name}`}>
                         <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
                         <span className="sr-only">View</span>
                       </button>
@@ -249,7 +186,6 @@ useEffect(() => {
               </tbody>
             </table>
 
-            {/* Empty state when filters return no results */}
             {filteredItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted">No items match your current filters.</p>
             ) : null}

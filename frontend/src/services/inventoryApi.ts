@@ -1,8 +1,18 @@
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
 
+const DEFAULT_MIN_STOCK = 5;
+
 type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number };
 type BranchDto = { BranchID: number; BranchName: string };
 type BranchItemCapacityDto = { BranchItemCapacityID: number; BranchID: number; ItemID: number; ItemQuantity: number };
+type InventoryRowDto = {
+  inventoryItemId: number;
+  inventoryItemName: string;
+  inventoryItemCategory: string;
+  inventoryItemProductionTime: number;
+  inventoryItemQuantity: number;
+  inventoryItemBranchName: string;
+};
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { credentials: 'include' });
@@ -24,35 +34,102 @@ export async function getBranches(): Promise<BranchDto[]> {
 
 export type DashboardPreviewRow = { id: string | number; name: string; qty: number; location: string; status: string };
 
-export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
-  // Fetch items, branch capacities and branches, then join them to build preview rows
-  const [items, branchItems, branches] = await Promise.all([getItems(), getBranchItems(), getBranches()]);
+export type InventoryStat = {
+  id: string;
+  label: string;
+  value: string | number;
+};
 
-  // Map for quick lookup
-  const itemById = new Map<number, ItemDto>();
-  items.forEach((i) => itemById.set(i.ItemID, i));
+export type InventoryTab = {
+  id: string;
+  label: string;
+};
 
-  const branchById = new Map<number, BranchDto>();
-  branches.forEach((b) => branchById.set(b.BranchID, b));
+export type InventoryOverview = {
+  items: InventoryItem[];
+  previewRows: DashboardPreviewRow[];
+  alerts: string[];
+  stats: InventoryStat[];
+  tabs: InventoryTab[];
+};
 
-  // Build preview rows: for each branch item, pair with item and branch info
-  const rows: DashboardPreviewRow[] = branchItems.map((bic) => {
-    const item = itemById.get(bic.ItemID);
-    const branch = branchById.get(bic.BranchID);
-    const qty = bic.ItemQuantity ?? 0;
-    const status = qty <= 5 ? 'LOW' : 'OK';
-    return {
-      id: item?.ItemID ?? `${bic.ItemID}-${bic.BranchID}`,
-      name: item?.ItemName ?? `Item ${bic.ItemID}`,
-      qty,
-      location: branch?.BranchName ?? `Branch ${bic.BranchID}`,
-      status,
-    };
+function slugifyCategory(category: string): string {
+  return category.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'misc';
+}
+
+function normalizeCategory(category: string | null | undefined): string {
+  return category?.trim() || 'Misc';
+}
+
+function normalizeLocation(location: string | null | undefined): string {
+  return location?.trim() || 'Unassigned';
+}
+
+function normalizeInventoryRow(row: InventoryRowDto): InventoryItem {
+  const category = normalizeCategory(row.inventoryItemCategory);
+  const quantity = row.inventoryItemQuantity ?? 0;
+  const minStock = DEFAULT_MIN_STOCK;
+  const status = quantity <= minStock ? 'LOW' : 'OK';
+
+  return {
+    id: row.inventoryItemId,
+    name: row.inventoryItemName || `Item ${row.inventoryItemId}`,
+    sku: `${category.slice(0, 3).toUpperCase()}-${row.inventoryItemId}`,
+    category,
+    quantity,
+    minStock,
+    location: normalizeLocation(row.inventoryItemBranchName),
+    status,
+    tab: slugifyCategory(category),
+  };
+}
+
+export function buildInventoryOverview(items: InventoryItem[]): InventoryOverview {
+  const categoryCounts = new Map<string, number>();
+  const lowStockItems = items.filter((item) => item.status === 'LOW');
+
+  items.forEach((item) => {
+    categoryCounts.set(item.category, (categoryCounts.get(item.category) ?? 0) + 1);
   });
 
-  // Sort by name to provide stable preview order
-  rows.sort((a, b) => a.name.localeCompare(b.name));
-  return rows;
+  const previewRows: DashboardPreviewRow[] = items.slice(0, 8).map((item) => ({
+    id: item.id,
+    name: item.name,
+    qty: item.quantity,
+    location: item.location,
+    status: item.status,
+  }));
+
+  const tabs: InventoryTab[] = [
+    { id: 'all', label: `All (${items.length})` },
+    ...Array.from(categoryCounts.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([category, count]) => ({
+        id: slugifyCategory(category),
+        label: `${category} (${count})`,
+      })),
+  ];
+
+  const alerts = lowStockItems.slice(0, 3).map((item) => `${item.name} (${item.quantity} remaining)`);
+  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  return {
+    items,
+    previewRows,
+    alerts,
+    stats: [
+      { id: 'totalItems', label: 'Total Items', value: items.length },
+      { id: 'lowStock', label: 'Low Stock', value: lowStockItems.length },
+      { id: 'totalUnits', label: 'Total Units', value: totalUnits.toLocaleString('en-ZA') },
+      { id: 'categories', label: 'Categories', value: categoryCounts.size },
+    ],
+    tabs,
+  };
+}
+
+export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
+  const overview = await getInventoryOverview();
+  return overview.previewRows;
 }
 
 export type InventoryItem = {
@@ -68,46 +145,63 @@ export type InventoryItem = {
 };
 
 export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const [items, branchItems, branches] = await Promise.all([getItems(), getBranchItems(), getBranches()]);
+  const rows = await fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`);
 
-  const itemById = new Map<number, ItemDto>();
-  items.forEach((i) => itemById.set(i.ItemID, i));
+  // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; locations: Record<string, number>; productionTime?: number }>();
 
-  const branchById = new Map<number, BranchDto>();
-  branches.forEach((b) => branchById.set(b.BranchID, b));
+  for (const r of rows) {
+    const id = r.inventoryItemId;
+    const category = normalizeCategory(r.inventoryItemCategory);
+    const name = r.inventoryItemName || `Item ${id}`;
+    const sku = `${category.slice(0, 3).toUpperCase()}-${id}`;
+    const qty = r.inventoryItemQuantity ?? 0;
+    const loc = normalizeLocation(r.inventoryItemBranchName);
 
-  // Collapse branchItems to per-item totals and pick primary branch name
-  const collapsed = new Map<number, { quantity: number; branchName?: string }>();
-  branchItems.forEach((bic) => {
-    const existing = collapsed.get(bic.ItemID) ?? { quantity: 0 };
-    existing.quantity += bic.ItemQuantity ?? 0;
-    if (!existing.branchName) existing.branchName = branchById.get(bic.BranchID)?.BranchName;
-    collapsed.set(bic.ItemID, existing);
-  });
+    if (!map.has(id)) {
+      map.set(id, { id, name, category, sku, quantity: qty, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
+    } else {
+      const entry = map.get(id)!;
+      entry.quantity += qty;
+      entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
+    }
+  }
 
-  const result: InventoryItem[] = [];
-  itemById.forEach((item, id) => {
-    const collapsedEntry = collapsed.get(id);
-    const quantity = collapsedEntry?.quantity ?? 0;
-    const location = collapsedEntry?.branchName ?? 'Main';
-    const minStock = 5; // sensible default until backend provides this
-    const status = quantity <= minStock ? 'LOW' : 'OK';
-    result.push({
-      id: item.ItemID,
-      name: item.ItemName,
-      sku: `ITM-${item.ItemID}`,
-      category: item.ItemCategory ?? 'Misc',
-      quantity,
+  const items: InventoryItem[] = Array.from(map.values()).map((e) => {
+    // pick primary location as the one with highest quantity
+    const primaryLocation = Object.entries(e.locations).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unassigned';
+    const minStock = DEFAULT_MIN_STOCK;
+    const status = e.quantity <= minStock ? 'LOW' : 'OK';
+
+    return {
+      id: e.id,
+      name: e.name,
+      sku: e.sku,
+      category: e.category,
+      quantity: e.quantity,
       minStock,
-      location,
+      location: primaryLocation,
       status,
-      tab: 'all',
-    });
+      tab: slugifyCategory(e.category),
+    };
   });
 
-  // Stable sort by name
-  result.sort((a, b) => a.name.localeCompare(b.name));
-  return result;
+  return items.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export default { getItems, getBranchItems, getBranches, getDashboardPreview, getInventoryItems };
+export async function getInventoryOverview(): Promise<InventoryOverview> {
+  const items = await getInventoryItems();
+  return buildInventoryOverview(items);
+}
+
+const inventoryApi = {
+  getItems,
+  getBranchItems,
+  getBranches,
+  getDashboardPreview,
+  getInventoryItems,
+  getInventoryOverview,
+  buildInventoryOverview,
+};
+
+export default inventoryApi;

@@ -4,6 +4,7 @@ namespace Artifax.Models
     public class Order
     {
         public int OrderID { get; set; }
+        public int ProductID { get; set; }
         public DateTime OrderDateTime { get; set; } = DateTime.UtcNow;
         public bool OrderExpedite { get; set; }
         public string Status { get; set; } = "Pending"; 
