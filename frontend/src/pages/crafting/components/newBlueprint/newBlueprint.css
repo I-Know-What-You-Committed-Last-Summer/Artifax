@@ -58,6 +58,10 @@
   gap: 16px;
 }
 
+.field-row--sub {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .field-group {
   display: flex;
   flex-direction: column;
@@ -191,6 +195,11 @@
 }
 
 @media (max-width: 860px) {
+  .field-row,
+  .field-row--sub {
+    grid-template-columns: 1fr;
+  }
+
   .materials-row {
     grid-template-columns: 1fr;
   }

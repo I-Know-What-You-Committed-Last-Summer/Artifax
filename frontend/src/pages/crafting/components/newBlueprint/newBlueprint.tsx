@@ -1,5 +1,6 @@
 import React, { FC, useState } from 'react';
 import Button from '../../../../components/common/Button';
+import FilterSelect from '../../../../components/common/FilterSelect';
 import './newBlueprint.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
@@ -33,6 +34,7 @@ const materialOptions = [
 const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
   const [blueprintName, setBlueprintName] = useState('');
   const [category, setCategory] = useState('metal');
+  const [craftTimeMinutes, setCraftTimeMinutes] = useState(1);
   const [materials, setMaterials] = useState<MaterialRow[]>([
     { id: 'mat-1', item: 'Metal', amount: 1 },
     { id: 'mat-2', item: '', amount: 1 },
@@ -69,6 +71,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     const payload = {
       name: blueprintName.trim(),
       category,
+      craftTimeMinutes,
       materials: validMaterials,
     };
 
@@ -89,51 +92,54 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
       </div>
 
       <form className="new-blueprint-form" onSubmit={handleSubmit}>
-        <div className="field-row">
-          <div className="field-group">
-            <label htmlFor="blueprintName">Blueprint Name</label>
-            <input
-              id="blueprintName"
-              type="text"
-              value={blueprintName}
-              onChange={(event) => setBlueprintName(event.target.value)}
-              placeholder="Name"
-              className="field-input"
-            />
-          </div>
+            <div className="field-row">
+            <div className="field-group">
+              <label htmlFor="blueprintName">Blueprint Name</label>
+              <input
+                id="blueprintName"
+                type="text"
+                value={blueprintName}
+                onChange={(event) => setBlueprintName(event.target.value)}
+                placeholder="Name"
+                className="field-input"
+              />
+            </div>
 
-          <div className="field-group field-group--category">
-            <label htmlFor="blueprintCategory">Category of Blueprint</label>
-            <select
-              id="blueprintCategory"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="field-select"
-            >
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="field-group field-group--category">
+              <label htmlFor="blueprintCategory">Category of Blueprint</label>
+              <FilterSelect
+                value={category}
+                onChange={setCategory}
+                options={categoryOptions}
+                className="field-select"
+                ariaLabel="Select blueprint category"
+              />
+            </div>
+
+            <div className="field-group field-group--craft-time">
+              <label htmlFor="craftTimeMinutes">Craft Time (min)</label>
+              <input
+                id="craftTimeMinutes"
+                type="number"
+                min={1}
+                step={1}
+                value={craftTimeMinutes}
+                onChange={(event) => setCraftTimeMinutes(Math.max(1, Number(event.target.value) || 1))}
+                className="field-input craft-time-input"
+              />
+            </div>
           </div>
-        </div>
  <label htmlFor="blueprintCategory">Required materials</label>
         <div className="material-list">
           {materials.map((material) => (
             <div key={material.id} className="materials-row">
-              <select
+              <FilterSelect
                 value={material.item}
-                onChange={(event) => handleMaterialChange(material.id, 'item', event.target.value)}
+                onChange={(value) => handleMaterialChange(material.id, 'item', value)}
+                options={[{ value: '', label: 'None selected' }, ...materialOptions]}
                 className="field-select material-select"
-              >
-                <option value="">None selected</option>
-                {materialOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                ariaLabel="Select material"
+              />
 
               <div className="amount-line">
                 <button
