@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { useApi } from '../../../../hooks/useApi';
 
 type User = {
   id: number;
@@ -18,13 +19,47 @@ interface CreateUsersPageProps {
 }
 
 function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
+  const api = useApi();
+  // `api` is the shared axios instance from `src/hooks/useApi.ts`.
+  // This file does not call backend endpoints directly for create/update; it passes data
+  // up to the parent (`users.tsx`) via `onSave`/`onDelete`. Parent handles POST/PATCH/DELETE.
   const [fullName, setFullName] = useState('');
-  const [branch, setBranch] = useState('Warehouse A');
+  const [branch, setBranch] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Admin');
   const [isEditing, setIsEditing] = useState(true);
 
+  const [branchOptions, setBranchOptions] = useState<Array<{ label: string; value: string }>>([]);
+
+  const roleOptions = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Employee', value: 'Employee' },
+  ];
+
+  // Fetch branches once on mount
+  useEffect(() => {
+    // Load branch list from backend once on mount.
+    // Endpoint: GET /api/Branch (implemented in Backend/Controllers/BranchController.cs)
+    // Response: array of BranchDto objects. We map them to `{ label, value }` for `FilterSelect`.
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await api.get('/Branch');
+        if (!mounted) return;
+        const opts = (resp.data ?? []).map((b: any) => ({ label: b.name ?? b.branchName ?? b.label, value: b.name ?? b.branchName ?? b.label }));
+        setBranchOptions(opts);
+        // If the form is for a new user and branch is empty, pick the first branch as default.
+        setBranch((current) => (current ? current : (opts.length > 0 ? opts[0].value : '')));
+      } catch (err) {
+        console.error('Failed to load branches', err);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [api]);
+
+  // Sync incoming `user` prop to local form state when it changes
   useEffect(() => {
     if (user) {
       setFullName(user.name);
@@ -35,7 +70,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       setIsEditing(false);
     } else {
       setFullName('');
-      setBranch('Warehouse A');
+      // keep current branch (from fetched defaults) when creating new user
       setEmail('');
       setPassword('');
       setRole('Admin');
@@ -69,6 +104,8 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       return;
     }
 
+    // Pass form data up to the parent `Users` component via `onSave`.
+    // The parent is responsible for calling the backend API (POST/PATCH) with the proper DTO.
     onSave({
       id: user?.id ?? null,
       name: fullName,
@@ -114,32 +151,27 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
 
           <label className="createusers-field">
             <span className="createusers-label">Branch</span>
-            <div className="createusers-input-shell">
-              <select
+            <div className="createusers-input-shell createusers-select-shell">
+              <FilterSelect
                 value={branch}
-                onChange={(event) => setBranch(event.target.value)}
-                className="createusers-input"
-                disabled={!isEditing}
-              >
-                <option value="Warehouse A">Warehouse A</option>
-                <option value="Warehouse B">Warehouse B</option>
-                <option value="Warehouse C">Warehouse C</option>
-              </select>
+                onChange={setBranch}
+                options={branchOptions}
+                className="createusers-select"
+                ariaLabel="Select branch"
+              />
             </div>
           </label>
 
           <label className="createusers-field">
             <span className="createusers-label">Role</span>
-            <div className="createusers-input-shell">
-              <select
+            <div className="createusers-input-shell createusers-select-shell">
+              <FilterSelect
                 value={role}
-                onChange={(event) => setRole(event.target.value)}
-                className="createusers-input"
-                disabled={!isEditing}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Staff">Staff</option>
-              </select>
+                onChange={setRole}
+                options={roleOptions}
+                className="createusers-select"
+                ariaLabel="Select role"
+              />
             </div>
           </label>
 
@@ -221,7 +253,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                   </button>
                   <button
                     type="button"
-                    className="createusers-secondary"
+                    className="createusers-secondary createusers-delete"
                     onClick={() => user && onDelete(user.id)}
                   >
                     Delete User

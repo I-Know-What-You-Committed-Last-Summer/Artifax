@@ -13,11 +13,14 @@ type User = {
 interface UserListProps {
   users: User[];
   selectedUserId: number | null;
+  // `loading` is passed from the parent `Users` component. It reflects the GET /api/User request state.
+  // We render a small footer status so the overall card height doesn't jump when loading starts/stops.
+  loading: boolean;
   onSelectUser: (id: number) => void;
   onCreateNewUser: () => void;
 }
 
-function UserList({ users, selectedUserId, onSelectUser, onCreateNewUser }: UserListProps) {
+function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUser }: UserListProps) {
   return (
     <section className="userlist-card">
       <header className="userlist-card-header">
@@ -43,39 +46,48 @@ function UserList({ users, selectedUserId, onSelectUser, onCreateNewUser }: User
       </header>
 
       <div className="userlist-items">
-        {users.map((user) => (
-          <article
-            key={user.id}
-            className={`userlist-item ${selectedUserId === user.id ? 'selected' : ''}`}
-            onClick={() => onSelectUser(user.id)}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="userlist-avatar-shell">
-              <img src={userIcon} alt="User icon" className="userlist-avatar" />
-            </div>
-            <div className="userlist-info">
-              <div className="userlist-name-row">
-                <span className="userlist-name">{user.name}</span>
+        {users.length === 0 ? (
+          <div className="userlist-empty">
+            <p>No users found — pull from API returned empty.</p>
+          </div>
+        ) : (
+          users.map((user) => (
+            <article
+              key={user.id}
+              className={`userlist-item ${selectedUserId === user.id ? 'selected' : ''}`}
+              onClick={() => onSelectUser(user.id)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="userlist-avatar-shell">
+                <img src={userIcon} alt="User icon" className="userlist-avatar" />
               </div>
-              <p className="userlist-email">{user.email}</p>
-            </div>
-            <div className="userlist-card-meta">
-              <span className={`userlist-role-tag ${user.role === 'Admin' ? 'role-admin' : 'role-staff'}`}>
-                {user.role}
-              </span>
-              <span className={`userlist-branch-tag ${user.branch === 'Warehouse A' ? 'branch-a' : 'branch-b'}`}>
-                {user.branch}
-              </span>
-            </div>
-          </article>
-        ))}
+              <div className="userlist-info">
+                <div className="userlist-name-row">
+                  <span className="userlist-name">{user.name}</span>
+                </div>
+                <p className="userlist-email">{user.email}</p>
+              </div>
+              <div className="userlist-card-meta">
+                <span className={`userlist-role-tag ${user.role === 'Admin' ? 'role-admin' : 'role-staff'}`}>
+                  {user.role}
+                </span>
+                <span className={`userlist-branch-tag ${user.branch === 'Warehouse A' ? 'branch-a' : 'branch-b'}`}>
+                  {user.branch}
+                </span>
+              </div>
+            </article>
+          ))
+        )}
       </div>
 
       <footer className="userlist-footer">
         <button type="button" className="userlist-button" onClick={onCreateNewUser}>
           Create new user
         </button>
+        <div className="userlist-status" aria-live="polite">
+          {loading ? 'Loading users...' : '\u00A0'}
+        </div>
       </footer>
     </section>
   );
