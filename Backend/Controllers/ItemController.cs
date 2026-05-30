@@ -34,6 +34,55 @@ namespace Artifax.Controllers
             }
             return ItemReadDto.ToDto(_item);
         }
+
+
+        [HttpPost("item/")]
+        public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
+        {
+            Item _item = new Item()
+            {
+                ItemCategory = incoming.ItemCategory,
+                ItemName = incoming.ItemName,
+                ProductionTime = incoming.ProductionTime
+            };
+            _context.Items.Add(_item);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetItem), new { id = _item.ItemID }, new ItemReadDto()
+            {
+                ItemID = _item.ItemID,
+                ItemName = _item.ItemName,
+                ItemCategory = _item.ItemCategory
+            });
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateItem(int id, ItemWriteDto incoming)
+        {
+            var _item = await _context.Items.FindAsync(id);
+            if (_item == null)
+            {
+                return NotFound();
+            }
+            _item.ItemName = incoming.ItemName;
+            _item.ItemCategory = incoming.ItemCategory;
+            _item.ProductionTime = incoming.ProductionTime;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteItem(int id)
+        {
+            var _item = await _context.Items.FindAsync(id);
+            if (_item == null)
+            {
+                return NotFound();
+            }
+            _context.Items.Remove(_item);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        #endregion
+        #region BlueprintEndpoints
         [HttpGet("item/allItemBlueprints")]
         public async Task<ActionResult<IEnumerable<ItemBlueprintReadDto>>> GetAllItemsWithIngredients()
         {
@@ -54,7 +103,7 @@ namespace Artifax.Controllers
                         Quantity = x.Ingredient.IngredientQuantity
                     }).ToList()
                 }).ToListAsync();
-                
+
             return itemsWithIngredients;
         }
         [HttpGet("item/allInventoryItems")]
@@ -68,51 +117,79 @@ namespace Artifax.Controllers
             return inventoryItems;
         }
 
-        [HttpPost("item/")]
-        public async Task<ActionResult<Item>> CreateItem(ItemWriteDto incoming)
+
+        //Updates the items prod time and creates new ingredients for the blueprint
+        [HttpPut("item/{itemId}/blueprint")]
+        public async Task<ActionResult> UpdateItemBlueprint(int itemId, ItemBlueprintWriteDto incoming)
         {
-            Item _item = new Item()
-            {
-                ItemCategory = incoming.ItemCategory,
-                ItemName = incoming.ItemName,
-                ProductionTime = incoming.ProductionTime
-            };
-            _context.Items.Add(_item);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetItem), new {id = _item.ItemID}, new ItemReadDto()
-            {
-                ItemID = _item.ItemID,
-                ItemName = _item.ItemName,
-                ItemCategory = _item.ItemCategory
-            });
-        }
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateItem(int id, ItemWriteDto incoming)
-        {
-            var _item = await _context.Items.FindAsync(id);
-            if (_item == null)
+            var item = await _context.Items.FindAsync(itemId);
+            if (item == null)
             {
                 return NotFound();
             }
-            _item.ItemName=incoming.ItemName;
-            _item.ItemCategory=incoming.ItemCategory;
-            _item.ProductionTime=incoming.ProductionTime;
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteItem(int id)
-        {
-            var _item = await _context.Items.FindAsync(id);
-            if (_item == null)
+            item.ProductionTime = incoming.ProductionTime;
+            if (incoming.Ingredients != null)
             {
-                return NotFound();
+                foreach (var ig in incoming.Ingredients)
+                {
+                    var itemIngredient = new ItemIngredient
+                    {
+                        ProductID = itemId,
+                        IngredientID = ig.IngredientID,
+                        IngredientQuantity = ig.IngredientQuantity
+                    };
+                    _context.ItemIngredients.Add(itemIngredient);
+                }
             }
-            _context.Items.Remove(_item);
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
+        //Updates prod time for item and updates existing ingredients, including creating new ones and deleting old ones
+        [HttpPut("item/{itemId}/blueprint/edit")]
+        public async Task<ActionResult> EditItemBlueprint(int itemId, ItemBlueprintWriteDto incoming)
+        {
+            var item = await _context.Items
+                .Include(i => i.ProductItemIngredients)
+                .FirstOrDefaultAsync(i => i.ItemID == itemId);
+            if (item == null)
+            {
+                return NotFound();
+            }
+            item.ProductionTime = incoming.ProductionTime;
+            if (incoming.Ingredients != null)
+            {
+                var incomingIngredientIds = incoming.Ingredients.Select(i => i.IngredientID).ToList();
+                var ingredientsToRemove = item.ProductItemIngredients
+                    .Where(existing => !incomingIngredientIds.Contains(existing.IngredientID))
+                    .ToList();
+                foreach (var igToRemove in ingredientsToRemove)
+                {
+                    _context.ItemIngredients.Remove(igToRemove);
+                }
+                foreach (var incomingIg in incoming.Ingredients)
+                {
+                    var existingIg = item.ProductItemIngredients
+                        .FirstOrDefault(e => e.IngredientID == incomingIg.IngredientID);
+                    if (existingIg != null)
+                    {
+                        existingIg.IngredientQuantity = incomingIg.IngredientQuantity;
+                    }
+                    else
+                    {
+                        var newIngredient = new ItemIngredient
+                        {
+                            ProductID = itemId,
+                            IngredientID = incomingIg.IngredientID,
+                            IngredientQuantity = incomingIg.IngredientQuantity
+                        };
+                        _context.ItemIngredients.Add(newIngredient);
+                    }
+                }
+            }
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
         #endregion
 
         #region ItemRecipeEndpoints
@@ -137,13 +214,16 @@ namespace Artifax.Controllers
         [HttpGet("itemIngredient/item/{itemId}")]
         public async Task<ActionResult<IEnumerable<IngredientBlueprintReadDto>>> GetIngredientsForItem(int itemId)
         {
-            var blueprint = await (from ingredient in _context.ItemIngredients join item in _context.Items on ingredient.IngredientID equals item.ItemID where ingredient.ProductID == itemId select new IngredientBlueprintReadDto
-            {
-                IngredientID = item.ItemID,
-                ItemName = item.ItemName,
-                ItemCategory = item.ItemCategory,
-                Quantity = ingredient.IngredientQuantity
-            }).ToListAsync();
+            var blueprint = await (from ingredient in _context.ItemIngredients
+                                   join item in _context.Items on ingredient.IngredientID equals item.ItemID
+                                   where ingredient.ProductID == itemId
+                                   select new IngredientBlueprintReadDto
+                                   {
+                                       IngredientID = item.ItemID,
+                                       ItemName = item.ItemName,
+                                       ItemCategory = item.ItemCategory,
+                                       Quantity = ingredient.IngredientQuantity
+                                   }).ToListAsync();
             if (!blueprint.Any())
             {
                 return NotFound();
@@ -161,10 +241,10 @@ namespace Artifax.Controllers
                 IngredientQuantity = incoming.IngredientQuantity,
                 ProductID = incoming.ProductID
             };
-            
+
             _context.ItemIngredients.Add(_itemIngredient);
             await _context.SaveChangesAsync();
-            
+
             return CreatedAtAction(nameof(GetItemIngredient), new { id = _itemIngredient.ItemIngredientID }, new ItemIngredientReadDto()
             {
                 ItemIngredientID = _itemIngredient.ItemIngredientID,
@@ -183,11 +263,11 @@ namespace Artifax.Controllers
             {
                 return NotFound();
             }
-            
+
             _itemIngredient.IngredientID = incoming.IngredientID;
             _itemIngredient.IngredientQuantity = incoming.IngredientQuantity;
             _itemIngredient.ProductID = incoming.ProductID;
-            
+
             await _context.SaveChangesAsync();
             return NoContent();
         }
@@ -201,7 +281,7 @@ namespace Artifax.Controllers
             {
                 return NotFound();
             }
-            
+
             _context.ItemIngredients.Remove(_itemIngredient);
             await _context.SaveChangesAsync();
             return NoContent();
@@ -241,7 +321,7 @@ namespace Artifax.Controllers
             };
             _context.BranchItemCapacities.Add(_branchItemCapacity);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetBranchItemsByID), new {id = _branchItemCapacity.BranchItemCapacityID}, new BranchItemCapacityReadDto()
+            return CreatedAtAction(nameof(GetBranchItemsByID), new { id = _branchItemCapacity.BranchItemCapacityID }, new BranchItemCapacityReadDto()
             {
                 BranchItemCapacityID = _branchItemCapacity.BranchItemCapacityID,
                 BranchID = _branchItemCapacity.BranchID,
@@ -272,7 +352,7 @@ namespace Artifax.Controllers
             {
                 return NotFound();
             }
-            
+
             _context.BranchItemCapacities.Remove(_branchItemCapacity);
             await _context.SaveChangesAsync();
             return NoContent();
