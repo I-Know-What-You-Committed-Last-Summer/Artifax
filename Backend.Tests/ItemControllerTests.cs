@@ -527,5 +527,152 @@ namespace Backend.Tests
             Assert.IsType<NotFoundResult>(result);
             Assert.Equal(1, await context.BranchItemCapacities.CountAsync());
         }
+        [Fact]
+        public async Task UpdateItemBlueprint_ExistingItem_UpdatesTimeAndAddsIngredients_ReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var existingItem = new Item { ItemID = 1, ItemName = "Iron Sword", ItemCategory = "Weapon", ProductionTime = 120 };
+            var ingredientItem = new Item { ItemID = 2, ItemName = "Iron Ingot", ItemCategory = "Metal", ProductionTime = 60 };
+            context.Items.AddRange(existingItem, ingredientItem);
+            await context.SaveChangesAsync();
+            var controller = new ItemController(context);
+            var blueprintDto = new ItemBlueprintWriteDto
+            {
+                ProductionTime = 240,
+                Ingredients = new List<IngredientBlueprintWriteDto> 
+                {
+                    new IngredientBlueprintWriteDto { IngredientID = 2, IngredientQuantity = 3 }
+                }
+            };
+
+            // ACT
+            var result = await controller.UpdateItemBlueprint(1, blueprintDto);
+
+            // ASSERT
+            Assert.IsType<NoContentResult>(result);
+            var updatedItem = await context.Items.FindAsync(1);
+            Assert.Equal(240, updatedItem.ProductionTime);
+            var addedIngredients = await context.ItemIngredients.ToListAsync();
+            Assert.Single(addedIngredients);
+            Assert.Equal(1, addedIngredients[0].ProductID);
+            Assert.Equal(2, addedIngredients[0].IngredientID);
+            Assert.Equal(3, addedIngredients[0].IngredientQuantity);
+        }
+
+        [Fact]
+        public async Task UpdateItemBlueprint_NonExistingItem_ReturnsNotFound()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var controller = new ItemController(context);
+
+            var blueprintDto = new ItemBlueprintWriteDto
+            {
+                ProductionTime = 240,
+                Ingredients = new List<IngredientBlueprintWriteDto>()
+            };
+
+            // ACT
+            var result = await controller.UpdateItemBlueprint(999, blueprintDto);
+
+            // ASSERT
+            Assert.IsType<NotFoundResult>(result); 
+            Assert.Equal(0, await context.ItemIngredients.CountAsync());
+        }
+        [Fact]
+        public async Task EditItemBlueprint_ExistingItem_ModifiesIngredientsAndTime_ReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            // Add base item and ingredients
+            var product = new Item { ItemID = 1, ItemName = "Steel Sword", ItemCategory = "Weapon", ProductionTime = 120 };
+            var ing1 = new Item { ItemID = 2, ItemName = "Iron Ingot", ItemCategory = "Metal", ProductionTime = 30 };
+            var ing2 = new Item { ItemID = 3, ItemName = "Leather", ItemCategory = "Material", ProductionTime = 10 };
+            var ing3 = new Item { ItemID = 4, ItemName = "Coal", ItemCategory = "Resource", ProductionTime = 5 };
+            context.Items.AddRange(product, ing1, ing2, ing3);
+
+            // Base ingredients setup
+            var existingIngredients = new List<ItemIngredient>
+            {
+                new ItemIngredient { ItemIngredientID = 1, ProductID = 1, IngredientID = 4, IngredientQuantity = 3 }, // Will be REMOVED
+                new ItemIngredient { ItemIngredientID = 2, ProductID = 1, IngredientID = 3, IngredientQuantity = 1 }  // Will be UPDATED
+            };
+            context.ItemIngredients.AddRange(existingIngredients);
+            await context.SaveChangesAsync();
+
+            var controller = new ItemController(context);
+
+            // Should: Remove Coal, Update Leather Quantity, Add Iron Ingot
+            var updateDto = new ItemBlueprintWriteDto
+            {
+                ProductionTime = 200, // Change prod time
+                Ingredients = new List<IngredientBlueprintWriteDto>
+                {
+                    new IngredientBlueprintWriteDto { IngredientID = 3, IngredientQuantity = 5 }, // Update quantity of existing ingredient
+                    new IngredientBlueprintWriteDto { IngredientID = 2, IngredientQuantity = 10 } // Adding new ingredient
+                    //By not including coal i expect it to be rmeoved
+                }
+            };
+
+            // ACT
+            var result = await controller.EditItemBlueprint(1, updateDto);
+
+            // ASSERT
+            Assert.IsType<NoContentResult>(result);
+            
+            //Verify Item changes
+            var updatedItem = await context.Items.FindAsync(1);
+            Assert.Equal(200, updatedItem.ProductionTime);
+            
+            //Verify Ingredient changes
+            var finalIngredients = await context.ItemIngredients
+                .Where(ig => ig.ProductID == 1)
+                .ToListAsync();
+
+            Assert.Equal(2, finalIngredients.Count); // Should only have 2 ingredients
+
+            // Verify Leather was updated
+            var leatherIg = finalIngredients.SingleOrDefault(ig => ig.IngredientID == 3);
+            Assert.NotNull(leatherIg);
+            Assert.Equal(5, leatherIg.IngredientQuantity);
+
+            // Verify Iron Ingot was added
+            var ironIg = finalIngredients.SingleOrDefault(ig => ig.IngredientID == 2);
+            Assert.NotNull(ironIg);
+            Assert.Equal(10, ironIg.IngredientQuantity);
+
+            // Verify Coal was removed
+            var coalIg = finalIngredients.SingleOrDefault(ig => ig.IngredientID == 4);
+            Assert.Null(coalIg);
+        }
+
+        [Fact]
+        public async Task EditItemBlueprint_NonExistingItem_ReturnsNotFound()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var controller = new ItemController(context);
+
+            var updateDto = new ItemBlueprintWriteDto
+            {
+                ProductionTime = 240,
+                Ingredients = new List<IngredientBlueprintWriteDto> 
+                { 
+                    new IngredientBlueprintWriteDto { IngredientID = 1, IngredientQuantity = 1 } 
+                }
+            };
+
+            // ACT
+            var result = await controller.EditItemBlueprint(999, updateDto);
+
+            // ASSERT
+            Assert.IsType<NotFoundResult>(result); 
+        }
     }
 }
