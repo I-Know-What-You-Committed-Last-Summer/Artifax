@@ -17,7 +17,7 @@ describe('CraftingItems', () => {
   it('updates card transform when the mouse moves and resets on leave', () => {
     render(<CraftingItems />);
 
-    const card = screen.getByText(/Circuit Board A1/i).closest('.job-card');
+    const card = screen.getByText(/Circuit Board A1/i).closest('.job-card') as HTMLElement | null;
     expect(card).toBeInTheDocument();
     expect(card?.style.transform).toBe('');
 

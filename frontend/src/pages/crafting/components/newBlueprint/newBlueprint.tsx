@@ -92,43 +92,45 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
       </div>
 
       <form className="new-blueprint-form" onSubmit={handleSubmit}>
-            <div className="field-row">
-            <div className="field-group">
-              <label htmlFor="blueprintName">Blueprint Name</label>
-              <input
-                id="blueprintName"
-                type="text"
-                value={blueprintName}
-                onChange={(event) => setBlueprintName(event.target.value)}
-                placeholder="Name"
-                className="field-input"
-              />
-            </div>
-
-            <div className="field-group field-group--category">
-              <label htmlFor="blueprintCategory">Category of Blueprint</label>
-              <FilterSelect
-                value={category}
-                onChange={setCategory}
-                options={categoryOptions}
-                className="field-select"
-                ariaLabel="Select blueprint category"
-              />
-            </div>
-
-            <div className="field-group field-group--craft-time">
-              <label htmlFor="craftTimeMinutes">Craft Time (min)</label>
-              <input
-                id="craftTimeMinutes"
-                type="number"
-                min={1}
-                step={1}
-                value={craftTimeMinutes}
-                onChange={(event) => setCraftTimeMinutes(Math.max(1, Number(event.target.value) || 1))}
-                className="field-input craft-time-input"
-              />
-            </div>
+        <div className="field-row">
+          <div className="field-group">
+            <label htmlFor="blueprintName">Blueprint Name</label>
+            <input
+              id="blueprintName"
+              type="text"
+              value={blueprintName}
+              onChange={(event) => setBlueprintName(event.target.value)}
+              placeholder="Name"
+              className="field-input"
+            />
           </div>
+        </div>
+
+        <div className="field-row field-row--split">
+          <div className="field-group field-group--craft-time">
+            <label htmlFor="craftTimeMinutes">Craft Time (min)</label>
+            <input
+              id="craftTimeMinutes"
+              type="number"
+              min={1}
+              step={1}
+              value={craftTimeMinutes}
+              onChange={(event) => setCraftTimeMinutes(Math.max(1, Number(event.target.value) || 1))}
+              className="field-input craft-time-input"
+            />
+          </div>
+
+          <div className="field-group field-group--category">
+            <label htmlFor="blueprintCategory">Category of Blueprint</label>
+            <FilterSelect
+              value={category}
+              onChange={setCategory}
+              options={categoryOptions}
+              className="field-select"
+              ariaLabel="Select blueprint category"
+            />
+          </div>
+        </div>
  <label htmlFor="blueprintCategory">Required materials</label>
         <div className="material-list">
           {materials.map((material) => (
@@ -142,6 +144,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
               />
 
               <div className="amount-line">
+                <span className="amount-caption">Amount Needed</span>
                 <button
                   type="button"
                   className="amount-button"
@@ -159,7 +162,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
                 >
                   +
                 </button>
-                <span className="amount-caption">Amount Needed</span>
+                
               </div>
 
               {materials.length > 1 && (

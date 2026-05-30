@@ -28,8 +28,7 @@
 .new-blueprint-icon {
   width: 42px;
   height: 42px;
-  border-radius: 14px;
-  background: var(--app);
+
   padding: 10px;
 }
 
@@ -37,9 +36,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: var(--surface-2);
   color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
@@ -56,6 +52,12 @@
 .field-row {
   display: grid;
   gap: 16px;
+}
+
+.field-row--split {
+  grid-template-columns: 20% 80%;
+  gap: 16px;
+  align-items: center;
 }
 
 .field-row--sub {
@@ -80,19 +82,27 @@
   font-weight: 700;
 }
 
-.field-input,
-.field-select {
+.field-input {
   width: 100%;
-  padding: 20px 18px;
+  padding: 14px 18px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--app);
   color: var(--text);
   font-size: 14px;
+  margin-top: 6px;
 }
 
 .field-select {
-  appearance: none;
+  width: 100%;
+}
+
+.field-select .artifax-select {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.8rem 2.35rem 0.8rem 0.95rem;
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .material-list {
@@ -102,33 +112,27 @@
 
 .materials-row {
   display: grid;
-  grid-template-columns: 1.8fr 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding:0px;
-  border-radius: 18px;
-}
-
-.material-select {
+  grid-template-columns: 4.8fr 1fr auto;
   min-width: 0;
+  gap: 16px;
 }
 
 .amount-line {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--surface);
-  min-width: 180px;
+  width: 280px;
 }
 
 .amount-button {
-  width: 38px;
-  height: 38px;
+  width: 33px;
+  height: 33px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--app);
   color: var(--text);
   cursor: pointer;
@@ -152,8 +156,8 @@
 }
 
 .remove-material {
-  width: 64px;
-  height: 64px;
+  width: 57px;
+  height: 57px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
