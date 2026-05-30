@@ -258,32 +258,40 @@ html[data-theme='synthwave'] {
   }
 
   .qty-column {
-    width: 68px;
-    min-width: 68px;
+    width: 56px;
+    min-width: 56px;
     text-align: left;
-    padding-right: 5.5rem;
+    padding-right: 1rem;
   }
 
   .dashboard-material-column {
-    width: 360px;
-    min-width: 360px;
+    width: 320px;
+    min-width: 320px;
   }
 
   .dashboard-location-column {
-    padding-left: 4rem;
+    padding-left: 1rem;
   }
 
   /* Visual nudges for dashboard preview content only */
   .qty-header,
   .qty-value {
     display: inline-block;
-    transform: translateX(-12px);
   }
 
   .location-header,
   .location-value {
     display: inline-block;
-    transform: translateX(12px);
+    white-space: nowrap;
+  }
+
+  .inventory-location-cell,
+  .dashboard-location-cell {
+    white-space: nowrap;
+  }
+
+  .inventory-view-details {
+    max-width: 100%;
   }
 
   .btn-outfit {

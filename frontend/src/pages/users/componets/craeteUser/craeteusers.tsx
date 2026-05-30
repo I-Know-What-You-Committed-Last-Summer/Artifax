@@ -15,7 +15,7 @@ type User = {
 
 interface CreateUsersPageProps {
   user?: User;
-  onSave: (user: Omit<User, 'id'> & { id: number | null }) => void;
+  onSave: (user: Omit<User, 'id'> & { id: number | null; password?: string }) => void;
   onDelete: (id: number) => void;
 }
 
@@ -42,14 +42,17 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
   // Fetch branches once on mount
   useEffect(() => {
     // Load branch list from backend once on mount.
-    // Endpoint: GET /api/Branch (implemented in Backend/Controllers/BranchController.cs)
-    // Response: array of BranchDto objects. We map them to `{ label, value }` for `FilterSelect`.
+    // We map BranchDto -> { label: BranchName, value: BranchID }
     let mounted = true;
     (async () => {
       try {
         const resp = await api.get('/Branch');
         if (!mounted) return;
-        const opts = (resp.data ?? []).map((b: any) => ({ label: b.name ?? b.branchName ?? b.label, value: b.name ?? b.branchName ?? b.label }));
+        const opts = (resp.data ?? []).map((b: any) => {
+          const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
+          const name = b.branchName ?? b.BranchName ?? b.name ?? '';
+          return { label: name, value: String(id) };
+        });
         setBranchOptions(opts);
         // If the form is for a new user and branch is empty, pick the first branch as default.
         setBranch((current) => (current ? current : (opts.length > 0 ? opts[0].value : '')));
@@ -108,8 +111,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       return;
     }
 
-    // Pass form data up to the parent `Users` component via `onSave`.
-    // The parent is responsible for calling the backend API (POST/PATCH) with the proper DTO.
+    // Pass form data up to the parent `Users` component via `onSave` (includes password).
     onSave({
       id: user?.id ?? null,
       name: fullName,
@@ -117,6 +119,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       branch,
       role,
       status: user?.status ?? 'Active',
+      password,
     });
 
     setCurrentUser({

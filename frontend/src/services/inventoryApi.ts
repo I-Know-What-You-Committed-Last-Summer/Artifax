@@ -14,17 +14,11 @@ type InventoryRowDto = {
   inventoryItemBranchName: string;
 };
 
-type ItemBlueprintDto = {
-  itemID: number;
+type IngredientBlueprintDto = {
+  ingredientID: number;
   itemName: string;
   itemCategory: string;
-  productionTime: number;
-  ingredients: Array<{
-    ingredientID: number;
-    itemName: string;
-    itemCategory: string;
-    quantity: number;
-  }>;
+  quantity: number;
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -229,10 +223,17 @@ export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
 }
 
 export async function getItemMaterialDetails(itemId: number): Promise<InventoryMaterialDetails | null> {
-  const [blueprintResponse, inventoryRows] = await Promise.all([
-    fetchJson<ItemBlueprintDto | null>(`${API_BASE}/Item/itemIngredient/item/${itemId}`).catch((error) => {
+  const [itemResponse, ingredientResponse, inventoryRows] = await Promise.all([
+    fetchJson<Record<string, unknown>>(`${API_BASE}/Item/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return null;
+      }
+
+      throw error;
+    }),
+    fetchJson<IngredientBlueprintDto[]>(`${API_BASE}/Item/itemIngredient/item/${itemId}`).catch((error) => {
+      if (String(error).includes('404')) {
+        return [];
       }
 
       throw error;
@@ -240,11 +241,11 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
     fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
   ]);
 
-  if (!blueprintResponse) {
+  if (!itemResponse) {
     return null;
   }
 
-  const ingredients: InventoryMaterialIngredient[] = blueprintResponse.ingredients.map((ingredient) => {
+  const ingredients: InventoryMaterialIngredient[] = ingredientResponse.map((ingredient) => {
     const branches = normalizeMaterialBranchRows(inventoryRows, ingredient.ingredientID);
     const availableQuantity = branches.reduce((sum, branch) => sum + branch.quantity, 0);
 
@@ -259,10 +260,10 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
   });
 
   return {
-    itemId: blueprintResponse.itemID,
-    itemName: blueprintResponse.itemName,
-    category: normalizeCategory(blueprintResponse.itemCategory),
-    productionTime: blueprintResponse.productionTime,
+    itemId: Number(itemResponse.ItemID ?? itemResponse.itemID ?? itemResponse.itemId ?? itemId),
+    itemName: String(itemResponse.ItemName ?? itemResponse.itemName ?? `Item ${itemId}`),
+    category: normalizeCategory(String(itemResponse.ItemCategory ?? itemResponse.itemCategory ?? 'Misc')),
+    productionTime: Number(itemResponse.ProductionTime ?? itemResponse.productionTime ?? 0),
     ingredients,
   };
 }

@@ -26,6 +26,7 @@ const Users: React.FC = () => {
   //  - PATCH /User/employee   -> update existing employee details (used in handleSaveUser)
   //  - DELETE /User/employee  -> delete an employee by id (used in handleDeleteUser)
   const [users, setUsers] = useState<User[]>([]);
+  const [branchMap, setBranchMap] = useState<Record<number, string>>({});
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   // ensure we only try fetching users once per page load
@@ -44,23 +45,101 @@ const Users: React.FC = () => {
     setSelectedUserId(null);
   };
 
-  const handleSaveUser = (user: Omit<User, 'id'> & { id: number | null }) => {
-    if (user.id === null) {
-      const nextId = Math.max(0, ...users.map((item) => item.id)) + 1;
-      setUsers((prev) => [...prev, { ...user, id: nextId }]);
-      setSelectedUserId(nextId);
-      setCurrentUser({ name: user.name, role: user.role, email: user.email });
-      return;
-    }
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const [usersResp, branchesResp] = await Promise.all([api.get('/User'), api.get('/Branch')]);
+      const branches = branchesResp.data ?? [];
+      const map: Record<number, string> = {};
+      branches.forEach((b: any) => {
+        const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
+        const name = b.branchName ?? b.BranchName ?? b.name ?? '';
+        if (id) map[id] = name;
+      });
+      setBranchMap(map);
 
-    setUsers((prev) => prev.map((existing) => (existing.id === user.id ? { ...existing, ...user } : existing)));
-    setCurrentUser({ name: user.name, role: user.role, email: user.email });
+      const usersData = (usersResp.data ?? []).map((e: any) => {
+        const id = e.employeeId ?? e.EmployeeId ?? e.EmployeeID ?? 0;
+        const name = e.employeeName ?? e.EmployeeName ?? e.employeeName ?? '';
+        const email = e.employeeEmail ?? e.EmployeeEmail ?? '';
+        const branchId = e.branchId ?? e.BranchId ?? e.BranchID ?? 0;
+        const role = e.employeeLevel ?? e.EmployeeLevel ?? 'Employee';
+        return {
+          id,
+          name,
+          email,
+          branch: String(branchId),
+          role: role === 'Admin' ? 'Admin' : 'Staff',
+          status: 'Active',
+        } as User;
+      });
+
+      setUsers(usersData);
+    } catch (err) {
+      console.error('Fetch users failed', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = (id: number) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
-    setSelectedUserId(null);
-    clearCurrentUser();
+  const handleSaveUser = async (user: Omit<User, 'id'> & { id: number | null; password?: string }) => {
+    try {
+      if (user.id === null) {
+        // Create new employee
+        const payload = {
+          BranchID: Number(user.branch),
+          EmployeeEmail: user.email,
+          EmployeeName: user.name,
+          EmployeePassword: user.password ?? '',
+          EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
+        };
+        const resp = await api.post('/User/employee', payload);
+        await fetchUsers();
+        const created = resp.data;
+        const createdId = created?.employeeId ?? created?.EmployeeId ?? null;
+        if (createdId) setSelectedUserId(createdId);
+        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        return;
+      }
+
+      // Update existing employee
+      const existing = users.find((u) => u.id === user.id);
+      const originalEmail = existing?.email ?? user.email;
+
+      // If only branch changed, call branch-specific endpoint
+      if (existing && existing.branch !== user.branch && existing.name === user.name && existing.email === user.email) {
+        await api.patch('/User/employee/branch', null, { params: { EmployeeEmail: originalEmail, BranchId: Number(user.branch) } });
+        await fetchUsers();
+        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        return;
+      }
+
+      // General details update (name/email/password)
+      const updatePayload: any = {
+        BranchID: Number(user.branch),
+        EmployeeEmail: user.email,
+        EmployeeName: user.name,
+        EmployeePassword: user.password ?? '',
+        EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
+      };
+
+      await api.patch('/User/employee', updatePayload, { params: { EmployeeEmail: originalEmail } });
+      await fetchUsers();
+      setCurrentUser({ name: user.name, role: user.role, email: user.email });
+    } catch (err) {
+      console.error('Save user failed', err);
+    }
+  };
+
+  const handleDeleteUser = async (id: number) => {
+    try {
+      await api.delete('/User/employee', { params: { id } });
+      await fetchUsers();
+      setSelectedUserId(null);
+      clearCurrentUser();
+    } catch (err) {
+      console.error('Delete user failed', err);
+    }
   };
 
   useEffect(() => {
@@ -76,22 +155,13 @@ const Users: React.FC = () => {
     }, 4000);
 
     (async () => {
-      // Fetch the users list from backend: GET /api/User
-      // Response expected: an array of EmployeeReadDto objects.
-      // We set `loading` while the request is pending; a timeout will cancel it after 4s.
       setLoading(true);
       try {
-        const resp = await api.get('/User');
-        if (!mounted) return;
-        if (!timedOut) setUsers(resp.data ?? []);
+        await fetchUsers();
       } catch (err) {
-        // On network or server error we log to console. Loading is cleared by finally.
         console.error('Fetch users failed', err);
       } finally {
-        clearTimeout(timeoutId);
-        if (mounted && !timedOut) {
-          setLoading(false);
-        }
+        // noop
       }
     })();
 

@@ -17,6 +17,11 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [surnameTouched, setSurnameTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
 
   // Basic email validation only
   const emailError = useMemo(() => {
@@ -31,11 +36,27 @@ function LoginPage() {
     return '';
   }, [email]);
 
-  const isFormValid = !emailError && password.trim().length >= 8;
+  const nameError = useMemo(() => {
+    if (!name.trim()) return 'Name is required';
+    return '';
+  }, [name]);
+
+  const surnameError = useMemo(() => {
+    if (!surname.trim()) return 'Surname is required';
+    return '';
+  }, [surname]);
+
+  const passwordError = useMemo(() => {
+    if (!password.trim()) return 'Password is required';
+    if (password.trim().length < 8) return 'Password must be at least 8 characters';
+    return '';
+  }, [password]);
+
+  const isFormValid = !emailError && !nameError && !surnameError && !passwordError;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
+    setSubmitAttempted(true);
     if (!isFormValid) {
       return;
     }
@@ -70,7 +91,15 @@ function LoginPage() {
 
       navigate('/dashboard');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      let message = 'Login failed. Please check your credentials.';
+      // If the fetch helper attached a status, prefer mapping 401 to a friendly message
+      const errAny = error as any;
+      if (errAny?.status === 401) {
+        message = 'Incorrect email or password.';
+      } else if (error instanceof Error && error.message) {
+        // backend may return a useful message
+        message = error.message;
+      }
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
@@ -104,16 +133,24 @@ function LoginPage() {
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  onBlur={() => setNameTouched(true)}
+                  aria-invalid={!!(submitAttempted || nameTouched) && !!nameError}
+                  aria-describedby="name-hint"
                   type="text"
                   autoComplete="given-name"
                   className="login-input"
                 />
-                <span className="login-field-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 7l-8.5 8.5L8 12" />
-                  </svg>
-                </span>
+                {((submitAttempted || nameTouched) && nameError) ? (
+                  <span className="login-field-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8.3v4.2" />
+                      <path d="M12 15.8h.01" />
+                    </svg>
+                  </span>
+                ) : null}
               </div>
+              {((submitAttempted || nameTouched) && nameError) ? <p id="name-hint" className="login-field-hint error">{nameError}</p> : null}
             </label>
 
             <label className="login-field">
@@ -122,38 +159,55 @@ function LoginPage() {
                 <input
                   value={surname}
                   onChange={(event) => setSurname(event.target.value)}
+                  onBlur={() => setSurnameTouched(true)}
+                  aria-invalid={!!(submitAttempted || surnameTouched) && !!surnameError}
+                  aria-describedby="surname-hint"
                   type="text"
                   autoComplete="family-name"
                   className="login-input"
                 />
-                <span className="login-field-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 7l-8.5 8.5L8 12" />
-                  </svg>
-                </span>
+                {((submitAttempted || surnameTouched) && surnameError) ? (
+                  <span className="login-field-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8.3v4.2" />
+                      <path d="M12 15.8h.01" />
+                    </svg>
+                  </span>
+                ) : null}
               </div>
+              {((submitAttempted || surnameTouched) && surnameError) ? <p id="surname-hint" className="login-field-hint error">{surnameError}</p> : null}
             </label>
 
             <label className="login-field">
               <span className="login-label">Email</span>
-              <div className={`login-input-shell ${emailError ? 'error' : ''}`}>
+              <div className={`login-input-shell ${( (submitAttempted || emailTouched) && emailError) ? 'error' : ''}`}>
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  onBlur={() => setEmailTouched(true)}
                   type="email"
                   autoComplete="email"
                   className="login-input"
+                  aria-invalid={!!(submitAttempted || emailTouched) && !!emailError}
+                  aria-describedby="email-hint"
                 />
-                <span className="login-field-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 7v5" />
-                    <circle cx="12" cy="16.5" r="0.9" />
-                    <path d="M10.3 4.5h3.4l5.8 5.8v3.4l-5.8 5.8h-3.4l-5.8-5.8v-3.4z" />
-                  </svg>
-                </span>
+                {((submitAttempted || emailTouched) && emailError) ? (
+                  <span className="login-field-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8.3v4.2" />
+                      <path d="M12 15.8h.01" />
+                    </svg>
+                  </span>
+                ) : null}
               </div>
               {/* Inline validation hint for email */}
-              {emailError ? <p className="login-field-hint error">{emailError}</p> : <p className="login-field-hint">Use your company email address.</p>}
+              {((submitAttempted || emailTouched) && emailError) ? (
+                <p id="email-hint" className="login-field-hint error">{emailError}</p>
+              ) : (
+                <p id="email-hint" className="login-field-hint">Use your company email address.</p>
+              )}
             </label>
 
             <label className="login-field">
@@ -162,10 +216,22 @@ function LoginPage() {
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => setPasswordTouched(true)}
+                  aria-invalid={!!(submitAttempted || passwordTouched) && !!passwordError}
+                  aria-describedby="password-hint"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   className="login-input"
                 />
+                {((submitAttempted || passwordTouched) && passwordError) ? (
+                  <span className="login-field-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8.3v4.2" />
+                      <path d="M12 15.8h.01" />
+                    </svg>
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className="login-password-toggle"
@@ -188,10 +254,11 @@ function LoginPage() {
                   )}
                 </button>
               </div>
+              {((submitAttempted || passwordTouched) && passwordError) ? <p id="password-hint" className="login-field-hint error">{passwordError}</p> : null}
             </label>
 
             {/* Accessible alert region showing validation messages */}
-            <div className="login-alert" role="alert" aria-live="polite">
+            <div className={`login-alert ${submitError ? 'error' : ''}`} role="alert" aria-live="polite">
               <div className="login-alert-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9" />
@@ -201,7 +268,7 @@ function LoginPage() {
               </div>
               <div>
                 <strong>{submitError ? 'Login error' : 'Input required'}</strong>
-                <p>{submitError || emailError || 'Enter email and password to continue.'}</p>
+                <p>{submitError || 'Enter details to continue.'}</p>
               </div>
             </div>
 

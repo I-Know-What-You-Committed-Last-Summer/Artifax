@@ -1,16 +1,13 @@
-import React, { forwardRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import { InventoryMaterialDetails } from '../../../services/inventoryApi';
 
 type InventoryMaterialsPopoverProps = {
   details: InventoryMaterialDetails | null;
   loading: boolean;
-  style: React.CSSProperties;
+  compact?: boolean;
 };
 
-const InventoryMaterialsPopover = forwardRef<HTMLDivElement, InventoryMaterialsPopoverProps>(function InventoryMaterialsPopover(
-  { details, loading, style },
-  ref,
-) {
+function InventoryMaterialsPopover({ details, loading, compact = false }: InventoryMaterialsPopoverProps) {
   const branchSummary = useMemo(() => {
     if (!details) {
       return [] as Array<{ branchName: string; quantity: number }>;
@@ -30,13 +27,7 @@ const InventoryMaterialsPopover = forwardRef<HTMLDivElement, InventoryMaterialsP
   }, [details]);
 
   return (
-    <div
-      ref={ref}
-      className="fixed z-50 w-[min(42rem,calc(100vw-1.5rem))] rounded-2xl border border-border bg-surface shadow-[0_24px_60px_rgba(15,23,42,0.22)]"
-      style={style}
-      role="dialog"
-      aria-label="Inventory materials details"
-    >
+    <div className={`rounded-2xl border border-border bg-surface shadow-[0_24px_60px_rgba(15,23,42,0.12)] ${compact ? 'overflow-hidden' : ''}`} role="region" aria-label="Inventory materials details">
       <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Materials</p>
@@ -118,6 +109,6 @@ const InventoryMaterialsPopover = forwardRef<HTMLDivElement, InventoryMaterialsP
       </div>
     </div>
   );
-});
+}
 
 export default InventoryMaterialsPopover;

@@ -1,5 +1,5 @@
 // React hooks and UI components used on the inventory page
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -26,8 +26,7 @@ function InventoryPage() {
   const [sortBy, setSortBy] = useState('NAME');
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [inventoryOverview, setInventoryOverview] = useState<InventoryOverview>({ items: [], previewRows: [], alerts: [], stats: [], tabs: [] });
-  const [activeViewItemId, setActiveViewItemId] = useState<number | null>(null);
-  const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
+  const [expandedViewItemId, setExpandedViewItemId] = useState<number | null>(null);
   const [materialDetailsById, setMaterialDetailsById] = useState<Record<number, InventoryMaterialDetails | null>>({});
   const [loadingMaterialItemId, setLoadingMaterialItemId] = useState<number | null>(null);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
@@ -35,7 +34,6 @@ function InventoryPage() {
   const [creatingItem, setCreatingItem] = useState(false);
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [ingredientItem, setIngredientItem] = useState<InventoryCreatedItem | null>(null);
-  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -59,44 +57,21 @@ function InventoryPage() {
   }, []);
 
   useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      if (activeViewItemId == null) {
-        return;
-      }
-
-      const target = event.target as HTMLElement | null;
-
-      if (target?.closest('[data-inventory-view-trigger="true"]')) {
-        return;
-      }
-
-      if (popoverRef.current && popoverRef.current.contains(target)) {
-        return;
-      }
-
-      setActiveViewItemId(null);
-      setPopoverPosition(null);
-    };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setActiveViewItemId(null);
-        setPopoverPosition(null);
+        setExpandedViewItemId(null);
       }
     };
 
-    document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeViewItemId]);
+  }, []);
 
-  const closePopover = (): void => {
-    setActiveViewItemId(null);
-    setPopoverPosition(null);
+  const closeExpandedView = (): void => {
+    setExpandedViewItemId(null);
   };
 
   const closeEditModal = (): void => {
@@ -115,23 +90,15 @@ function InventoryPage() {
     setIngredientItem(null);
   };
 
-  const handleViewClick = async (item: InventoryItem, event: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
-    const buttonRect = event.currentTarget.getBoundingClientRect();
-    const popoverWidth = Math.min(672, window.innerWidth - 24);
-    const estimatedPopoverHeight = 540;
-    const openAbove = buttonRect.bottom + 12 + estimatedPopoverHeight > window.innerHeight;
-    const left = Math.max(12, Math.min(buttonRect.left, window.innerWidth - popoverWidth - 12));
-    const top = openAbove ? Math.max(12, buttonRect.top - estimatedPopoverHeight - 12) : Math.min(buttonRect.bottom + 12, window.innerHeight - 24);
+  const handleViewClick = async (item: InventoryItem): Promise<void> => {
+    const numericItemId = Number(item.id);
 
-    if (activeViewItemId === item.id) {
-      closePopover();
+    if (expandedViewItemId === numericItemId) {
+      closeExpandedView();
       return;
     }
 
-    setActiveViewItemId(Number(item.id));
-    setPopoverPosition({ top, left });
-
-    const numericItemId = Number(item.id);
+    setExpandedViewItemId(numericItemId);
 
     if (Number.isNaN(numericItemId) || materialDetailsById[numericItemId] !== undefined) {
       return;
@@ -151,7 +118,7 @@ function InventoryPage() {
   };
 
   const handleEditClick = (item: InventoryItem): void => {
-    closePopover();
+    closeExpandedView();
     setEditingItemId(Number(item.id));
   };
 
@@ -193,7 +160,6 @@ function InventoryPage() {
 
   // prefer server-provided overview items, fall back to per-item list
   const sourceItems = inventoryOverview.items && inventoryOverview.items.length ? inventoryOverview.items : inventoryItems;
-
   const locationOptions = useMemo(() => {
     const locations = Array.from(new Set(sourceItems.map((item) => item.location))).sort((left, right) => left.localeCompare(right));
 
@@ -286,12 +252,12 @@ function InventoryPage() {
           <Tabs tabs={inventoryOverview.tabs} activeTab={activeTab} onChange={setActiveTab} />
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[920px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted">
                 <tr className="border-b border-border">
                   <th className="pb-2 font-medium">Material / SKU</th>
                   <th className="pb-2 font-medium">Category</th>
-                  <th className="pb-2 font-medium">Qty</th>
+                  <th className="pb-2 text-right font-medium">Qty</th>
                   <th className="pb-2 font-medium">Min</th>
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
@@ -300,48 +266,68 @@ function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-border/70">
-                    <td className="py-2.5">
-                      <p className="font-semibold text-text">{item.name}</p>
-                      <p className="text-xs text-muted">{item.sku}</p>
-                    </td>
-                    <td className="py-2.5 text-muted">{item.category}</td>
-                    <td className="py-2.5 font-semibold text-text">{item.quantity}</td>
-                    <td className="py-2.5 text-muted">{item.minStock}</td>
-                    <td className="py-2.5 text-muted">{item.location}</td>
-                    <td className="py-2.5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="py-2.5">
-                      <button
-                        type="button"
-                        className="icon-action-button"
-                        aria-label={`Edit ${item.name}`}
-                        onClick={() => handleEditClick(item)}
-                      >
-                        <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
-                        <span className="sr-only">Edit</span>
-                      </button>
-                    </td>
-                    <td className="py-2.5">
-                      <button
-                        type="button"
-                        className={`icon-action-button ${activeViewItemId === Number(item.id) ? 'border-primary bg-bg text-text' : ''}`}
-                        aria-label={`View ${item.name}`}
-                        aria-haspopup="dialog"
-                        aria-expanded={activeViewItemId === Number(item.id)}
-                        data-inventory-view-trigger="true"
-                        onClick={(event) => {
-                          void handleViewClick(item, event);
-                        }}
-                      >
-                        <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
-                        <span className="sr-only">View</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredItems.map((item) => {
+                  const itemId = Number(item.id);
+                  const isExpanded = expandedViewItemId === itemId;
+
+                  return (
+                    <React.Fragment key={item.id}>
+                      <tr className={`border-b border-border/70 ${isExpanded ? 'bg-bg/30' : ''}`}>
+                        <td className="py-2.5 pr-3">
+                          <p className="font-semibold text-text">{item.name}</p>
+                          <p className="text-xs text-muted">{item.sku}</p>
+                        </td>
+                        <td className="py-2.5 pr-3 text-muted">{item.category}</td>
+                        <td className="py-2.5 pr-3 text-right font-semibold text-text">{item.quantity}</td>
+                        <td className="py-2.5 pr-3 text-muted">{item.minStock}</td>
+                        <td className="inventory-location-cell py-2.5 pr-3 text-muted">{item.location}</td>
+                        <td className="py-2.5 pr-3">
+                          <StatusBadge status={item.status} />
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <button
+                            type="button"
+                            className="icon-action-button"
+                            aria-label={`Edit ${item.name}`}
+                            onClick={() => handleEditClick(item)}
+                          >
+                            <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                            <span className="sr-only">Edit</span>
+                          </button>
+                        </td>
+                        <td className="py-2.5">
+                          <button
+                            type="button"
+                            className={`icon-action-button ${isExpanded ? 'border-primary bg-bg text-text' : ''}`}
+                            aria-label={`View ${item.name}`}
+                            aria-controls={`inventory-details-${item.id}`}
+                            aria-expanded={isExpanded}
+                            onClick={() => {
+                              void handleViewClick(item);
+                            }}
+                          >
+                            <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                            <span className="sr-only">View</span>
+                          </button>
+                        </td>
+                      </tr>
+
+                      {isExpanded ? (
+                        <tr className="border-b border-border/70 bg-app/60">
+                          <td colSpan={8} className="px-0 py-3">
+                            <div id={`inventory-details-${item.id}`} className="inventory-view-details px-0 sm:px-1">
+                              <InventoryMaterialsPopover
+                              loading={loadingMaterialItemId === itemId && materialDetailsById[itemId] === undefined}
+                              details={materialDetailsById[itemId] ?? null}
+                              compact
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -349,16 +335,6 @@ function InventoryPage() {
               <p className="py-6 text-center text-sm text-muted">No items match your current filters.</p>
             ) : null}
           </div>
-
-          {activeViewItemId != null && popoverPosition ? (
-            <InventoryMaterialsPopover
-              ref={popoverRef}
-              loading={loadingMaterialItemId === activeViewItemId && materialDetailsById[activeViewItemId] === undefined}
-              details={materialDetailsById[activeViewItemId] ?? null}
-              style={{ top: popoverPosition.top, left: popoverPosition.left, width: Math.min(672, window.innerWidth - 24) }}
-            />
-          ) : null}
-
           <InventoryItemEditModal
             item={editingItemId != null ? sourceItems.find((candidate) => Number(candidate.id) === editingItemId) ?? null : null}
             open={editingItemId != null}
