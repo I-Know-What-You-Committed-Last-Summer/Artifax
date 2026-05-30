@@ -27,7 +27,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "coverage": "yarn test --coverage"
+    "test:coverage": "cross-env CI=true react-scripts test --coverage --watchAll=false --runInBand"
   },
   "eslintConfig": {
     "extends": [
