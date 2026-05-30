@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../../components/layout/PageHeader';
 import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
 import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
+import { useApi } from '../../hooks/useApi';
 
 type User = {
   id: number;
@@ -14,17 +15,21 @@ type User = {
   status: string;
 };
 
-const initialUsers: User[] = [
-  { id: 1, name: 'Sam Smith', email: 'sam@gmail.com', branch: 'Warehouse A', role: 'Admin', status: 'Active' },
-  { id: 2, name: 'Alex Johnson', email: 'alex.johnson@gmail.com', branch: 'Warehouse B', role: 'Admin', status: 'Active' },
-  { id: 3, name: 'Maria Garcia', email: 'maria.garcia@gmail.com', branch: 'Warehouse A', role: 'Staff', status: 'Active' },
-  { id: 4, name: 'Jordan Lee', email: 'jordan.lee@gmail.com', branch: 'Warehouse C', role: 'Staff', status: 'Pending' },
-];
-
 const Users: React.FC = () => {
   const currentDate = getCurrentDateSAST();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const api = useApi();
+  // `api` is an axios instance configured in `src/hooks/useApi.ts`.
+  // All backend HTTP calls in this file use `api` and the base URL `http://localhost:5253/api`.
+  // Backend endpoints used:
+  //  - GET  /User             -> fetch all users (used in useEffect)
+  //  - POST /User/employee    -> create a new employee (used in handleSaveUser)
+  //  - PATCH /User/employee   -> update existing employee details (used in handleSaveUser)
+  //  - DELETE /User/employee  -> delete an employee by id (used in handleDeleteUser)
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  // ensure we only try fetching users once per page load
+  const usersFetchedRef = useRef(false);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) ?? undefined,
@@ -58,6 +63,41 @@ const Users: React.FC = () => {
     clearCurrentUser();
   };
 
+  useEffect(() => {
+    let mounted = true;
+    if (usersFetchedRef.current) return; // already attempted fetch
+    usersFetchedRef.current = true;
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      if (!mounted) return;
+      console.error('Fetch users timed out');
+      timedOut = true;
+      setLoading(false);
+    }, 4000);
+
+    (async () => {
+      // Fetch the users list from backend: GET /api/User
+      // Response expected: an array of EmployeeReadDto objects.
+      // We set `loading` while the request is pending; a timeout will cancel it after 4s.
+      setLoading(true);
+      try {
+        const resp = await api.get('/User');
+        if (!mounted) return;
+        if (!timedOut) setUsers(resp.data ?? []);
+      } catch (err) {
+        // On network or server error we log to console. Loading is cleared by finally.
+        console.error('Fetch users failed', err);
+      } finally {
+        clearTimeout(timeoutId);
+        if (mounted && !timedOut) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => { mounted = false; clearTimeout(timeoutId); };
+  }, [api]);
+
   return (
     <div className="page-content">
       <div className="space-y-4 sm:space-y-5">
@@ -78,6 +118,7 @@ const Users: React.FC = () => {
             <UserList
               users={users}
               selectedUserId={selectedUserId}
+              loading={loading}
               onSelectUser={handleSelectUser}
               onCreateNewUser={handleCreateNewUser}
             />
