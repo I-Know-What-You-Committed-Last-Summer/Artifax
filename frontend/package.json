@@ -5,14 +5,12 @@
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^29.5.5",
     "@types/node": "^20.11.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.27",
-    "axios": "^1.16.0",
+    "axios": "^1.16.1",
     "chart.js": "^4.5.1",
     "postcss": "^8.5.8",
     "react": "^19.2.4",
@@ -49,6 +47,10 @@
     ]
   },
   "devDependencies": {
-    "daisyui": "^4.12.22"
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
+    "daisyui": "^4.12.22",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11"
   }
 }

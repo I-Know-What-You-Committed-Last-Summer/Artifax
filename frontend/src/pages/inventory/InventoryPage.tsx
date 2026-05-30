@@ -1,5 +1,5 @@
 // React hooks and UI components used on the inventory page
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -12,6 +12,7 @@ import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
+import axios from 'axios';
 
 function InventoryPage() {
   // Local UI state: active tab, search text, filters, sorting
@@ -22,26 +23,69 @@ function InventoryPage() {
   const [status, setStatus] = useState('ALL');
   const [zone, setZone] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
+  const [inventoryData, setInventoryData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
 
+
+useEffect(() => {
+    
+    const fetchInventory = async () => {
+      try {
+        
+        const response = await axios.get('http://localhost:5253/api/Item/item/allInventoryItems');
+        console.log('Fetched inventory data:', response.data);
+        setInventoryData(response.data);
+      } catch (error) {
+        console.error('Error fetching inventory data:', error);
+      } finally {
+        setIsLoading(false); 
+      }
+    };
+
+    
+    fetchInventory();
+  }, []);
+
+
+
+//   inventoryItemBranchName
+// : 
+// "Johannesburg"
+// inventoryItemCategory
+// : 
+// "Metals"
+// inventoryItemId
+// : 
+// 1
+// inventoryItemName
+// : 
+// "Stainless Steel"
+// inventoryItemProductionTime
+// : 
+// 5
+// inventoryItemQuantity
+// : 
+// 5
   // Compute filtered + sorted items when dependencies change
   const filteredItems = useMemo(() => {
     const searchLower = search.toLowerCase();
 
-    return inventoryItems
+    return inventoryData
       .filter((item) => {
         // Tab filter: show only items for the selected tab
-        if (activeTab !== 'all' && item.tab !== activeTab) {
+        if (activeTab !== 'all' && item.inventoryItemCategory !== activeTab) {
           return false;
         }
-
         // Status filter (OK / LOW / ALL)
         if (status !== 'ALL' && item.status !== status) {
-          return false;
+          //FIXME: Bypassing, pls fix
+          return true;
         }
 
         // Zone/location filter
-        if (zone !== 'ALL' && item.location !== zone) {
-          return false;
+        if (zone !== 'ALL' && item.inventoryItemBranchName !== zone) {
+          return true;
         }
 
         // If no search text, include the item
@@ -51,18 +95,18 @@ function InventoryPage() {
 
         // Search across name, sku, and location
         return (
-          item.name.toLowerCase().includes(searchLower) ||
-          item.sku.toLowerCase().includes(searchLower) ||
-          item.location.toLowerCase().includes(searchLower)
+          item.inventoryItemName.toLowerCase().includes(searchLower) ||
+          item.inventoryItemSKU.toLowerCase().includes(searchLower) ||
+          item.inventoryItemBranchName.toLowerCase().includes(searchLower)
         );
       })
       .sort((a, b) => {
         // Optional sort by quantity or by name
         if (sortBy === 'QTY') {
-          return b.quantity - a.quantity;
+          return b.inventoryItemQuantity - a.inventoryItemQuantity;
         }
 
-        return a.name.localeCompare(b.name);
+        return a.inventoryItemName.localeCompare(b.inventoryItemName);
       });
   }, [activeTab, search, sortBy, status, zone]);
 
@@ -148,24 +192,24 @@ function InventoryPage() {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-border/70">
+                  <tr key={item.inventoryItemId} className="border-b border-border/70">
                     <td className="py-2.5">
-                      <p className="font-semibold text-text">{item.name}</p>
-                      <p className="text-xs text-muted">{item.sku}</p>
+                      <p className="font-semibold text-text">{item.inventoryItemName}</p>
+                      <p className="text-xs text-muted">{item.inventoryItemCategory.slice(0, 3) + "-" + item.inventoryItemId}</p>
                     </td>
-                    <td className="py-2.5 text-muted">{item.category}</td>
-                    <td className="py-2.5 font-semibold text-text">{item.quantity}</td>
-                    <td className="py-2.5 text-muted">{item.minStock}</td>
-                    <td className="py-2.5 text-muted">{item.location}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemCategory}</td>
+                    <td className="py-2.5 font-semibold text-text">{item.inventoryItemQuantity}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemProductionTime}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemBranchName}</td>
                     <td className="py-2.5">
                       {/* Status badge */}
-                      <StatusBadge status={item.status} />
+                      <StatusBadge status={item.inventoryItemQuantity < 10 ? 'LOW' : 'OK'} />
                     </td>
                     <td className="py-2.5">
                       <button
                         type="button"
                         className="icon-action-button"
-                        aria-label={`Edit ${item.name}`}
+                        aria-label={`Edit ${item.inventoryItemId}`}
                       >
                         <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
                         <span className="sr-only">Edit</span>
