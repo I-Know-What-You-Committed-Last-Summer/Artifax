@@ -1,19 +1,28 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import BlueprintPanel from './blueprintPanel';
+import { useApi } from '../../../../hooks';
 
-// Mock responses for the backend endpoints used by BlueprintPanel.
-// These fixtures let the test verify that the component receives data
-// from the API and renders blueprint content without requiring a real backend.
+jest.mock('../../../../hooks', () => ({
+  useApi: jest.fn(),
+}));
+
 const mockBlueprintsResponse = [
   {
     itemID: 1,
     itemName: 'Pot',
-    itemCategory: 'other',
+    itemCategory: 'metal',
     productionTime: 10,
     ingredients: [
       { itemName: 'Iron Ingot', quantity: 2 }
     ]
+  },
+  {
+    itemID: 2,
+    itemName: 'Table',
+    itemCategory: 'other',
+    productionTime: 20,
   }
 ];
 
@@ -25,36 +34,36 @@ const mockBranchResponse = [
   { itemID: 101, itemQuantity: 5 }
 ];
 
+const mockUseApi = useApi as jest.Mock;
+
+const createApiMock = (handler: (url: string) => Promise<any>) => {
+  const get = jest.fn((url: string) => handler(url));
+  mockUseApi.mockReturnValue({ get });
+  return get;
+};
+
 describe('BlueprintPanel', () => {
-  const originalFetch = global.fetch;
-
   beforeEach(() => {
-    global.fetch = jest.fn((url: RequestInfo) => {
-      if (url === 'http://localhost:5253/api/Item/item/allItemBlueprints') {
-        // Return the blueprint list when the component requests all blueprint items.
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockBlueprintsResponse) } as Response);
-      }
-      if (url === 'http://localhost:5253/api/Item/item') {
-        // Return item metadata used to build the inventory mapping.
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockItemsResponse) } as Response);
-      }
-      if (url === 'http://localhost:5253/api/Item/Branch') {
-        // Return branch inventory quantities used to calculate "have" values.
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockBranchResponse) } as Response);
-      }
-      return Promise.resolve({ ok: false, statusText: 'Not Found' } as Response);
-    }) as jest.Mock;
+    jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-    global.fetch = originalFetch;
-  });
-
-  it('fetches blueprint data from the backend and renders received items', async () => {
+  it('renders blueprint cards and auto-selects the first blueprint', async () => {
     const handleSelectBlueprint = jest.fn();
     const handleFilterChange = jest.fn();
     const handleCreateBlueprint = jest.fn();
+
+    const getMock = createApiMock((url) => {
+      if (url === '/Item/item/allItemBlueprints') {
+        return Promise.resolve({ data: mockBlueprintsResponse });
+      }
+      if (url === '/Item/item') {
+        return Promise.resolve({ data: mockItemsResponse });
+      }
+      if (url === '/Item/Branch') {
+        return Promise.resolve({ data: mockBranchResponse });
+      }
+      return Promise.reject(new Error(`Unexpected GET ${url}`));
+    });
 
     render(
       <BlueprintPanel
@@ -66,17 +75,112 @@ describe('BlueprintPanel', () => {
       />
     );
 
-    // Verify the first API call to fetch the blueprints list happened.
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5253/api/Item/item/allItemBlueprints');
+    expect(getMock).toHaveBeenCalledWith('/Item/item/allItemBlueprints');
 
-    // Wait for the component to render the blueprint item from the mocked API response.
-    await waitFor(() => {
-      expect(screen.getByText(/Pot/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: /Pot/i })).toBeInTheDocument());
+
+    const potCard = screen.getByRole('button', { name: /Pot/i });
+    expect(within(potCard).getByText('0')).toBeInTheDocument();
+    expect(within(potCard).getByText('2')).toBeInTheDocument();
+    expect(handleSelectBlueprint).toHaveBeenCalledWith('bp-1');
+    expect(screen.queryByText(/Loading blueprints.../i)).not.toBeInTheDocument();
+  });
+
+  it('filters blueprints by category and forwards filter changes', async () => {
+    const handleSelectBlueprint = jest.fn();
+    const handleFilterChange = jest.fn();
+    const handleCreateBlueprint = jest.fn();
+
+    createApiMock((url) => {
+      if (url === '/Item/item/allItemBlueprints') {
+        return Promise.resolve({ data: mockBlueprintsResponse });
+      }
+      if (url === '/Item/item') {
+        return Promise.resolve({ data: mockItemsResponse });
+      }
+      if (url === '/Item/Branch') {
+        return Promise.resolve({ data: mockBranchResponse });
+      }
+      return Promise.reject(new Error(`Unexpected GET ${url}`));
     });
 
-    // Confirm the component also requested the inventory endpoints needed to compute "have" values.
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5253/api/Item/item');
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5253/api/Item/Branch');
+    render(
+      <BlueprintPanel
+        selectedBlueprintId="bp-1"
+        filter="metal"
+        onFilterChange={handleFilterChange}
+        onSelectBlueprint={handleSelectBlueprint}
+        onCreateBlueprint={handleCreateBlueprint}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Pot/i })).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Table/i })).not.toBeInTheDocument();
+
+    const filterButton = screen.getByRole('button', { name: /Blueprint filter/i });
+    await userEvent.click(filterButton);
+    await userEvent.click(screen.getByRole('option', { name: /Other/i }));
+
+    expect(handleFilterChange).toHaveBeenCalledWith('other');
+  });
+
+  it('shows an error message when blueprint fetching fails', async () => {
+    const handleSelectBlueprint = jest.fn();
+    const handleFilterChange = jest.fn();
+    const handleCreateBlueprint = jest.fn();
+
+    createApiMock((url) => {
+      if (url === '/Item/item/allItemBlueprints') {
+        return Promise.reject(new Error('Network error'));
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(
+      <BlueprintPanel
+        selectedBlueprintId=""
+        filter="all"
+        onFilterChange={handleFilterChange}
+        onSelectBlueprint={handleSelectBlueprint}
+        onCreateBlueprint={handleCreateBlueprint}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByText(/Error: Network error/i)).toBeInTheDocument());
     expect(screen.queryByText(/Loading blueprints.../i)).not.toBeInTheDocument();
+  });
+
+  it('calls the create blueprint callback when the New Blueprint button is clicked', async () => {
+    const handleSelectBlueprint = jest.fn();
+    const handleFilterChange = jest.fn();
+    const handleCreateBlueprint = jest.fn();
+
+    createApiMock((url) => {
+      if (url === '/Item/item/allItemBlueprints') {
+        return Promise.resolve({ data: mockBlueprintsResponse });
+      }
+      if (url === '/Item/item') {
+        return Promise.resolve({ data: mockItemsResponse });
+      }
+      if (url === '/Item/Branch') {
+        return Promise.resolve({ data: mockBranchResponse });
+      }
+      return Promise.reject(new Error(`Unexpected GET ${url}`));
+    });
+
+    render(
+      <BlueprintPanel
+        selectedBlueprintId="bp-1"
+        filter="all"
+        onFilterChange={handleFilterChange}
+        onSelectBlueprint={handleSelectBlueprint}
+        onCreateBlueprint={handleCreateBlueprint}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Pot/i })).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /New Blueprint/i }));
+
+    expect(handleCreateBlueprint).toHaveBeenCalledTimes(1);
   });
 });
