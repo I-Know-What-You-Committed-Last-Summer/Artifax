@@ -1,40 +1,14 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useState } from 'react';
 import './craftingQueue.css';
-import { CraftingJob, getActiveAndQueuedJobs } from '../../../../services/orderApi';
+import { craftingData, CraftingItem } from '../craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
 const itemsPerPage = 3;
 
 const CraftingQueue: FC = () => {
   const [page, setPage] = useState<number>(1);
-  const [activeItems, setActiveItems] = useState<CraftingJob[]>([]);
-  const [queuedItems, setQueuedItems] = useState<CraftingJob[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    getActiveAndQueuedJobs()
-      .then(({ activeItems: liveActiveItems, queuedItems: liveQueuedItems }) => {
-        if (!mounted) {
-          return;
-        }
-
-        setActiveItems(liveActiveItems);
-        setQueuedItems(liveQueuedItems);
-      })
-      .catch((error) => {
-        console.error('Failed to load crafting queue orders', error);
-        if (mounted) {
-          setActiveItems([]);
-          setQueuedItems([]);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  const activeItems: CraftingItem[] = craftingData.filter((item) => item.status !== 'Queued');
+  const queuedItems: CraftingItem[] = craftingData.filter((item) => item.status === 'Queued');
   const activeCount = activeItems.length;
   const totalPages = Math.max(1, Math.ceil(queuedItems.length / itemsPerPage));
 
