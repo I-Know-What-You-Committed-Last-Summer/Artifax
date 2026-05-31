@@ -203,7 +203,20 @@ function InventoryPage() {
 
         return left.name.localeCompare(right.name);
       });
+      
   }, [activeTab, sourceItems, search, sortBy, status, zone]);
+
+  useEffect(() => {
+    console.log('InventoryPage filteredItems', {
+      activeTab,
+      search,
+      status,
+      zone,
+      sortBy,
+      filteredCount: filteredItems.length,
+      filteredItems,
+    });
+  }, [activeTab, search, status, zone, sortBy, filteredItems]);
 
   return (
     <div className="space-y-4 sm:space-y-5">

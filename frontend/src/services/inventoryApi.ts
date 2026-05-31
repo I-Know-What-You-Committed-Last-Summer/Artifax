@@ -284,7 +284,7 @@ export async function updateInventoryItem(itemId: number, payload: InventoryItem
 }
 
 export async function createInventoryItem(payload: InventoryItemCreate): Promise<InventoryCreatedItem> {
-  const response = await fetch(`${API_BASE}/Item/item/`, {
+  const response = await fetch(`${API_BASE}/Item/item/CreateItemDefaultQuantity`, {
     method: 'POST',
     credentials: 'include',
     headers: {
