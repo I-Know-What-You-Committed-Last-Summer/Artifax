@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import FilterSelect from '../../../components/common/FilterSelect';
 import { InventoryItem, InventoryItemUpdate } from '../../../services/inventoryApi';
 
 type InventoryItemEditModalProps = {
   item: InventoryItem | null;
   open: boolean;
   saving: boolean;
+  categoryOptions: string[];
   onClose: () => void;
   onSave: (itemId: number, payload: InventoryItemUpdate) => Promise<void>;
 };
 
-function InventoryItemEditModal({ item, open, saving, onClose, onSave }: InventoryItemEditModalProps) {
+function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, onSave }: InventoryItemEditModalProps) {
   const [formValues, setFormValues] = useState<InventoryItemUpdate>({
     itemName: '',
     itemCategory: '',
@@ -20,7 +22,7 @@ function InventoryItemEditModal({ item, open, saving, onClose, onSave }: Invento
     if (item) {
       setFormValues({
         itemName: item.name,
-        itemCategory: item.category,
+        itemCategory: item.category.trim(),
         productionTime: item.productionTime,
       });
     }
@@ -44,6 +46,11 @@ function InventoryItemEditModal({ item, open, saving, onClose, onSave }: Invento
   if (!open || !item) {
     return null;
   }
+
+  const categoryValue = formValues.itemCategory.trim();
+  const categoryIsKnown = categoryValue.length > 0 && categoryOptions.includes(categoryValue);
+  const selectOptions = categoryIsKnown ? categoryOptions : [categoryValue, ...categoryOptions.filter((option) => option !== categoryValue)].filter((option) => option.length > 0);
+  const categorySelectOptions = selectOptions.map((option) => ({ value: option, label: option }));
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,11 +91,11 @@ function InventoryItemEditModal({ item, open, saving, onClose, onSave }: Invento
 
             <label className="space-y-2 text-sm text-text">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Category</span>
-              <input
+              <FilterSelect
                 value={formValues.itemCategory}
-                onChange={(event) => setFormValues((current) => ({ ...current, itemCategory: event.target.value }))}
-                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
-                required
+                onChange={(value) => setFormValues((current) => ({ ...current, itemCategory: value }))}
+                options={categorySelectOptions}
+                ariaLabel="Select item category"
               />
             </label>
           </div>

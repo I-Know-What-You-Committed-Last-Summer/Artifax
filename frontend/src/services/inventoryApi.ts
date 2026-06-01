@@ -41,6 +41,16 @@ export async function getItems(): Promise<ItemDto[]> {
   return rows.map(normalizeItemDto);
 }
 
+export function getItemCategoryOptions(items: ItemDto[]): string[] {
+  return Array.from(
+    new Set(
+      items
+        .map((item) => item.ItemCategory.trim())
+        .filter((category) => category.length > 0),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+}
+
 export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
   return fetchJson<BranchItemCapacityDto[]>(`${API_BASE}/Item/Branch`);
 }
@@ -396,6 +406,7 @@ const inventoryApi = {
   getBranches,
   getDashboardPreview,
   getItemMaterialDetails,
+  getItemCategoryOptions,
   getInventoryItems,
   getInventoryOverview,
   createInventoryItem,

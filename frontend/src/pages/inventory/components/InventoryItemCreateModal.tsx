@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import FilterSelect from '../../../components/common/FilterSelect';
 import { InventoryCreatedItem, InventoryItemCreate } from '../../../services/inventoryApi';
 
 type InventoryItemCreateModalProps = {
   open: boolean;
   saving: boolean;
+  categoryOptions: string[];
   onClose: () => void;
   onCreate: (payload: InventoryItemCreate) => Promise<InventoryCreatedItem>;
 };
 
-function InventoryItemCreateModal({ open, saving, onClose, onCreate }: InventoryItemCreateModalProps) {
+function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCreate }: InventoryItemCreateModalProps) {
   const [formValues, setFormValues] = useState<InventoryItemCreate>({
     itemName: '',
     itemCategory: '',
@@ -22,10 +24,10 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
 
     setFormValues({
       itemName: '',
-      itemCategory: '',
+      itemCategory: categoryOptions[0] ?? '',
       productionTime: 0,
     });
-  }, [open]);
+  }, [categoryOptions, open]);
 
   useEffect(() => {
     if (!open) {
@@ -85,11 +87,11 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
 
             <label className="space-y-2 text-sm text-text">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Category</span>
-              <input
+              <FilterSelect
                 value={formValues.itemCategory}
-                onChange={(event) => setFormValues((current) => ({ ...current, itemCategory: event.target.value }))}
-                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
-                required
+                onChange={(value) => setFormValues((current) => ({ ...current, itemCategory: value }))}
+                options={categoryOptions.map((option) => ({ value: option, label: option }))}
+                ariaLabel="Select item category"
               />
             </label>
           </div>

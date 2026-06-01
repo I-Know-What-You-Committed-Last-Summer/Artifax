@@ -4,6 +4,7 @@ jest.mock('../../../services/inventoryApi', () => {
     ...actual,
     getInventoryOverview: jest.fn(),
     getItemMaterialDetails: jest.fn(),
+    getItems: jest.fn(),
   };
 });
 jest.mock('../components/InventoryItemEditModal', () => () => null);
@@ -53,6 +54,11 @@ describe('InventoryPage', () => {
         },
       ],
     });
+
+    (inventoryApi.getItems as jest.Mock).mockResolvedValue([
+      { ItemID: 1, ItemName: 'Widget', ItemCategory: 'Parts', ProductionTime: 42 },
+      { ItemID: 11, ItemName: 'Screw', ItemCategory: 'Hardware', ProductionTime: 0 },
+    ]);
 
     render(<InventoryPage />);
 
