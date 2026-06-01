@@ -1,5 +1,6 @@
 import React, { FC, useMemo, useState, useEffect } from 'react';
 import './historyPanel.css';
+import SearchInput from '../../../../components/common/SearchInput';
 import FilterSelect from '../../../../components/common/FilterSelect';
 import { historyData, HistoryItem } from '../historyData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
@@ -105,12 +106,11 @@ const HistoryPanel: FC = () => {
         <div className="history-controls">
           <div className="history-search">
             <label className="history-search-label" htmlFor="history-search-input">Search:</label>
-            <input
+            <SearchInput
               id="history-search-input"
-              type="text"
               placeholder="Search items, SKU, location..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
             />
           </div>
           <div className="history-select-wrapper">
@@ -167,7 +167,6 @@ const HistoryPanel: FC = () => {
         <table className="history-table">
           <thead>
             <tr>
-              <th className="history-arrow-column" />
               <th>ITEM</th>
               <th>DATE</th>
               <th>QTY</th>
@@ -180,9 +179,6 @@ const HistoryPanel: FC = () => {
           <tbody>
             {paginatedData.map((item) => (
               <tr key={`${item.id}-${item.operator}`}>
-                <td className="history-arrow-column">
-                  <span className="history-row-arrow">›</span>
-                </td>
                 <td>
                   <div className="history-item-cell">
                     <img src={unitIcon} alt="item icon" className="table-item-icon" />

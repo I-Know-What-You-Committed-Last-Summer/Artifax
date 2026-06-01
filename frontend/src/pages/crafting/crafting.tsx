@@ -12,7 +12,7 @@ import CraftPanel from './components/craftPanel/craftPanel';
 import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import { Blueprint } from './components/craftingData';
-import { craftingAlerts } from '../../data/mockDashboard';
+import { craftingAlerts } from '../../data/fallback';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 interface PageProps {
@@ -69,17 +69,40 @@ const CraftPage: FC<PageProps> = ({ activeTab, onTabChange }) => {
         const item = await itemResponse.json();
         const ingredients = await ingredientsResponse.json();
 
+        // Fetch inventory to populate `have` values for materials and blueprint
+        let inventoryMap: Record<string, number> = {};
+        try {
+          const [itemsResp, branchResp] = await Promise.all([
+            fetch('http://localhost:5253/api/Item/item'),
+            fetch('http://localhost:5253/api/Item/Branch')
+          ]);
+
+          if (itemsResp.ok && branchResp.ok) {
+            const items = await itemsResp.json();
+            const branchItems = await branchResp.json();
+            const idToName: Record<number, string> = {};
+            items.forEach((it: any) => { idToName[it.itemID] = it.itemName; });
+            branchItems.forEach((bic: any) => {
+              const name = idToName[bic.itemID];
+              if (!name) return;
+              inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
+            });
+          }
+        } catch (e) {
+          console.error('Error fetching inventory for blueprint:', e);
+        }
+
         const blueprint: Blueprint = {
           id: `bp-${item.itemID}`,
           name: item.itemName,
           description: `Production time: ${item.productionTime}s`,
           category: item.itemCategory?.toLowerCase() as any || 'mechanical',
-          have: 0,
+          have: inventoryMap[item.itemName] || 0,
           craft: 0,
           materials: ingredients.map((ing: any) => ({
             name: ing.itemName,
             need: ing.quantity,
-            have: 0,
+            have: inventoryMap[ing.itemName] || 0,
           })),
         };
 

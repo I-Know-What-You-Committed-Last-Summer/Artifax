@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../../components/layout/PageHeader';
 import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
+import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
+import { useApi } from '../../hooks/useApi';
 
 type User = {
   id: number;
@@ -13,17 +15,22 @@ type User = {
   status: string;
 };
 
-const initialUsers: User[] = [
-  { id: 1, name: 'Sam Smith', email: 'sam@gmail.com', branch: 'Warehouse A', role: 'Admin', status: 'Active' },
-  { id: 2, name: 'Alex Johnson', email: 'alex.johnson@gmail.com', branch: 'Warehouse B', role: 'Admin', status: 'Active' },
-  { id: 3, name: 'Maria Garcia', email: 'maria.garcia@gmail.com', branch: 'Warehouse A', role: 'Staff', status: 'Active' },
-  { id: 4, name: 'Jordan Lee', email: 'jordan.lee@gmail.com', branch: 'Warehouse C', role: 'Staff', status: 'Pending' },
-];
-
 const Users: React.FC = () => {
   const currentDate = getCurrentDateSAST();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const api = useApi();
+  // `api` is an axios instance configured in `src/hooks/useApi.ts`.
+  // All backend HTTP calls in this file use `api` and the base URL `http://localhost:5253/api`.
+  // Backend endpoints used:
+  //  - GET  /User             -> fetch all users (used in useEffect)
+  //  - POST /User/employee    -> create a new employee (used in handleSaveUser)
+  //  - PATCH /User/employee   -> update existing employee details (used in handleSaveUser)
+  //  - DELETE /User/employee  -> delete an employee by id (used in handleDeleteUser)
+  const [users, setUsers] = useState<User[]>([]);
+  const [branchMap, setBranchMap] = useState<Record<number, string>>({});
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  // ensure we only try fetching users once per page load
+  const usersFetchedRef = useRef(false);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) ?? undefined,
@@ -38,21 +45,128 @@ const Users: React.FC = () => {
     setSelectedUserId(null);
   };
 
-  const handleSaveUser = (user: Omit<User, 'id'> & { id: number | null }) => {
-    if (user.id === null) {
-      const nextId = Math.max(0, ...users.map((item) => item.id)) + 1;
-      setUsers((prev) => [...prev, { ...user, id: nextId }]);
-      setSelectedUserId(nextId);
-      return;
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const [usersResp, branchesResp] = await Promise.all([api.get('/User'), api.get('/Branch')]);
+      const branches = branchesResp.data ?? [];
+      const map: Record<number, string> = {};
+      branches.forEach((b: any) => {
+        const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
+        const name = b.branchName ?? b.BranchName ?? b.name ?? '';
+        if (id) map[id] = name;
+      });
+      setBranchMap(map);
+
+      const usersData = (usersResp.data ?? []).map((e: any) => {
+        const id = e.employeeId ?? e.EmployeeId ?? e.EmployeeID ?? 0;
+        const name = e.employeeName ?? e.EmployeeName ?? e.employeeName ?? '';
+        const email = e.employeeEmail ?? e.EmployeeEmail ?? '';
+        const branchId = e.branchId ?? e.BranchId ?? e.BranchID ?? 0;
+        const role = e.employeeLevel ?? e.EmployeeLevel ?? 'Employee';
+        return {
+          id,
+          name,
+          email,
+          branch: String(branchId),
+          role: role === 'Admin' ? 'Admin' : 'Staff',
+          status: 'Active',
+        } as User;
+      });
+
+      setUsers(usersData);
+    } catch (err) {
+      console.error('Fetch users failed', err);
+    } finally {
+      setLoading(false);
     }
-
-    setUsers((prev) => prev.map((existing) => (existing.id === user.id ? { ...existing, ...user } : existing)));
   };
 
-  const handleDeleteUser = (id: number) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
-    setSelectedUserId(null);
+  const handleSaveUser = async (user: Omit<User, 'id'> & { id: number | null; password?: string }) => {
+    try {
+      if (user.id === null) {
+        // Create new employee
+        const payload = {
+          BranchID: Number(user.branch),
+          EmployeeEmail: user.email,
+          EmployeeName: user.name,
+          EmployeePassword: user.password ?? '',
+          EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
+        };
+        const resp = await api.post('/User/employee', payload);
+        await fetchUsers();
+        const created = resp.data;
+        const createdId = created?.employeeId ?? created?.EmployeeId ?? null;
+        if (createdId) setSelectedUserId(createdId);
+        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        return;
+      }
+
+      // Update existing employee
+      const existing = users.find((u) => u.id === user.id);
+      const originalEmail = existing?.email ?? user.email;
+
+      // If only branch changed, call branch-specific endpoint
+      if (existing && existing.branch !== user.branch && existing.name === user.name && existing.email === user.email) {
+        await api.patch('/User/employee/branch', null, { params: { EmployeeEmail: originalEmail, BranchId: Number(user.branch) } });
+        await fetchUsers();
+        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        return;
+      }
+
+      // General details update (name/email/password)
+      const updatePayload: any = {
+        BranchID: Number(user.branch),
+        EmployeeEmail: user.email,
+        EmployeeName: user.name,
+        EmployeePassword: user.password ?? '',
+        EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
+      };
+
+      await api.patch('/User/employee', updatePayload, { params: { EmployeeEmail: originalEmail } });
+      await fetchUsers();
+      setCurrentUser({ name: user.name, role: user.role, email: user.email });
+    } catch (err) {
+      console.error('Save user failed', err);
+    }
   };
+
+  const handleDeleteUser = async (id: number) => {
+    try {
+      await api.delete('/User/employee', { params: { id } });
+      await fetchUsers();
+      setSelectedUserId(null);
+      clearCurrentUser();
+    } catch (err) {
+      console.error('Delete user failed', err);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    if (usersFetchedRef.current) return; // already attempted fetch
+    usersFetchedRef.current = true;
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      if (!mounted) return;
+      console.error('Fetch users timed out');
+      timedOut = true;
+      setLoading(false);
+    }, 4000);
+
+    (async () => {
+      setLoading(true);
+      try {
+        await fetchUsers();
+      } catch (err) {
+        console.error('Fetch users failed', err);
+      } finally {
+        // noop
+      }
+    })();
+
+    return () => { mounted = false; clearTimeout(timeoutId); };
+  }, [api]);
 
   return (
     <div className="page-content">
@@ -74,6 +188,7 @@ const Users: React.FC = () => {
             <UserList
               users={users}
               selectedUserId={selectedUserId}
+              loading={loading}
               onSelectUser={handleSelectUser}
               onCreateNewUser={handleCreateNewUser}
             />

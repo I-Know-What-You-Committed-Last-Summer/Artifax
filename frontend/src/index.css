@@ -137,12 +137,13 @@ html[data-theme='synthwave'] {
 
   .artifax-select {
     width: 100%;
-    min-height: 2.8rem;
+    height: 3rem;
+    min-height: 3rem;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
     color: var(--text);
-    padding: 0.8rem 2.35rem 0.8rem 0.95rem;
+    padding: 0 2.35rem 0 0.95rem;
     font: inherit;
     outline: none;
     cursor: pointer;
@@ -150,7 +151,14 @@ html[data-theme='synthwave'] {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
+    line-height: 1;
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  }
+
+  .artifax-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    box-shadow: none;
   }
 
   .artifax-select:focus {
@@ -247,6 +255,43 @@ html[data-theme='synthwave'] {
     height: 24px;
     object-fit: contain;
     pointer-events: none;
+  }
+
+  .qty-column {
+    width: 56px;
+    min-width: 56px;
+    text-align: left;
+    padding-right: 1rem;
+  }
+
+  .dashboard-material-column {
+    width: 320px;
+    min-width: 320px;
+  }
+
+  .dashboard-location-column {
+    padding-left: 1rem;
+  }
+
+  /* Visual nudges for dashboard preview content only */
+  .qty-header,
+  .qty-value {
+    display: inline-block;
+  }
+
+  .location-header,
+  .location-value {
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .inventory-location-cell,
+  .dashboard-location-cell {
+    white-space: nowrap;
+  }
+
+  .inventory-view-details {
+    max-width: 100%;
   }
 
   .btn-outfit {

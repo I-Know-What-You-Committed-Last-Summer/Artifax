@@ -201,7 +201,7 @@ namespace Artifax.Controllers
                 return NotFound($"Order with ID {id} not found.");
 
             // Prevent updates to completed orders
-            if (existingOrder.Status == "Completed" || existingOrder.Status == "Crafted")
+            if (existingOrder.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
                 return BadRequest("Cannot update a completed order.");
 
             // Validate the item exists
@@ -290,7 +290,7 @@ namespace Artifax.Controllers
                 return NotFound($"Order with ID {id} not found.");
 
             // Prevent deletion of completed orders
-            if (order.Status == "Completed" || order.Status == "Crafted")
+            if (order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
                 return BadRequest("Cannot delete a completed order.");
 
             context.Orders.Remove(order);
