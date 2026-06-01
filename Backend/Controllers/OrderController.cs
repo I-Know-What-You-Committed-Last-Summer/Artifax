@@ -300,5 +300,62 @@ namespace Artifax.Controllers
         }
 
         #endregion
+
+        #region HistoryRoutes
+
+        // GET /api/Order/{id}/history — Returns the complete history of status changes for an order
+        // [HttpGet("{id}/history")]
+        // public async Task<IActionResult> GetOrderHistory(int id)
+        // {
+        //     var order = await context.Orders.FindAsync(id);
+        //     if (order == null)
+        //         return NotFound($"Order with ID {id} not found.");
+
+        //     var history = await context.OrderHistories
+        //         .Where(oh => oh.OrderID == id)
+        //         .Include(oh => oh.ChangedByEmployee)
+        //         .OrderByDescending(oh => oh.ChangedDateTime)
+        //         .ToListAsync();
+
+        //     var historyDtos = history.Select(h => new OrderHistoryReadDto
+        //     {
+        //         OrderHistoryID = h.OrderHistoryID,
+        //         OrderID = h.OrderID,
+        //         PreviousStatus = h.PreviousStatus,
+        //         NewStatus = h.NewStatus,
+        //         ChangedDateTime = h.ChangedDateTime,
+        //         ChangedByEmployeeID = h.ChangedByEmployeeID,
+        //         ChangedByEmployeeName = h.ChangedByEmployee?.EmployeeName ?? "System",
+        //         ChangeReason = h.ChangeReason
+        //     }).ToList();
+
+        //     return Ok(historyDtos);
+        // }
+
+        // // GET /api/Order/history/all — Returns history for all orders
+        // [HttpGet("history/all")]
+        // public async Task<IActionResult> GetAllOrderHistory()
+        // {
+        //     var history = await context.OrderHistories
+        //         .Include(oh => oh.ChangedByEmployee)
+        //         .OrderByDescending(oh => oh.ChangedDateTime)
+        //         .ToListAsync();
+
+        //     var historyDtos = history.Select(h => new OrderHistoryReadDto
+        //     {
+        //         OrderHistoryID = h.OrderHistoryID,
+        //         OrderID = h.OrderID,
+        //         PreviousStatus = h.PreviousStatus,
+        //         NewStatus = h.NewStatus,
+        //         ChangedDateTime = h.ChangedDateTime,
+        //         ChangedByEmployeeID = h.ChangedByEmployeeID,
+        //         ChangedByEmployeeName = h.ChangedByEmployee?.EmployeeName ?? "System",
+        //         ChangeReason = h.ChangeReason
+        //     }).ToList();
+
+        //     return Ok(historyDtos);
+        // }
+
+        #endregion
     }
 }

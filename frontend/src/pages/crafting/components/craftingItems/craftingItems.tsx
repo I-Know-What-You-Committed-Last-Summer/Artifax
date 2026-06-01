@@ -1,6 +1,6 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useState } from 'react';
 import './craftingItems.css';
-import { CraftingJob, getActiveAndQueuedJobs } from '../../../../services/orderApi';
+import { craftingData, CraftingItem } from '../craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
 // The tilt state stores a CSS transform string for each card by its id.
@@ -13,28 +13,8 @@ const CraftingItems: FC = () => {
   // `tilts` maps card ids to their current transform styles.
   // `setTilts` updates the map when the mouse moves or leaves a card.
   const [tilts, setTilts] = useState<TiltsState>({});
-  const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    getActiveAndQueuedJobs()
-      .then(({ activeItems }) => {
-        if (mounted) {
-          setActiveJobs(activeItems);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load active crafting orders', error);
-        if (mounted) {
-          setActiveJobs([]);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const activeJobs: CraftingItem[] = craftingData.filter(item => item.status !== "Queued");
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
     // Get the bounding rectangle of the card being hovered.
