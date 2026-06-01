@@ -1,9 +1,9 @@
 // Mapping of status text to visual styles (background, text color, border)
 const statusMap = {
   OK: 'bg-okBg text-okText border border-okText/20',
-  LOW: 'bg-warnBg text-warnText border border-warnText/20',
+  LOW: 'bg-dangerBg text-dangerText border border-dangerText/20',
   QUEUED: 'bg-app text-muted border border-border',
-  'IN PROGRESS': 'bg-primary text-white border border-primary',
+  'IN PROGRESS': 'bg-okBg text-okText border border-okText/20',
   PAUSED: 'bg-border text-text border border-border',
   CRAFTED: 'bg-okBg text-okText border border-okText/20',
   CANCELLED: 'bg-dangerBg text-dangerText border border-dangerText/20',

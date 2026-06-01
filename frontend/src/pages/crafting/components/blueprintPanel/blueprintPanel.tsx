@@ -2,6 +2,7 @@ import React, { FC, useState, useEffect } from 'react';
 import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
+import FilterSelect from '../../../../components/common/FilterSelect';
 
 interface Category {
   id: string;
@@ -20,13 +21,13 @@ interface BlueprintPanelProps {
   filter: string;
   onFilterChange: (filter: string) => void;
   onSelectBlueprint: (blueprintId: string) => void;
+  onCreateBlueprint: () => void;
 }
 
 const categories: Category[] = [
   { id: 'all', label: 'All' },
-  { id: 'mechanical', label: 'Mechanical' },
-  { id: 'electronics', label: 'Electronics' },
-  { id: 'furniture', label: 'Furniture' },
+  { id: 'metal', label: 'Metal' },
+  { id: 'other', label: 'Other' },
 ];
 
 const computeCraftable = (materials: BlueprintMaterial[]): number => {
@@ -41,7 +42,8 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   selectedBlueprintId, 
   filter, 
   onFilterChange, 
-  onSelectBlueprint
+  onSelectBlueprint,
+  onCreateBlueprint,
 }) => {
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,6 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
 
   /**
    * Fetch blueprints from API on component mount.
-   * This effect runs once when the component is first loaded.
    */
   useEffect(() => {
     fetchBlueprintsFromApi();
@@ -57,7 +58,6 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
 
   /**
    * Auto-select the first blueprint when blueprints are loaded.
-   * This ensures the user always sees a blueprint without needing to manually select one.
    */
   useEffect(() => {
     if (blueprints.length > 0 && !selectedBlueprintId) {
@@ -68,78 +68,46 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
 
   /**
    * Fetches blueprint data from the backend.
-   * 
-   * Process:
-   * - Only calls: GET /api/Item/itemIngredient/item/{itemId}
-   * - This endpoint returns the recipe/ingredients needed to craft a specific item
-   * - Example: To craft "Circuit Board", it returns 5x "Resistor" and 3x "Capacitor"
-   * - Creates Blueprint objects from the ingredient data returned
+
    */
   const fetchBlueprintsFromApi = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Generate item IDs to fetch blueprints for (1 through 10)
-      // This will attempt to fetch blueprints from the itemIngredient endpoint for each ID
-      const itemIds = Array.from({ length: 10 }, (_, i) => i + 1);
+      // Fetch all blueprint items from the backend endpoint.
+      // The backend returns items and their ingredients together.
+      const response = await fetch('http://localhost:5253/api/Item/item/allItemBlueprints');
+      if (!response.ok) {
+        throw new Error(`Unable to load blueprints: ${response.statusText}`);
+      }
 
-      // Fetch blueprints for all item IDs in parallel
-      // We use Promise.allSettled() to continue even if some requests fail
-      const results = await Promise.allSettled(
-        itemIds.map(async (itemID) => {
-          try {
-            // Call the itemIngredient endpoint to get the recipe for this item
-            const ingredientsResponse = await fetch(
-              `http://localhost:5253/api/Item/itemIngredient/item/${itemID}`
-            );
+      // Parse JSON returned by the API.
+      const apiBlueprints = await response.json();
 
-            // If no data exists for this item ID, skip it
-            if (!ingredientsResponse.ok) {
-              return null;
-            }
+      // Map API shape into our local Blueprint type.
+      const blueprints: Blueprint[] = apiBlueprints.map((item: any) => {
+        const rawCategory = (item.itemCategory ?? 'other').toLowerCase();
+        const normalizedCategory = rawCategory.includes('metal') ? 'metal' : 'other';
 
-            const ingredients: IngredientBlueprint[] = await ingredientsResponse.json();
-            
-            // Skip if no ingredients returned
-            if (!ingredients || ingredients.length === 0) {
-              return null;
-            }
+        return {
+          id: `bp-${item.itemID}`,
+          name: item.itemName,
+          description: `Production time: ${item.productionTime}s`,
+          category: normalizedCategory as any,
+          have: 0,
+          craft: 0,
+          materials: (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => ({
+            name: ing.itemName,
+            need: ing.quantity,
+            have: 0,
+          })),
+        };
+      });
 
-            // Extract category from the first ingredient
-            const category = ingredients[0]?.itemCategory?.toLowerCase() || 'mechanical';
-
-            // Create a blueprint from the ingredients data
-            const blueprint: Blueprint = {
-              id: `bp-${itemID}`,
-              name: `Item ${itemID}`,
-              description: 'Recipe Blueprint',
-              category: category as any,
-              have: 0,
-              craft: 0,
-              materials: ingredients.map((ing) => ({
-                name: ing.itemName,
-                need: ing.quantity,
-                have: 0,
-              })),
-            };
-
-            return blueprint;
-          } catch (err) {
-            console.error(`Error fetching blueprint for item ${itemID}:`, err);
-            return null;
-          }
-        })
-      );
-
-      // Filter out null results and extract successful blueprints
-      const blueprints = results
-        .filter((result) => result.status === 'fulfilled' && result.value !== null)
-        .map((result) => (result as PromiseFulfilledResult<Blueprint>).value);
-
+      // Store the mapped blueprints in local component state.
       setBlueprints(blueprints);
-      console.log('app fetched blueprints', blueprints);
+      // console.log('app fetched blueprints', blueprints);
     } catch (err) {
-      // If fetch fails completely, display the error to the user
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       console.error('Error fetching blueprints:', err);
     } finally {
@@ -149,7 +117,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
 
   const filteredBlueprints = filter === 'all'
     ? blueprints
-    : blueprints.filter((blueprint) => blueprint.category === filter as any);
+    : blueprints.filter((blueprint) => blueprint.category === filter);
 
   return (
     <div className="blueprint-panel">
@@ -157,11 +125,12 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
         <h3>Blueprints</h3>
         <div className="blueprint-filter">
           <label htmlFor="blueprintFilter">Filter Blueprints</label>
-          <select id="blueprintFilter" value={filter} onChange={(e) => onFilterChange(e.target.value)}>
-            {categories.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
-            ))}
-          </select>
+          <FilterSelect
+            value={filter}
+            onChange={onFilterChange}
+            ariaLabel="Blueprint filter"
+            options={categories.map((option) => ({ label: option.label, value: option.id }))}
+          />
         </div>
       </div>
 
@@ -171,16 +140,14 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
       <div className="blueprint-list">
         {filteredBlueprints.map((blueprint) => {
           const craftable = computeCraftable(blueprint.materials);
-          const isDisabled = craftable === 0;
-          const cardClass = `blueprint-card ${selectedBlueprintId === blueprint.id ? 'active' : ''} ${isDisabled ? 'cant-craft' : ''}`;
+          const cardClass = `blueprint-card ${selectedBlueprintId === blueprint.id ? 'active' : ''} ${craftable === 0 ? 'cant-craft' : ''}`;
 
           return (
             <button
               key={blueprint.id}
               type="button"
               className={cardClass}
-              onClick={() => !isDisabled && onSelectBlueprint(blueprint.id)}
-              disabled={isDisabled}
+              onClick={() => onSelectBlueprint(blueprint.id)}
             >
               <div className="blueprint-card-main">
                 <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
@@ -204,7 +171,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
       </div>
 
       <div className="blueprint-actions">
-        <button type="button" className="blueprint-new-btn">New Blueprint</button>
+        <button type="button" className="blueprint-new-btn" onClick={onCreateBlueprint}>New Blueprint</button>
       </div>
     </div>
   );

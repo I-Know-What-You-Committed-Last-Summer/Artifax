@@ -1,20 +1,14 @@
-
-public class OrderReadDto
+namespace Artifax.DTOs
 {
-    public int OrderID { get; set; }
-    public DateTime OrderDate { get; set; }
-    public string Status { get; set; }
-    public decimal TotalAmount { get; set; }
-    
-    // This is key: We return a list of items with details
-    public List<OrderItemReadDto> OrderItems { get; set; }
+    public class OrderReadDto
+    {
+        public int OrderID { get; set; }
+        public int ItemID { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public DateTime OrderDateTime { get; set; }
+        public int BranchID { get; set; }
+        public int EmployeeID { get; set; }
+        public bool OrderExpedite { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
 }
-
-public class OrderItemReadDto
-{
-    public int ProductId { get; set; }
-    public string ProductName { get; set; }
-    public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
-}
-

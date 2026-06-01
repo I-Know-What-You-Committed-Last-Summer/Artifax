@@ -1,6 +1,5 @@
 // React hooks and UI components used on the inventory page
-import { useMemo, useState } from 'react';
-import Button from '../../components/common/Button';
+import { useEffect, useMemo, useState } from 'react';
 import FilterSelect from '../../components/common/FilterSelect';
 import SearchInput from '../../components/common/SearchInput';
 import SectionCard from '../../components/common/SectionCard';
@@ -11,37 +10,82 @@ import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
 import { inventoryAlerts, inventoryItems, inventoryStats, inventoryTabs } from '../../data/mockInventory';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
+import editIcon from '../../assets/images/Edit Icon.png';
+import viewIcon from '../../assets/images/View Icon.png';
+import axios from 'axios';
 
 function InventoryPage() {
   // Local UI state: active tab, search text, filters, sorting
   // `getCurrentDateSAST` provides a short date string used in the header
   const currentDate = getCurrentDateSAST();
->>>>>>> mario/add-comments
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [zone, setZone] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
+  const [inventoryData, setInventoryData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
 
+
+useEffect(() => {
+    
+    const fetchInventory = async () => {
+      try {
+        
+        const response = await axios.get('http://localhost:5253/api/Item/item/allInventoryItems');
+        console.log('Fetched inventory data:', response.data);
+        setInventoryData(response.data);
+      } catch (error) {
+        console.error('Error fetching inventory data:', error);
+      } finally {
+        setIsLoading(false); 
+      }
+    };
+
+    
+    fetchInventory();
+  }, []);
+
+
+
+//   inventoryItemBranchName
+// : 
+// "Johannesburg"
+// inventoryItemCategory
+// : 
+// "Metals"
+// inventoryItemId
+// : 
+// 1
+// inventoryItemName
+// : 
+// "Stainless Steel"
+// inventoryItemProductionTime
+// : 
+// 5
+// inventoryItemQuantity
+// : 
+// 5
   // Compute filtered + sorted items when dependencies change
   const filteredItems = useMemo(() => {
     const searchLower = search.toLowerCase();
 
-    return inventoryItems
+    return inventoryData
       .filter((item) => {
         // Tab filter: show only items for the selected tab
-        if (activeTab !== 'all' && item.tab !== activeTab) {
+        if (activeTab !== 'all' && item.inventoryItemCategory !== activeTab) {
           return false;
         }
-
         // Status filter (OK / LOW / ALL)
         if (status !== 'ALL' && item.status !== status) {
-          return false;
+          //FIXME: Bypassing, pls fix
+          return true;
         }
 
         // Zone/location filter
-        if (zone !== 'ALL' && item.location !== zone) {
-          return false;
+        if (zone !== 'ALL' && item.inventoryItemBranchName !== zone) {
+          return true;
         }
 
         // If no search text, include the item
@@ -51,18 +95,18 @@ function InventoryPage() {
 
         // Search across name, sku, and location
         return (
-          item.name.toLowerCase().includes(searchLower) ||
-          item.sku.toLowerCase().includes(searchLower) ||
-          item.location.toLowerCase().includes(searchLower)
+          item.inventoryItemName.toLowerCase().includes(searchLower) ||
+          item.inventoryItemSKU.toLowerCase().includes(searchLower) ||
+          item.inventoryItemBranchName.toLowerCase().includes(searchLower)
         );
       })
       .sort((a, b) => {
         // Optional sort by quantity or by name
         if (sortBy === 'QTY') {
-          return b.quantity - a.quantity;
+          return b.inventoryItemQuantity - a.inventoryItemQuantity;
         }
 
-        return a.name.localeCompare(b.name);
+        return a.inventoryItemName.localeCompare(b.inventoryItemName);
       });
   }, [activeTab, search, sortBy, status, zone]);
 
@@ -72,7 +116,11 @@ function InventoryPage() {
       <PageHeader
         title="Inventory Management"
         subtitle={`Full Inventory · ${currentDate}`}
-        rightSlot={<Button>Add Item</Button>}
+        rightSlot={
+          <button type="button" className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary hover:bg-bg">
+            Add Item
+          </button>
+        }
       />
       {/* Alerts at the top */}
       <AlertStrip label="3 Low Stock Alerts:" items={inventoryAlerts} />
@@ -88,7 +136,7 @@ function InventoryPage() {
       <SectionCard title="All Inventory Items" subtitle="24 items">
         <div className="space-y-3">
           {/* Search and filter controls */}
-          <div className="grid gap-2 lg:grid-cols-[2fr,auto,auto,auto]">
+          <div className="grid items-end gap-2 lg:grid-cols-[minmax(0,2.4fr),repeat(3,minmax(0,1fr))]">
             <SearchInput
               value={search}
               onChange={setSearch}
@@ -139,27 +187,43 @@ function InventoryPage() {
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Edit</th>
+                  <th className="pb-2 font-medium">View</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b border-border/70">
+                  <tr key={item.inventoryItemId} className="border-b border-border/70">
                     <td className="py-2.5">
-                      <p className="font-semibold text-text">{item.name}</p>
-                      <p className="text-xs text-muted">{item.sku}</p>
+                      <p className="font-semibold text-text">{item.inventoryItemName}</p>
+                      <p className="text-xs text-muted">{item.inventoryItemCategory.slice(0, 3) + "-" + item.inventoryItemId}</p>
                     </td>
-                    <td className="py-2.5 text-muted">{item.category}</td>
-                    <td className="py-2.5 font-semibold text-text">{item.quantity}</td>
-                    <td className="py-2.5 text-muted">{item.minStock}</td>
-                    <td className="py-2.5 text-muted">{item.location}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemCategory}</td>
+                    <td className="py-2.5 font-semibold text-text">{item.inventoryItemQuantity}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemProductionTime}</td>
+                    <td className="py-2.5 text-muted">{item.inventoryItemBranchName}</td>
                     <td className="py-2.5">
                       {/* Status badge */}
-                      <StatusBadge status={item.status} />
+                      <StatusBadge status={item.inventoryItemQuantity < 10 ? 'LOW' : 'OK'} />
                     </td>
                     <td className="py-2.5">
-                      <Button variant="secondary" className="px-3 py-1 text-xs">
-                        Edit
-                      </Button>
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        aria-label={`Edit ${item.inventoryItemId}`}
+                      >
+                        <img src={editIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">Edit</span>
+                      </button>
+                    </td>
+                    <td className="py-2.5">
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        aria-label={`View ${item.name}`}
+                      >
+                        <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">View</span>
+                      </button>
                     </td>
                   </tr>
                 ))}

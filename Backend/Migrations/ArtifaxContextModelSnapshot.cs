@@ -157,6 +157,9 @@ namespace Backend.Migrations
                     b.Property<int>("EmployeeID")
                         .HasColumnType("integer");
 
+                    b.Property<int>("ItemID")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("OrderDateTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -171,33 +174,48 @@ namespace Backend.Migrations
 
                     b.HasIndex("BranchID");
 
+                    b.HasIndex("EmployeeID");
+
+                    b.HasIndex("ItemID");
+
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("Artifax.Models.OrderItem", b =>
+            modelBuilder.Entity("Artifax.Models.OrderHistory", b =>
                 {
-                    b.Property<int>("OrderItemID")
+                    b.Property<int>("OrderHistoryID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OrderItemID"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OrderHistoryID"));
 
-                    b.Property<int>("ItemID")
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ChangedByEmployeeID")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("ChangedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("OrderID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.HasKey("OrderItemID");
+                    b.HasKey("OrderHistoryID");
 
-                    b.HasIndex("ItemID");
+                    b.HasIndex("ChangedByEmployeeID");
 
                     b.HasIndex("OrderID");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderHistories");
                 });
 
             modelBuilder.Entity("Artifax.Models.BranchItemCapacity", b =>
@@ -257,24 +275,38 @@ namespace Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Branch");
-                });
+                    b.HasOne("Artifax.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-            modelBuilder.Entity("Artifax.Models.OrderItem", b =>
-                {
                     b.HasOne("Artifax.Models.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("Artifax.Models.OrderHistory", b =>
+                {
+                    b.HasOne("Artifax.Models.Employee", "ChangedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("ChangedByEmployeeID");
+
                     b.HasOne("Artifax.Models.Order", "Order")
-                        .WithMany("OrderItems")
+                        .WithMany("OrderHistories")
                         .HasForeignKey("OrderID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Item");
+                    b.Navigation("ChangedByEmployee");
 
                     b.Navigation("Order");
                 });
@@ -299,7 +331,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Artifax.Models.Order", b =>
                 {
-                    b.Navigation("OrderItems");
+                    b.Navigation("OrderHistories");
                 });
 #pragma warning restore 612, 618
         }
