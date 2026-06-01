@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import userIcon from '../../../../assets/images/userIcon.png';
 import './UserList.css';
 
@@ -18,9 +19,17 @@ interface UserListProps {
   loading: boolean;
   onSelectUser: (id: number) => void;
   onCreateNewUser: () => void;
+  branchMap: Record<number, string>;
 }
 
-function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUser }: UserListProps) {
+function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUser, branchMap }: UserListProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const query = searchQuery.toLowerCase().trim();
+    return users.filter((user) => user.name.toLowerCase().includes(query));
+  }, [users, searchQuery]);
   return (
     <section className="userlist-card">
       <header className="userlist-card-header">
@@ -41,17 +50,19 @@ function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUse
             type="search"
             placeholder="Search users..."
             aria-label="Search users"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </header>
 
       <div className="userlist-items">
-        {users.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <div className="userlist-empty">
-            <p>No users found — pull from API returned empty.</p>
+            <p>{searchQuery.trim() ? 'No users match your search.' : 'No users found — pull from API returned empty.'}</p>
           </div>
         ) : (
-          users.map((user) => (
+          filteredUsers.map((user) => (
             <article
               key={user.id}
               className={`userlist-item ${selectedUserId === user.id ? 'selected' : ''}`}
@@ -69,11 +80,11 @@ function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUse
                 <p className="userlist-email">{user.email}</p>
               </div>
               <div className="userlist-card-meta">
-                <span className={`userlist-role-tag ${user.role === 'Admin' ? 'role-admin' : 'role-staff'}`}>
+                <span className={`userlist-role-tag ${user.role === 'Admin' ? 'role-admin' : 'role-employee'}`}>
                   {user.role}
                 </span>
-                <span className={`userlist-branch-tag ${user.branch === 'Warehouse A' ? 'branch-a' : 'branch-b'}`}>
-                  {user.branch}
+                <span className="userlist-branch-tag">
+                  {branchMap[Number(user.branch)] ?? user.branch}
                 </span>
               </div>
             </article>

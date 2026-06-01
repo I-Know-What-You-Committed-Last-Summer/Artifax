@@ -198,6 +198,7 @@ const Users: React.FC = () => {
               loading={loading}
               onSelectUser={handleSelectUser}
               onCreateNewUser={handleCreateNewUser}
+              branchMap={branchMap}
             />
           </div>
         </div>

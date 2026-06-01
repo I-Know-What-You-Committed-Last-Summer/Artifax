@@ -36,7 +36,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
 
   const roleOptions = [
     { label: 'Admin', value: 'Admin' },
-    { label: 'Staff', value: 'Staff' },
+    { label: 'Employee', value: 'Employee' },
   ];
 
   // Fetch branches once on mount
