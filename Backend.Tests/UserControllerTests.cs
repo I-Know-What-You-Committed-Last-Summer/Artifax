@@ -105,7 +105,7 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public async Task TestName()
+        public async Task LoginEmployee_WhenEmployeeExist()
         {
             // Given
             var _controller = await GetPopulatedDummyController();
@@ -123,6 +123,53 @@ namespace Backend.Tests
             var _returnedOk = Assert.IsType<OkObjectResult>(_actionResult.Result);
             var _returnedDto = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
             Assert.Equal("Emp1", _returnedDto.EmployeeName);
+        }
+
+        [Fact]
+        public async Task LoginEmployee_WhenEmployeeDoesNotExist()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContextMock.Object
+            };
+        
+            // When
+            var _dto = await _controller.LoginEmployee(new (){Email="test@artifax.com", Password="testPass"});
+        
+            // Then
+            var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_dto);
+            Assert.IsType<UnauthorizedObjectResult>(_actionResult.Result);
+        }
+
+        [Fact]
+        public async Task TestName()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContextMock.Object
+            };
+            await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
+        
+            // When
+            var _response = await _controller.ChangeEmployeeBranch("employee1@artifax.com", 2);
+        
+            // Then
+            var _baseResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_response);
+            var _returnedOk = Assert.IsType<UnauthorizedObjectResult>(_baseResult.Result);
+            var _result = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
+            Assert.Equal(_result, new EmployeeReadDto()
+            {
+               BranchId= 2,
+               EmployeeEmail="employee1@artifax.com",
+               EmployeeId= 1,
+               EmployeeName= "Emp1" 
+            });
         }
     }
 }
