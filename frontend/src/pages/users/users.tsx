@@ -48,7 +48,12 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const [usersResp, branchesResp] = await Promise.all([api.get('/User'), api.get('/Branch')]);
+      const [adminsResp, employeesResp, branchesResp] = await Promise.all([
+        api.get('/User/admins'),
+        api.get('/User/employees'),
+        api.get('/Branch'),
+      ]);
+
       const branches = branchesResp.data ?? [];
       const map: Record<number, string> = {};
       branches.forEach((b: any) => {
@@ -58,23 +63,25 @@ const Users: React.FC = () => {
       });
       setBranchMap(map);
 
-      const usersData = (usersResp.data ?? []).map((e: any) => {
+      const makeUser = (e: any, role: 'Admin' | 'Employee') => {
         const id = e.employeeId ?? e.EmployeeId ?? e.EmployeeID ?? 0;
         const name = e.employeeName ?? e.EmployeeName ?? e.employeeName ?? '';
         const email = e.employeeEmail ?? e.EmployeeEmail ?? '';
         const branchId = e.branchId ?? e.BranchId ?? e.BranchID ?? 0;
-        const role = e.employeeLevel ?? e.EmployeeLevel ?? 'Employee';
         return {
           id,
           name,
           email,
           branch: String(branchId),
-          role: role === 'Admin' ? 'Admin' : 'Staff',
+          role,
           status: 'Active',
         } as User;
-      });
+      };
 
-      setUsers(usersData);
+      const adminUsers = (adminsResp.data ?? []).map((e: any) => makeUser(e, 'Admin'));
+      const employeeUsers = (employeesResp.data ?? []).map((e: any) => makeUser(e, 'Employee'));
+
+      setUsers([...adminUsers, ...employeeUsers]);
     } catch (err) {
       console.error('Fetch users failed', err);
     } finally {
@@ -191,6 +198,7 @@ const Users: React.FC = () => {
               loading={loading}
               onSelectUser={handleSelectUser}
               onCreateNewUser={handleCreateNewUser}
+              branchMap={branchMap}
             />
           </div>
         </div>
