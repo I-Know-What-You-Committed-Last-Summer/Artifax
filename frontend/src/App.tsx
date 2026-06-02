@@ -1,12 +1,14 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import AppLayout from './layouts/AppLayout';
-import PlaceholderPage from './pages/PlaceholderPage';
 import CraftingPage from './pages/crafting/crafting';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import InventoryPage from './pages/inventory/InventoryPage';
 import AnalyticsPage from './pages/analytics/analytics';
 import LoginPage from './pages/auth/LoginPage';
+import OtpVerifyPage from './pages/auth/OtpVerifyPage';
+import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
+import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
 import { useEffect } from 'react';
 import axios from 'axios';
@@ -20,7 +22,7 @@ function App() {
     
     const url = 'http://localhost:5253/api/Item/item';
     
-    const fetchData = (async () => {
+    (async () => {
       try {
         const result = await axios.get(url);
         console.log(result);
@@ -35,6 +37,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/verify" element={<OtpVerifyPage />} />
+        <Route path="/login/verify-success" element={<OtpVerifySuccessPage />} />
+        <Route path="/login/verify-failed" element={<OtpVerifyFailedPage />} />
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
@@ -42,7 +47,6 @@ function App() {
           <Route path="crafting" element={<CraftingPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="users" element={<UsersPage />} />
-          <Route path="profile" element={<PlaceholderPage title="Profile" />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>

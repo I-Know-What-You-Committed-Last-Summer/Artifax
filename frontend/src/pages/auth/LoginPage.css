@@ -25,6 +25,11 @@ html[data-theme='synthwave'] .login-page-shell {
   overflow: hidden;
 }
 
+.login-card-compact {
+  width: min(100%, 560px);
+  min-height: auto;
+}
+
 html[data-theme='synthwave'] .login-card {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(29, 52, 79, 0.96);
@@ -77,12 +82,22 @@ html[data-theme='synthwave'] .login-avatar {
   padding: 20px 20px 22px;
 }
 
+.login-card-body-compact {
+  padding: 28px 24px;
+}
+
 .login-section-heading {
   margin-bottom: 18px;
   font-family: 'Outfit', 'Sora', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
+}
+
+.login-subtitle {
+  margin: 0 0 20px;
+  font-size: 0.96rem;
+  color: var(--muted);
 }
 
 .login-form {
@@ -132,6 +147,10 @@ html[data-theme='synthwave'] .login-input-shell {
   font-size: 0.96rem;
 }
 
+.login-input-shell.has-password-toggle .login-input {
+  padding-right: 84px;
+}
+
 .login-password-toggle {
   position: absolute;
   right: 10px;
@@ -170,6 +189,10 @@ html[data-theme='synthwave'] .login-input-shell {
   right: 12px;
   display: inline-flex;
   color: #a6afbf;
+}
+
+.login-input-shell.has-password-toggle .login-field-icon {
+  right: 48px;
 }
 
 .login-field-icon svg {
@@ -277,6 +300,143 @@ html[data-theme='synthwave'] .login-alert-icon {
   color: var(--on-primary);
 }
 
+.login-secondary-action {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 10px;
+  min-height: 44px;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.login-secondary-action:hover,
+.login-secondary-action:focus-visible {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.28);
+}
+
+html[data-theme='synthwave'] .login-secondary-action {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme='synthwave'] .login-secondary-action:hover,
+html[data-theme='synthwave'] .login-secondary-action:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.login-otp-sequence {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.login-otp-input {
+  border: 1px solid #dfe4ec;
+  border-radius: 10px;
+  min-height: 52px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(251, 252, 254, 0.9);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html[data-theme='synthwave'] .login-otp-input {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-otp-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.login-otp-input.invalid {
+  border-color: #ef4444;
+}
+
+.login-inline-error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #b91c1c;
+}
+
+.login-actions-column {
+  margin-top: 4px;
+  display: grid;
+  gap: 10px;
+}
+
+.login-status-card {
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+html[data-theme='synthwave'] .login-status-card {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-status-card h1 {
+  margin: 0;
+  font-family: 'Outfit', 'Sora', sans-serif;
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.login-status-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.login-status-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-status-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.login-status-card.success {
+  border-color: rgba(22, 163, 74, 0.26);
+  background: rgba(240, 253, 244, 0.92);
+}
+
+.login-status-card.success .login-status-icon {
+  color: #166534;
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.login-status-card.failed {
+  border-color: rgba(239, 68, 68, 0.26);
+  background: rgba(254, 242, 242, 0.92);
+}
+
+.login-status-card.failed .login-status-icon {
+  color: #991b1b;
+  background: rgba(248, 113, 113, 0.2);
+}
+
 @media (max-width: 768px) {
   .login-page-shell {
     padding: 12px;
@@ -290,5 +450,14 @@ html[data-theme='synthwave'] .login-alert-icon {
   .login-card-body {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .login-otp-sequence {
+    gap: 8px;
+  }
+
+  .login-otp-input {
+    min-height: 48px;
+    font-size: 1.1rem;
   }
 }
