@@ -15,6 +15,20 @@ namespace Backend.Tests
 {
     public class UserControllerTests
     {
+        #region classes
+            class FakeSession : ISession {
+                private readonly Dictionary<string, byte[]> _sessionStorage = new();
+                public bool IsAvailable => true;
+                public string Id => Guid.NewGuid().ToString();
+                public IEnumerable<string> Keys => _sessionStorage.Keys;
+                public void Set(string key, byte[] value) => _sessionStorage[key] = value;
+                public bool TryGetValue(string key, out byte[] value) => _sessionStorage.TryGetValue(key, out value);
+                public void Remove(string key) => _sessionStorage.Remove(key);
+                public void Clear() => _sessionStorage.Clear();
+                public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+                public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+            }
+        #endregion
 
         Employee[] testEmployees = [
             new Employee {EmployeeEmail="employee1@artifax.com",EmployeeName="Emp1",EmployeePasswordHash="123", EmployeeLevel="Employee"}, 
@@ -62,17 +76,11 @@ namespace Backend.Tests
 
         Mock<HttpContext> GetMockSession ()
         {
-            var sessionMock = new Mock<ISession>();
-            var sessionKey = "UserSessionKey";
-            byte[] sessionBytes = Encoding.UTF8.GetBytes("my-session-value");
+            var _fakeSession = new FakeSession();
 
-            // Setup the TryGetValue function to return a specific byte array and return true
-            sessionMock.Setup(s => s.TryGetValue(sessionKey, out sessionBytes))
-                       .Returns(true);
-
-            var httpContextMock = new Mock<HttpContext>();
-            httpContextMock.Setup(c => c.Session).Returns(sessionMock.Object);
-            return httpContextMock;
+            var _httpContextMock = new Mock<HttpContext>();
+            _httpContextMock.Setup(c => c.Session).Returns(_fakeSession);
+            return _httpContextMock;
         }
 
         [Fact]
@@ -145,14 +153,14 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public async Task TestName()
+        public async Task ChangeExistingEmployeeBranch()
         {
             // Given
             var _controller = await GetPopulatedDummyController();
-            var httpContextMock = GetMockSession();
+            var _httpContextMock = GetMockSession();
             _controller.ControllerContext = new ControllerContext
             {
-                HttpContext = httpContextMock.Object
+                HttpContext = _httpContextMock.Object
             };
             await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
         
@@ -161,7 +169,7 @@ namespace Backend.Tests
         
             // Then
             var _baseResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_response);
-            var _returnedOk = Assert.IsType<UnauthorizedObjectResult>(_baseResult.Result);
+            var _returnedOk = Assert.IsType<OkObjectResult>(_baseResult.Result);
             var _result = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
             Assert.Equal(_result, new EmployeeReadDto()
             {
