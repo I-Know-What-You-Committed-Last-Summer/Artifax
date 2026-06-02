@@ -60,8 +60,13 @@ namespace Artifax.Controllers
                 OrderID = o.OrderID,
                 ItemID = o.ItemID,
                 ItemName = o.Item?.ItemName ?? "Unknown",
+                Quantity = o.Quantity,
+                CreatedDateTime = o.CreatedDateTime,
+                StartedDateTime = o.StartedDateTime,
+                CompletedDateTime = o.CompletedDateTime,
+                TotalTime = o.TotalTime,
+                TimeElapsed = o.TimeElapsed,
                 Status = o.Status,
-                OrderDateTime = o.OrderDateTime,
                 BranchID = o.BranchID,
                 EmployeeID = o.EmployeeID,
                 OrderExpedite = o.OrderExpedite
@@ -116,8 +121,13 @@ namespace Artifax.Controllers
                 OrderID = order.OrderID,
                 ItemID = order.ItemID,
                 ItemName = order.Item?.ItemName ?? "Unknown",
+                Quantity = order.Quantity,
+                CreatedDateTime = order.CreatedDateTime,
+                StartedDateTime = order.StartedDateTime,
+                CompletedDateTime = order.CompletedDateTime,
+                TotalTime = order.TotalTime,
+                TimeElapsed = order.TimeElapsed,
                 Status = order.Status,
-                OrderDateTime = order.OrderDateTime,
                 BranchID = order.BranchID,
                 EmployeeID = order.EmployeeID,
                 OrderExpedite = order.OrderExpedite
@@ -131,7 +141,7 @@ namespace Artifax.Controllers
         #region CreateRoutes
 
         // POST /api/Order/create — Creates a new order with a single item
-        // Request body: { itemID, branchID, employeeID, orderExpedite }
+        // Request body: { itemID, quantity, branchID, employeeID, orderExpedite }
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto newOrderDto)
         {
@@ -150,15 +160,33 @@ namespace Artifax.Controllers
             if (employee == null)
                 return BadRequest($"Employee with ID {newOrderDto.EmployeeID} does not exist.");
 
+            // Calculate total production time
+            int totalTime = newOrderDto.Quantity * item.ProductionTime;
+
+            // Check if this branch already has 3 active orders
+            int activeOrderCount = await context.Orders
+                .Where(o => o.BranchID == newOrderDto.BranchID && o.Status == "Active")
+                .CountAsync();
+
+            string initialStatus = (activeOrderCount < 3 && newOrderDto.OrderExpedite) 
+                ? "Active" 
+                : "Queued";
+
+            DateTime? startedDateTime = initialStatus == "Active" ? DateTime.UtcNow : null;
+
             // Create the order
             var newOrder = new Order
             {
                 ItemID = newOrderDto.ItemID,
+                Quantity = newOrderDto.Quantity,
                 BranchID = newOrderDto.BranchID,
                 EmployeeID = newOrderDto.EmployeeID,
                 OrderExpedite = newOrderDto.OrderExpedite,
-                Status = "Pending",
-                OrderDateTime = DateTime.UtcNow
+                Status = initialStatus,
+                CreatedDateTime = DateTime.UtcNow,
+                StartedDateTime = startedDateTime,
+                TotalTime = totalTime,
+                TimeElapsed = 0
             };
 
             context.Orders.Add(newOrder);
@@ -175,8 +203,13 @@ namespace Artifax.Controllers
                 OrderID = created.OrderID,
                 ItemID = created.ItemID,
                 ItemName = created.Item?.ItemName ?? "Unknown",
+                Quantity = created.Quantity,
+                CreatedDateTime = created.CreatedDateTime,
+                StartedDateTime = created.StartedDateTime,
+                CompletedDateTime = created.CompletedDateTime,
+                TotalTime = created.TotalTime,
+                TimeElapsed = created.TimeElapsed,
                 Status = created.Status,
-                OrderDateTime = created.OrderDateTime,
                 BranchID = created.BranchID,
                 EmployeeID = created.EmployeeID,
                 OrderExpedite = created.OrderExpedite
@@ -221,9 +254,17 @@ namespace Artifax.Controllers
 
             // Update fields
             existingOrder.ItemID = updatedOrderDto.ItemID;
+            existingOrder.Quantity = updatedOrderDto.Quantity;
             existingOrder.BranchID = updatedOrderDto.BranchID;
             existingOrder.EmployeeID = updatedOrderDto.EmployeeID;
             existingOrder.OrderExpedite = updatedOrderDto.OrderExpedite;
+
+            // Recalculate TotalTime if Item or Quantity changed
+            var updatedItem = await context.Items.FindAsync(updatedOrderDto.ItemID);
+            if (updatedItem != null)
+            {
+                existingOrder.TotalTime = updatedOrderDto.Quantity * updatedItem.ProductionTime;
+            }
 
             await context.SaveChangesAsync();
 
@@ -238,8 +279,13 @@ namespace Artifax.Controllers
                 OrderID = result.OrderID,
                 ItemID = result.ItemID,
                 ItemName = result.Item?.ItemName ?? "Unknown",
+                Quantity = result.Quantity,
+                CreatedDateTime = result.CreatedDateTime,
+                StartedDateTime = result.StartedDateTime,
+                CompletedDateTime = result.CompletedDateTime,
+                TotalTime = result.TotalTime,
+                TimeElapsed = result.TimeElapsed,
                 Status = result.Status,
-                OrderDateTime = result.OrderDateTime,
                 BranchID = result.BranchID,
                 EmployeeID = result.EmployeeID,
                 OrderExpedite = result.OrderExpedite
