@@ -90,36 +90,6 @@ namespace Artifax.Controllers
                 Price = _item.Price
             });
         }
-        [HttpPost("item/CreateItemDefaultQuantity")]
-        public async Task<ActionResult<Item>> CreateItemAndBranches(ItemWriteDto incoming)
-        {
-            Item _item = new Item()
-            {
-                ItemCategory = incoming.ItemCategory,
-                ItemName = incoming.ItemName,
-                ProductionTime = incoming.ProductionTime
-            };
-            _context.Items.Add(_item);
-            await _context.SaveChangesAsync();
-            var branches = await _context.Branches.ToListAsync();
-            foreach (var branch in branches)
-            {
-                var defaultCapacity = new BranchItemCapacity()
-                {
-                    BranchID = branch.BranchID,
-                    ItemID = _item.ItemID,
-                    ItemQuantity = 0
-                };
-                _context.BranchItemCapacities.Add(defaultCapacity);
-            }
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetItem), new { id = _item.ItemID }, new ItemReadDto()
-            {
-                ItemID = _item.ItemID,
-                ItemName = _item.ItemName,
-                ItemCategory = _item.ItemCategory
-            });
-        }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItem(int id, ItemWriteDto incoming)
         {
