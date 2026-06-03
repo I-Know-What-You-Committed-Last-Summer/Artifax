@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '../../utils/currentUser';
+import AlertsModal from './AlertsModal';
+import { getInventoryItems } from '../../services/inventoryApi';
 
 // Mapping route segments to friendly breadcrumb labels
 const ROUTE_LABELS = {
@@ -43,6 +45,28 @@ function Topbar() {
     return savedTheme !== 'light';
   });
   const breadcrumbItems = getBreadcrumbItems(pathname);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    // fetch low-stock count on mount
+    getInventoryItems()
+      .then((rows) => {
+        if (!mounted) return;
+        const low = rows.filter((r) => r.status === 'LOW').length;
+        setLowStockCount(low);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch inventory for low-stock count', err);
+        if (mounted) setLowStockCount(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     // On mount, default the app to synthwave unless the user explicitly saved light mode.
@@ -166,9 +190,20 @@ function Topbar() {
           <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Warehouse A
           </button>
-          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
-            Alerts
-          </button>
+          <div className="relative">
+            <button
+              className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem] flex items-center gap-2"
+              onClick={() => setAlertsOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={alertsOpen}
+            >
+              Alerts
+              {lowStockCount !== null && lowStockCount > 0 ? (
+                <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-danger-text/10 text-xs font-semibold text-danger-text">{lowStockCount}</span>
+              ) : null}
+            </button>
+            <AlertsModal open={alertsOpen} onClose={() => setAlertsOpen(false)} />
+          </div>
           <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
             {currentUser?.name ?? 'D. Dastardly'}
           </div>
