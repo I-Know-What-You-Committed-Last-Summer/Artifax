@@ -49,7 +49,11 @@
 .stat-icon {
   width: 20px;
   height: 20px;
-  color: #4a5568;
+  color: var(--muted);
+}
+
+html[data-theme='synthwave'] .stat-icon {
+  color: #c3d8f6;
 }
 
 .text-wrapper {

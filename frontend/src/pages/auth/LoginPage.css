@@ -119,7 +119,7 @@ html[data-theme='synthwave'] .login-input-shell {
 }
 
 .login-input-shell.error {
-  border-color: #d7dbe3;
+  border-color: #ef4444; /* red */
 }
 
 .login-input {
@@ -130,6 +130,35 @@ html[data-theme='synthwave'] .login-input-shell {
   padding: 10px 44px 10px 14px;
   color: var(--text);
   font-size: 0.96rem;
+}
+
+.login-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7a8494;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.login-password-toggle:hover,
+.login-password-toggle:focus-visible {
+  color: var(--text);
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.login-password-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .login-input::placeholder {
@@ -156,7 +185,21 @@ html[data-theme='synthwave'] .login-input-shell {
 
 .login-field-hint.error {
   margin-left: 0;
-  color: #6d7584;
+  color: #b91c1c; /* dark red */
+}
+
+.login-input-shell.error .login-field-icon {
+  color: #ef4444;
+}
+
+.login-alert.error {
+  border-color: #fca5a5;
+  background: rgba(255, 235, 238, 0.8);
+  color: #7f1d1d;
+}
+
+.login-alert.error .login-alert-icon {
+  color: #ef4444;
 }
 
 .login-alert {

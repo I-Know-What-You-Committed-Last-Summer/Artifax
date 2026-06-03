@@ -3,6 +3,7 @@ import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { useApi } from '../../../../hooks';
 
 interface Category {
   id: string;
@@ -27,6 +28,9 @@ interface BlueprintPanelProps {
 const categories: Category[] = [
   { id: 'all', label: 'All' },
   { id: 'metal', label: 'Metal' },
+  { id: 'mechanical', label: 'Mechanical' },
+  { id: 'electronics', label: 'Electronics' },
+  { id: 'furniture', label: 'Furniture' },
   { id: 'other', label: 'Other' },
 ];
 
@@ -45,6 +49,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   onSelectBlueprint,
   onCreateBlueprint,
 }) => {
+  const api = useApi();
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,32 +81,55 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
     try {
       // Fetch all blueprint items from the backend endpoint.
       // The backend returns items and their ingredients together.
-      const response = await fetch('http://localhost:5253/api/Item/item/allItemBlueprints');
-      if (!response.ok) {
-        throw new Error(`Unable to load blueprints: ${response.statusText}`);
-      }
+      const response = await api.get('/Item/item/allItemBlueprints');
+      const apiBlueprints = response.data;
 
-      // Parse JSON returned by the API.
-      const apiBlueprints = await response.json();
+      // Also fetch inventory (items + branch quantities) so we can populate "have" values
+      const [itemsResp, branchResp] = await Promise.all([
+        api.get('/Item/item'),
+        api.get('/Item/Branch')
+      ]);
+
+      let inventoryMap: Record<string, number> = {};
+      const items = itemsResp.data;
+      const branchItems = branchResp.data;
+
+      // map itemID -> itemName
+      const idToName: Record<number, string> = {};
+      items.forEach((it: any) => { idToName[it.itemID] = it.itemName; });
+
+      // sum quantities by itemName across branches
+      branchItems.forEach((bic: any) => {
+        const name = idToName[bic.itemID];
+        if (!name) return;
+        inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
+      });
 
       // Map API shape into our local Blueprint type.
       const blueprints: Blueprint[] = apiBlueprints.map((item: any) => {
         const rawCategory = (item.itemCategory ?? 'other').toLowerCase();
-        const normalizedCategory = rawCategory.includes('metal') ? 'metal' : 'other';
+        // Map to valid categories
+        let normalizedCategory = 'other';
+        if (rawCategory.includes('metal')) normalizedCategory = 'metal';
+        else if (rawCategory.includes('mechanical')) normalizedCategory = 'mechanical';
+        else if (rawCategory.includes('electronics')) normalizedCategory = 'electronics';
+        else if (rawCategory.includes('furniture')) normalizedCategory = 'furniture';
+
+        const materials = (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => ({
+          name: ing.itemName,
+          need: ing.quantity,
+          have: inventoryMap[ing.itemName] || 0,
+        }));
 
         return {
           id: `bp-${item.itemID}`,
           name: item.itemName,
           description: `Production time: ${item.productionTime}s`,
           category: normalizedCategory as any,
-          have: 0,
+          have: inventoryMap[item.itemName] || 0,
           craft: 0,
-          materials: (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => ({
-            name: ing.itemName,
-            need: ing.quantity,
-            have: 0,
-          })),
-        };
+          materials,
+        } as Blueprint;
       });
 
       // Store the mapped blueprints in local component state.

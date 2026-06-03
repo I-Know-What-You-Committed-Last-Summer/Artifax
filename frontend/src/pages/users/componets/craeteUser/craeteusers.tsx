@@ -1,6 +1,8 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { clearCurrentUser, setCurrentUser } from '../../../../utils/currentUser';
+import { useApi } from '../../../../hooks/useApi';
 
 type User = {
   id: number;
@@ -13,18 +15,56 @@ type User = {
 
 interface CreateUsersPageProps {
   user?: User;
-  onSave: (user: Omit<User, 'id'> & { id: number | null }) => void;
+  onSave: (user: Omit<User, 'id'> & { id: number | null; password?: string }) => void;
   onDelete: (id: number) => void;
 }
 
 function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
+  const api = useApi();
+  // `api` is the shared axios instance from `src/hooks/useApi.ts`.
+  // This file does not call backend endpoints directly for create/update; it passes data
+  // up to the parent (`users.tsx`) via `onSave`/`onDelete`. Parent handles POST/PATCH/DELETE.
   const [fullName, setFullName] = useState('');
-  const [branch, setBranch] = useState('Warehouse A');
+  const [branch, setBranch] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Admin');
   const [isEditing, setIsEditing] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
+  const [branchOptions, setBranchOptions] = useState<Array<{ label: string; value: string }>>([]);
+
+  const roleOptions = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Employee', value: 'Employee' },
+  ];
+
+  // Fetch branches once on mount
+  useEffect(() => {
+    // Load branch list from backend once on mount.
+    // We map BranchDto -> { label: BranchName, value: BranchID }
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await api.get('/Branch');
+        if (!mounted) return;
+        const opts = (resp.data ?? []).map((b: any) => {
+          const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
+          const name = b.branchName ?? b.BranchName ?? b.name ?? '';
+          return { label: name, value: String(id) };
+        });
+        setBranchOptions(opts);
+        // If the form is for a new user and branch is empty, pick the first branch as default.
+        setBranch((current) => (current ? current : (opts.length > 0 ? opts[0].value : '')));
+      } catch (err) {
+        console.error('Failed to load branches', err);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [api]);
+
+  // Sync incoming `user` prop to local form state when it changes
   useEffect(() => {
     if (user) {
       setFullName(user.name);
@@ -33,34 +73,52 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       setPassword('************');
       setRole(user.role);
       setIsEditing(false);
+      setShowPassword(false);
     } else {
       setFullName('');
-      setBranch('Warehouse A');
+      // keep current branch (from fetched defaults) when creating new user
       setEmail('');
       setPassword('');
       setRole('Admin');
       setIsEditing(true);
+      setShowPassword(false);
     }
   }, [user]);
 
   const emailError = useMemo(() => {
-    if (!email.trim()) {
+    const value = email.trim();
+    if (!value) {
       return 'Email is required';
     }
 
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      return 'Email error: end with @gmail.com';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return 'Please enter a valid email address';
     }
 
     return '';
   }, [email]);
+
+  const passwordError = useMemo(() => {
+    const length = password.length;
+    if (!password) {
+      return 'Password is required';
+    }
+    if (length < 5) {
+      return 'Password must be at least 5 characters';
+    }
+    if (length > 15) {
+      return 'Password must be no more than 15 characters';
+    }
+    return '';
+  }, [password]);
 
   const isFormValid =
     fullName.trim().length > 0 &&
     branch.trim().length > 0 &&
     role.trim().length > 0 &&
     !emailError &&
-    password.trim().length >= 8;
+    !passwordError;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,6 +127,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       return;
     }
 
+    // Pass form data up to the parent `Users` component via `onSave` (includes password).
     onSave({
       id: user?.id ?? null,
       name: fullName,
@@ -76,7 +135,15 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       branch,
       role,
       status: user?.status ?? 'Active',
+      password,
     });
+
+    setCurrentUser({
+      name: fullName.trim(),
+      role,
+      email: email.trim(),
+    });
+
     setIsEditing(false);
   };
 
@@ -114,32 +181,33 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
 
           <label className="createusers-field">
             <span className="createusers-label">Branch</span>
-            <div className="createusers-input-shell">
-              <select
+            <div className="createusers-input-shell createusers-select-shell">
+              <FilterSelect
                 value={branch}
-                onChange={(event) => setBranch(event.target.value)}
-                className="createusers-input"
+                onChange={setBranch}
+                options={branchOptions.length > 0 ? branchOptions : [
+                  { label: 'Warehouse A', value: 'Warehouse A' },
+                  { label: 'Warehouse B', value: 'Warehouse B' },
+                  { label: 'Warehouse C', value: 'Warehouse C' },
+                ]}
+                className="createusers-select"
+                ariaLabel="Select branch"
                 disabled={!isEditing}
-              >
-                <option value="Warehouse A">Warehouse A</option>
-                <option value="Warehouse B">Warehouse B</option>
-                <option value="Warehouse C">Warehouse C</option>
-              </select>
+              />
             </div>
           </label>
 
           <label className="createusers-field">
             <span className="createusers-label">Role</span>
-            <div className="createusers-input-shell">
-              <select
+            <div className="createusers-input-shell createusers-select-shell">
+              <FilterSelect
                 value={role}
-                onChange={(event) => setRole(event.target.value)}
-                className="createusers-input"
+                onChange={setRole}
+                options={roleOptions}
+                className="createusers-select"
+                ariaLabel="Select role"
                 disabled={!isEditing}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Staff">Staff</option>
-              </select>
+              />
             </div>
           </label>
 
@@ -163,28 +231,52 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 className="createusers-input"
                 disabled={!isEditing}
                 placeholder={user ? '••••••••••••' : 'Enter password'}
               />
+              <button
+                type="button"
+                className="createusers-password-toggle"
+                onClick={() => setShowPassword((previous) => !previous)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                disabled={!isEditing}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+                    <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.8 0 9.7 4.9 10.8 6.5a1.4 1.4 0 0 1 0 1.5c-.6.9-1.6 2.3-3.1 3.7" />
+                    <path d="M6.6 6.6C4.3 8.2 2.8 10.1 2 11.5a1.4 1.4 0 0 0 0 1.5C3.1 14.7 7 19.6 12.8 19.6c1.2 0 2.4-.2 3.5-.6" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2.8 12C4 10.1 7.6 5.4 12 5.4S20 10.1 21.2 12c-1.2 1.9-4.8 6.6-9.2 6.6S4 13.9 2.8 12Z" />
+                    <circle cx="12" cy="12" r="2.8" />
+                  </svg>
+                )}
+              </button>
             </div>
           </label>
 
-          <div className="createusers-alert" role="alert" aria-live="polite">
-            <div className="createusers-alert-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8.3v4.2" />
-                <path d="M12 15.8h.01" />
-              </svg>
+          {(emailError || passwordError) && (
+            <div className="createusers-alert" role="alert" aria-live="polite">
+              <div className="createusers-alert-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8.3v4.2" />
+                  <path d="M12 15.8h.01" />
+                </svg>
+              </div>
+              <div>
+                <strong>Wrong input</strong>
+                <p>{emailError || passwordError}</p>
+              </div>
             </div>
-            <div>
-              <strong>Wrong input</strong>
-              <p>{emailError || 'Email error: end with @gmail.com'}</p>
-            </div>
-          </div>
+          )}
 
           <div className="createusers-action-row">
             {user ? (
@@ -204,6 +296,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                         setEmail(user.email);
                         setPassword('************');
                         setRole(user.role);
+                        setShowPassword(false);
                       }
                     }}
                   >
@@ -222,7 +315,12 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                   <button
                     type="button"
                     className="createusers-secondary"
-                    onClick={() => user && onDelete(user.id)}
+                    onClick={() => {
+                      if (user) {
+                        clearCurrentUser();
+                        onDelete(user.id);
+                      }
+                    }}
                   >
                     Delete User
                   </button>

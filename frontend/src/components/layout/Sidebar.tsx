@@ -5,6 +5,9 @@ import inventoryIcon from '../../assets/images/inventoryIcon.png';
 import craftingIcon from '../../assets/images/craftingIcon.png';
 import analyticsIcon from '../../assets/images/analyticsIcon.png';
 import usersIcon from '../../assets/images/usersIcon.png';
+import { useCurrentUser } from '../../utils/currentUser';
+import { clearCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken } from '../../utils/authToken';
 
 const MENU_DATA = {
   logo: {
@@ -56,9 +59,14 @@ function SidebarNavGroup({ title, items }) {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const currentUser = useCurrentUser();
+  const userName = currentUser?.name ?? MENU_DATA.user.name;
+  const userRole = currentUser?.role ?? MENU_DATA.user.role;
 
   const handleLogout = () => {
     sessionStorage.clear();
+    clearAuthToken();
+    clearCurrentUser();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('session');
@@ -80,7 +88,7 @@ function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <button type="button" className="sidebar-profile-button" aria-label={`${MENU_DATA.user.name} profile`}>
+        <button type="button" className="sidebar-profile-button" aria-label={`${userName} profile`}>
           <span className="user-avatar" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="8" r="3.4" />
@@ -88,8 +96,8 @@ function Sidebar() {
             </svg>
           </span>
           <span className="user-info nav-text">
-            <span className="user-name">{MENU_DATA.user.name}</span>
-            <span className="user-role">{MENU_DATA.user.role}</span>
+            <span className="user-name">{userName}</span>
+            <span className="user-role">{userRole}</span>
           </span>
         </button>
 
