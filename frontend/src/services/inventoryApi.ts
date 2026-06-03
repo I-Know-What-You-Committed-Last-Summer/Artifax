@@ -80,7 +80,7 @@ export type InventoryItemIngredientCreate = {
   ingredientQuantity: number;
 };
 
-export type DashboardPreviewRow = { id: string | number; name: string; qty: number; location: string; status: string };
+export type DashboardPreviewRow = { id: string; name: string; qty: number; location: string; status: string };
 
 export type InventoryStat = {
   id: string;
@@ -337,7 +337,7 @@ export async function createInventoryItemIngredient(payload: InventoryItemIngred
 }
 
 export type InventoryItem = {
-  id: string | number;
+  id: string;
   name: string;
   sku: string;
   category: string;
@@ -379,7 +379,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const status = e.quantity <= minStock ? 'LOW' : 'OK';
 
     return {
-      id: e.id,
+      id: String(e.id),
       name: e.name,
       sku: e.sku,
       category: e.category,
