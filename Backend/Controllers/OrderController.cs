@@ -79,10 +79,7 @@ namespace Artifax.Controllers
         [HttpGet("{id}/history")]
         public async Task<IActionResult> GetOrderHistory(int id)
         {
-            var order = await context.Orders.FindAsync(id);
-            if (order == null)
-                return NotFound($"Order with ID {id} not found.");
-
+            // Note: We don't check if order exists - return history regardless (empty if order doesn't exist)
             var history = await context.OrderHistories
                 .Where(oh => oh.OrderID == id)
                 .Include(oh => oh.ChangedByEmployee)
@@ -233,9 +230,9 @@ namespace Artifax.Controllers
             if (existingOrder == null)
                 return NotFound($"Order with ID {id} not found.");
 
-            // Prevent updates to completed orders
-            if (existingOrder.Status == "Completed" || existingOrder.Status == "Crafted")
-                return BadRequest("Cannot update a completed order.");
+            // Prevent updates to completed or cancelled orders
+            if (existingOrder.Status == "Complete" || existingOrder.Status == "Cancelled")
+                return BadRequest($"Cannot update an order with status '{existingOrder.Status}'.");
 
             // Validate the item exists
             var item = await context.Items.FindAsync(updatedOrderDto.ItemID);
@@ -294,7 +291,7 @@ namespace Artifax.Controllers
             return Ok(resultDto);
         }
 
-        // PUT /api/Order/{id}/status — Update order status
+        // PUT /api/Order/{id}/status — Update order status with validation and constraints
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatusUpdateDto statusDto)
         {
@@ -302,7 +299,40 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
+            // Validate status value
+            var validStatuses = new[] { "Queued", "Active", "Paused", "Cancelled", "Complete" };
+            if (!validStatuses.Contains(statusDto.Status))
+                return BadRequest($"Invalid status '{statusDto.Status}'. Valid statuses are: Queued, Active, Paused, Cancelled, Complete.");
+
             string previousStatus = order.Status;
+
+            // Prevent transitions from Complete or Cancelled
+            if (previousStatus == "Complete" || previousStatus == "Cancelled")
+                return BadRequest($"Cannot transition from '{previousStatus}' status.");
+
+            // Check 3-active constraint when transitioning to Active
+            if (statusDto.Status == "Active" && previousStatus != "Active")
+            {
+                int activeOrderCount = await context.Orders
+                    .Where(o => o.BranchID == order.BranchID && o.Status == "Active")
+                    .CountAsync();
+
+                if (activeOrderCount >= 3)
+                    return BadRequest($"Cannot activate order. Branch {order.BranchID} already has 3 active orders.");
+            }
+
+            // Set StartedDateTime when transitioning to Active
+            if (statusDto.Status == "Active" && previousStatus != "Active")
+            {
+                order.StartedDateTime = DateTime.UtcNow;
+            }
+
+            // Set CompletedDateTime when transitioning to Complete
+            if (statusDto.Status == "Complete")
+            {
+                order.CompletedDateTime = DateTime.UtcNow;
+            }
+
             order.Status = statusDto.Status;
 
             // Create history entry
@@ -335,9 +365,9 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
-            // Prevent deletion of completed orders
-            if (order.Status == "Completed" || order.Status == "Crafted")
-                return BadRequest("Cannot delete a completed order.");
+            // Prevent deletion of completed or cancelled orders
+            if (order.Status == "Complete" || order.Status == "Cancelled")
+                return BadRequest($"Cannot delete an order with status '{order.Status}'.");
 
             context.Orders.Remove(order);
             await context.SaveChangesAsync();

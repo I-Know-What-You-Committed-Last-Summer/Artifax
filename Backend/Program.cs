@@ -1,4 +1,5 @@
 using Artifax.Data;
+using Artifax.Services;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +51,9 @@ if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Ho
 }
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
+
+// Register the background service for order time tracking
+builder.Services.AddHostedService<OrderTimeTrackingService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(option => {
