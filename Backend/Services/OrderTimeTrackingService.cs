@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Artifax.Data;
 using Artifax.Models;
+using Artifax.DTOs;
 
 namespace Artifax.Services
 {
@@ -57,7 +58,14 @@ namespace Artifax.Services
                 // Increment TimeElapsed for each active order by 1 minute
                 foreach (var order in activeOrders)
                 {
-                    order.TimeElapsed += 1;
+                    if (order.OrderExpedite)
+                    {
+                    order.TimeElapsed += 2;
+
+                    }
+                    else {
+                         order.TimeElapsed ++;
+                    }
 
                     // Check if order is complete
                     if (order.TimeElapsed >= order.TotalTime)
@@ -78,6 +86,29 @@ namespace Artifax.Services
                             ChangeReason = "Auto-completed by background service (elapsed time reached total time)"
                         };
                         context.OrderHistories.Add(completionHistory);
+                        var existingCapacity = await context.BranchItemCapacities
+                            .FirstOrDefaultAsync(bic => bic.BranchID == order.BranchID && bic.ItemID == order.ItemID, stoppingToken);
+                        if (existingCapacity == null)
+                        {
+                            existingCapacity = context.BranchItemCapacities.Local
+                                .FirstOrDefault(bic => bic.BranchID == order.BranchID && bic.ItemID == order.ItemID);
+                        }
+                        if (existingCapacity != null)
+                        {
+                            existingCapacity.ItemQuantity += order.Quantity;
+                            logger.LogInformation($"Incremented capacity for Branch {order.BranchID}, Item {order.ItemID} by {order.Quantity}.");
+                        }
+                        else
+                        {
+                            var craftedItem = new BranchItemCapacity
+                            {
+                                BranchID = order.BranchID,
+                                ItemID = order.ItemID,
+                                ItemQuantity = order.Quantity
+                            };
+                            context.BranchItemCapacities.Add(craftedItem);
+                            logger.LogInformation($"Created new capacity record for Branch {order.BranchID}, Item {order.ItemID} with quantity {order.Quantity}.");
+                        }
                     }
                 }
 
