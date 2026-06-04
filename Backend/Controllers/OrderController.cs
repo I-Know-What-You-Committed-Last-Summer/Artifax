@@ -187,18 +187,6 @@ namespace Artifax.Controllers
             };
 
             context.Orders.Add(newOrder);
-            
-            // Log the creation in OrderHistory
-            var history = new OrderHistory
-            {
-                OrderID = newOrder.OrderID,
-                PreviousStatus = "N/A",
-                NewStatus = initialStatus,
-                ChangedDateTime = DateTime.UtcNow,
-                ChangeReason = $"Order created with {newOrderDto.Quantity}x {item.ItemName}"
-            };
-            context.OrderHistories.Add(history);
-            
             await context.SaveChangesAsync();
 
             // Reload and return the created order
@@ -267,9 +255,6 @@ namespace Artifax.Controllers
             existingOrder.BranchID = updatedOrderDto.BranchID;
             existingOrder.EmployeeID = updatedOrderDto.EmployeeID;
             existingOrder.OrderExpedite = updatedOrderDto.OrderExpedite;
-            
-            // Recalculate TotalTime based on new quantity and item
-            existingOrder.TotalTime = updatedOrderDto.Quantity * item.ProductionTime;
 
             // Recalculate TotalTime if Item or Quantity changed
             var updatedItem = await context.Items.FindAsync(updatedOrderDto.ItemID);
@@ -310,10 +295,7 @@ namespace Artifax.Controllers
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatusUpdateDto statusDto)
         {
-            var order = await context.Orders
-                .Include(o => o.Item)
-                .FirstOrDefaultAsync(o => o.OrderID == id);
-            
+            var order = await context.Orders.FindAsync(id);
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
@@ -361,13 +343,13 @@ namespace Artifax.Controllers
                 NewStatus = statusDto.Status,
                 ChangedDateTime = DateTime.UtcNow,
                 ChangedByEmployeeID = statusDto.ChangedByEmployeeID,
-                ChangeReason = statusDto.ChangeReason ?? $"Status changed to {statusDto.Status}"
+                ChangeReason = statusDto.ChangeReason
             };
 
             context.OrderHistories.Add(history);
             await context.SaveChangesAsync();
 
-            return Ok(new { message = $"Order status updated to {statusDto.Status}." });
+            return Ok(new { message = "Order status updated successfully." });
         }
 
         #endregion
