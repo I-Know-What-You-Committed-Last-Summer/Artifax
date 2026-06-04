@@ -118,7 +118,12 @@ function InventoryItemIngredientModal({ item, open, onClose }: InventoryItemIngr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4" role="presentation" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: 'var(--overlay-backdrop)' }}
+      role="presentation"
+      onMouseDown={onClose}
+    >
       <div
         className="w-full max-w-2xl rounded-2xl border border-border bg-surface shadow-[0_30px_80px_rgba(15,23,42,0.28)]"
         role="dialog"
@@ -208,7 +213,12 @@ function InventoryItemIngredientModal({ item, open, onClose }: InventoryItemIngr
                 <button type="button" onClick={onClose} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary">
                   Finish
                 </button>
-                <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primaryDark disabled:cursor-not-allowed disabled:opacity-60">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium transition hover:bg-primaryDark disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ color: 'var(--on-primary)' }}
+                >
                   {saving ? 'Adding...' : 'Add ingredient'}
                 </button>
               </div>

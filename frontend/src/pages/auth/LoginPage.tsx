@@ -10,16 +10,14 @@ function LoginPage() {
   // Router helper to navigate on successful login
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [nameTouched, setNameTouched] = useState(false);
-  const [surnameTouched, setSurnameTouched] = useState(false);
+  const [fullNameTouched, setFullNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
 
@@ -36,15 +34,10 @@ function LoginPage() {
     return '';
   }, [email]);
 
-  const nameError = useMemo(() => {
-    if (!name.trim()) return 'Name is required';
+  const fullNameError = useMemo(() => {
+    if (!fullName.trim()) return 'Full Name is required';
     return '';
-  }, [name]);
-
-  const surnameError = useMemo(() => {
-    if (!surname.trim()) return 'Surname is required';
-    return '';
-  }, [surname]);
+  }, [fullName]);
 
   const passwordError = useMemo(() => {
     if (!password.trim()) return 'Password is required';
@@ -52,7 +45,7 @@ function LoginPage() {
     return '';
   }, [password]);
 
-  const isFormValid = !emailError && !nameError && !surnameError && !passwordError;
+  const isFormValid = !emailError && !fullNameError && !passwordError;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -81,7 +74,7 @@ function LoginPage() {
 
       const sessionUser = await getCurrentUserFromSession();
 
-      const fallbackName = [name.trim(), surname.trim()].filter(Boolean).join(' ').trim();
+      const fallbackName = fullName.trim();
 
       setCurrentUser({
         name: sessionUser.Username || loginResponse.employeeName || fallbackName || email.trim(),
@@ -128,19 +121,19 @@ function LoginPage() {
           {/* Controlled form with labels, inputs and inline validation hints */}
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             <label className="login-field">
-              <span className="login-label">Name</span>
+              <span className="login-label">Full Name</span>
               <div className="login-input-shell">
                 <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  onBlur={() => setNameTouched(true)}
-                  aria-invalid={!!(submitAttempted || nameTouched) && !!nameError}
-                  aria-describedby="name-hint"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  onBlur={() => setFullNameTouched(true)}
+                  aria-invalid={!!(submitAttempted || fullNameTouched) && !!fullNameError}
+                  aria-describedby="full-name-hint"
                   type="text"
-                  autoComplete="given-name"
+                  autoComplete="name"
                   className="login-input"
                 />
-                {((submitAttempted || nameTouched) && nameError) ? (
+                {((submitAttempted || fullNameTouched) && fullNameError) ? (
                   <span className="login-field-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="9" />
@@ -150,33 +143,7 @@ function LoginPage() {
                   </span>
                 ) : null}
               </div>
-              {((submitAttempted || nameTouched) && nameError) ? <p id="name-hint" className="login-field-hint error">{nameError}</p> : null}
-            </label>
-
-            <label className="login-field">
-              <span className="login-label">Surname</span>
-              <div className="login-input-shell">
-                <input
-                  value={surname}
-                  onChange={(event) => setSurname(event.target.value)}
-                  onBlur={() => setSurnameTouched(true)}
-                  aria-invalid={!!(submitAttempted || surnameTouched) && !!surnameError}
-                  aria-describedby="surname-hint"
-                  type="text"
-                  autoComplete="family-name"
-                  className="login-input"
-                />
-                {((submitAttempted || surnameTouched) && surnameError) ? (
-                  <span className="login-field-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 8.3v4.2" />
-                      <path d="M12 15.8h.01" />
-                    </svg>
-                  </span>
-                ) : null}
-              </div>
-              {((submitAttempted || surnameTouched) && surnameError) ? <p id="surname-hint" className="login-field-hint error">{surnameError}</p> : null}
+              {((submitAttempted || fullNameTouched) && fullNameError) ? <p id="full-name-hint" className="login-field-hint error">{fullNameError}</p> : null}
             </label>
 
             <label className="login-field">
@@ -212,7 +179,7 @@ function LoginPage() {
 
             <label className="login-field">
               <span className="login-label">Password</span>
-              <div className="login-input-shell">
+              <div className="login-input-shell has-password-toggle">
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -268,7 +235,7 @@ function LoginPage() {
               </div>
               <div>
                 <strong>{submitError ? 'Login error' : 'Input required'}</strong>
-                <p>{submitError || 'Enter details to continue.'}</p>
+                <p>{submitError || 'Enter Full Name, Email, and Password to continue.'}</p>
               </div>
             </div>
 

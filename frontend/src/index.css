@@ -19,6 +19,8 @@
   --chart-tick: #94a3b8;
   --chart-tooltip-bg: rgba(30,41,59,0.95);
   --chart-accent: #0f172a;
+  --chart-fill: rgba(60, 99, 255, 0.16);
+  --overlay-backdrop: rgba(2, 6, 23, 0.45);
 
   --bg: #f2f4f8;
   --surface: #ffffff;
@@ -51,6 +53,8 @@ html[data-theme='synthwave'] {
   --chart-tick: #9fbbe0;
   --chart-tooltip-bg: rgba(8,18,30,0.85);
   --chart-accent: #cbdcff;
+  --chart-fill: rgba(76, 138, 201, 0.26);
+  --overlay-backdrop: rgba(3, 10, 18, 0.6);
 
   --bg: #0A1C2A;
   --surface: #1e3e62;

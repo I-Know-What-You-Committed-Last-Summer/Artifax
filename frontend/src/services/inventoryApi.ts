@@ -41,6 +41,16 @@ export async function getItems(): Promise<ItemDto[]> {
   return rows.map(normalizeItemDto);
 }
 
+export function getItemCategoryOptions(items: ItemDto[]): string[] {
+  return Array.from(
+    new Set(
+      items
+        .map((item) => item.ItemCategory.trim())
+        .filter((category) => category.length > 0),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+}
+
 export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
   return fetchJson<BranchItemCapacityDto[]>(`${API_BASE}/Item/Branch`);
 }
@@ -70,7 +80,7 @@ export type InventoryItemIngredientCreate = {
   ingredientQuantity: number;
 };
 
-export type DashboardPreviewRow = { id: string | number; name: string; qty: number; location: string; status: string };
+export type DashboardPreviewRow = { id: string; name: string; qty: number; location: string; status: string };
 
 export type InventoryStat = {
   id: string;
@@ -200,7 +210,7 @@ export function buildInventoryOverview(items: InventoryItem[]): InventoryOvervie
 
   tabs.push(...extraTabs);
 
-  const alerts = lowStockItems.slice(0, 3).map((item) => `${item.name} (${item.quantity} remaining)`);
+  const alerts = lowStockItems.map((item) => `${item.name} (${item.quantity} remaining)`);
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return {
@@ -327,7 +337,7 @@ export async function createInventoryItemIngredient(payload: InventoryItemIngred
 }
 
 export type InventoryItem = {
-  id: string | number;
+  id: string;
   name: string;
   sku: string;
   category: string;
@@ -369,7 +379,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const status = e.quantity <= minStock ? 'LOW' : 'OK';
 
     return {
-      id: e.id,
+      id: String(e.id),
       name: e.name,
       sku: e.sku,
       category: e.category,
@@ -396,6 +406,7 @@ const inventoryApi = {
   getBranches,
   getDashboardPreview,
   getItemMaterialDetails,
+  getItemCategoryOptions,
   getInventoryItems,
   getInventoryOverview,
   createInventoryItem,

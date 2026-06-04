@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import axios from 'axios';
 import './craftingItems.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import { calculateProgress, formatTimeLeft, normalizeQueueStatus } from '../../../../services/craftingUtils';
 
 interface TiltsState {
   [key: string]: string;
@@ -45,30 +46,6 @@ type CraftingJob = {
 
 const API_BASE = 'http://localhost:5253/api';
 
-function normalizeStatus(status: string): CraftingJob['status'] {
-  const normalized = status?.trim().toLowerCase();
-
-  if (normalized === 'active' || normalized === 'in progress') return 'Active';
-  if (normalized === 'paused') return 'Paused';
-  if (normalized === 'completed') return 'Completed';
-
-  return 'Pending';
-}
-
-function calculateProgress(totalTime?: number, timeElapsed?: number): number {
-  if (totalTime == null || totalTime === 0 || timeElapsed == null) return 0;
-  return Math.min(100, Math.max(0, Math.round((timeElapsed / totalTime) * 100)));
-}
-
-function formatTimeLeft(totalTime?: number, timeElapsed?: number): string {
-  if (totalTime == null || timeElapsed == null) {
-    return 'No estimate';
-  }
-
-  const remaining = Math.max(0, totalTime - timeElapsed);
-  return remaining === 0 ? 'Complete' : `${remaining} min left`;
-}
-
 async function updateOrderStatus(orderID: number, status: string): Promise<void> {
   try {
     await axios.put(`${API_BASE}/Order/${orderID}/status`, {
@@ -102,7 +79,7 @@ const CraftingItems: FC = () => {
       const sortedOrders = ordersResponse.data.slice().sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime());
 
       const normalizedOrders = sortedOrders.map((order) => {
-        const rawStatus = normalizeStatus(order.status);
+        const rawStatus = normalizeQueueStatus(order.status);
         const isComplete = rawStatus !== 'Pending' && rawStatus !== 'Completed'
           && order.totalTime != null
           && order.timeElapsed != null
