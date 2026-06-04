@@ -50,7 +50,7 @@ namespace Backend.Tests
         async Task<UserController> GetEmptyDummyController ()
         {
             var _options = GetDbContextOptions();
-            using var _context = new ArtifaxContext(_options);
+            var _context = new ArtifaxContext(_options);
 
             var _controller = new UserController(_context);
 
@@ -168,16 +168,31 @@ namespace Backend.Tests
             var _response = await _controller.ChangeEmployeeBranch("employee1@artifax.com", 2);
         
             // Then
-            var _baseResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_response);
+            var _baseResult = Assert.IsType<ActionResult<EmployeeReadDto>>(_response);
             var _returnedOk = Assert.IsType<OkObjectResult>(_baseResult.Result);
             var _result = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
-            Assert.Equal(_result, new EmployeeReadDto()
+
+            Assert.Equal(2, _result.BranchId);
+            Assert.Equal("employee1@artifax.com", _result.EmployeeEmail);
+            Assert.Equal(1, _result.EmployeeId);
+            Assert.Equal("Emp1", _result.EmployeeName);
+        }
+
+        [Fact]
+        public async Task TestName()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
             {
-               BranchId= 2,
-               EmployeeEmail="employee1@artifax.com",
-               EmployeeId= 1,
-               EmployeeName= "Emp1" 
-            });
+                HttpContext = _httpContextMock.Object
+            };
+            await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
+        
+            // When
+        
+            // Then
         }
     }
 }
