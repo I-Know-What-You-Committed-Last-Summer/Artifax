@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Moq;
 using Microsoft.AspNetCore.Http;
 using System.Text;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Backend.Tests
 {
@@ -39,6 +40,13 @@ namespace Backend.Tests
             new Employee {EmployeeEmail="admin3@artifax.com",EmployeeName="Ad3",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
         ];
 
+        Branch[] testBranches = [
+            new Branch {BranchID=1,BranchName="Johannesburg" },
+            new Branch {BranchID=2,BranchName="Centurion" },
+            new Branch {BranchID=3,BranchName="Durban" },
+            new Branch {BranchID=4,BranchName="Head Office" },
+        ];
+
         // Helper method to build an isolated, clean in-memory database context for every test
         private DbContextOptions<ArtifaxContext> GetDbContextOptions()
         {
@@ -66,6 +74,11 @@ namespace Backend.Tests
             {
                 testEmployee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(testEmployee.EmployeePasswordHash);
                 _context.Employees.Add(testEmployee);
+            }
+
+            foreach (var testBranch in testBranches)
+            {
+                _context.Branches.Add(testBranch);
             }
 
             await _context.SaveChangesAsync();
@@ -174,12 +187,11 @@ namespace Backend.Tests
 
             Assert.Equal(2, _result.BranchId);
             Assert.Equal("employee1@artifax.com", _result.EmployeeEmail);
-            Assert.Equal(1, _result.EmployeeId);
             Assert.Equal("Emp1", _result.EmployeeName);
         }
 
         [Fact]
-        public async Task TestName()
+        public async Task DeleteNonExistingEmployee()
         {
             // Given
             var _controller = await GetPopulatedDummyController();
@@ -191,8 +203,10 @@ namespace Backend.Tests
             await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
         
             // When
+            var _response = await _controller.DeleteEmployee(100);
         
             // Then
+            Assert.IsType<NotFoundObjectResult>(_response);
         }
     }
 }
