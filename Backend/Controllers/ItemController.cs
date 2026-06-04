@@ -43,7 +43,8 @@ namespace Artifax.Controllers
             {
                 ItemCategory = incoming.ItemCategory,
                 ItemName = incoming.ItemName,
-                ProductionTime = incoming.ProductionTime
+                ProductionTime = incoming.ProductionTime,
+                Price = incoming.Price
             };
             _context.Items.Add(_item);
             await _context.SaveChangesAsync();
@@ -51,7 +52,9 @@ namespace Artifax.Controllers
             {
                 ItemID = _item.ItemID,
                 ItemName = _item.ItemName,
-                ItemCategory = _item.ItemCategory
+                ItemCategory = _item.ItemCategory,
+                ProductionTime = _item.ProductionTime,
+                Price = _item.Price
             });
         }
         [HttpPost("item/CreateItemDefaultQuantity")]
@@ -61,7 +64,8 @@ namespace Artifax.Controllers
             {
                 ItemCategory = incoming.ItemCategory,
                 ItemName = incoming.ItemName,
-                ProductionTime = incoming.ProductionTime
+                ProductionTime = incoming.ProductionTime,
+                Price = incoming.Price
             };
             _context.Items.Add(_item);
             await _context.SaveChangesAsync();
@@ -81,7 +85,9 @@ namespace Artifax.Controllers
             {
                 ItemID = _item.ItemID,
                 ItemName = _item.ItemName,
-                ItemCategory = _item.ItemCategory
+                ItemCategory = _item.ItemCategory,
+                ProductionTime = _item.ProductionTime,
+                Price = _item.Price
             });
         }
         [HttpPut("{id}")]
@@ -95,6 +101,7 @@ namespace Artifax.Controllers
             _item.ItemName = incoming.ItemName;
             _item.ItemCategory = incoming.ItemCategory;
             _item.ProductionTime = incoming.ProductionTime;
+            _item.Price = incoming.Price;
             await _context.SaveChangesAsync();
             return NoContent();
         }
@@ -125,6 +132,7 @@ namespace Artifax.Controllers
                     ItemName = g.Key.ItemName,
                     ItemCategory = g.Key.ItemCategory,
                     ProductionTime = g.Key.ProductionTime,
+                    Price = g.Key.Price,
                     Ingredients = g.Select(x => new IngredientBlueprintReadDto
                     {
                         IngredientID = x.Ingredient.IngredientID,
@@ -158,6 +166,7 @@ namespace Artifax.Controllers
                 return NotFound();
             }
             item.ProductionTime = incoming.ProductionTime;
+            item.Price = incoming.Price;
             if (incoming.Ingredients != null)
             {
                 foreach (var ig in incoming.Ingredients)
@@ -187,6 +196,7 @@ namespace Artifax.Controllers
                 return NotFound();
             }
             item.ProductionTime = incoming.ProductionTime;
+            item.Price = incoming.Price;
             if (incoming.Ingredients != null)
             {
                 var incomingIngredientIds = incoming.Ingredients.Select(i => i.IngredientID).ToList();
@@ -252,6 +262,7 @@ namespace Artifax.Controllers
                                        IngredientID = item.ItemID,
                                        ItemName = item.ItemName,
                                        ItemCategory = item.ItemCategory,
+                                       ItemPrice = item.Price,
                                        Quantity = ingredient.IngredientQuantity
                                    }).ToListAsync();
             if (!blueprint.Any())
