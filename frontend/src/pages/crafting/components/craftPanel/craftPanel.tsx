@@ -7,9 +7,11 @@ interface CraftPanelProps {
   amount: number;
   onAmountChange: (amount: number) => void;
   onCraft: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, onCraft }) => {
+const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, onCraft, onEdit, onDelete }) => {
   const canCraft = blueprint.materials.every(item => item.have >= item.need * amount);
 
   const handleDecrement = (): void => {
@@ -91,6 +93,14 @@ const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, on
       >
         Craft Item
       </button>
+      <div className="craft-additional-actions">
+        <button type="button" className="craft-secondary-btn" onClick={onEdit}>
+          Edit Blueprint
+        </button>
+        <button type="button" className="craft-secondary-btn craft-delete-btn" onClick={onDelete}>
+          Delete Blueprint
+        </button>
+      </div>
       <p className="craft-hint">Button enabled when all materials are available.</p>
     </div>
   );

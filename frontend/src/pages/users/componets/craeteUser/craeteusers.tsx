@@ -36,7 +36,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
 
   const roleOptions = [
     { label: 'Admin', value: 'Admin' },
-    { label: 'Staff', value: 'Staff' },
+    { label: 'Employee', value: 'Employee' },
   ];
 
   // Fetch branches once on mount
@@ -86,23 +86,39 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
   }, [user]);
 
   const emailError = useMemo(() => {
-    if (!email.trim()) {
+    const value = email.trim();
+    if (!value) {
       return 'Email is required';
     }
 
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      return 'Email error: end with @gmail.com';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return 'Please enter a valid email address';
     }
 
     return '';
   }, [email]);
+
+  const passwordError = useMemo(() => {
+    const length = password.length;
+    if (!password) {
+      return 'Password is required';
+    }
+    if (length < 5) {
+      return 'Password must be at least 5 characters';
+    }
+    if (length > 15) {
+      return 'Password must be no more than 15 characters';
+    }
+    return '';
+  }, [password]);
 
   const isFormValid =
     fullName.trim().length > 0 &&
     branch.trim().length > 0 &&
     role.trim().length > 0 &&
     !emailError &&
-    password.trim().length >= 8;
+    !passwordError;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -246,19 +262,21 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             </div>
           </label>
 
-          <div className="createusers-alert" role="alert" aria-live="polite">
-            <div className="createusers-alert-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8.3v4.2" />
-                <path d="M12 15.8h.01" />
-              </svg>
+          {(emailError || passwordError) && (
+            <div className="createusers-alert" role="alert" aria-live="polite">
+              <div className="createusers-alert-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8.3v4.2" />
+                  <path d="M12 15.8h.01" />
+                </svg>
+              </div>
+              <div>
+                <strong>Wrong input</strong>
+                <p>{emailError || passwordError}</p>
+              </div>
             </div>
-            <div>
-              <strong>Wrong input</strong>
-              <p>{emailError || 'Email error: end with @gmail.com'}</p>
-            </div>
-          </div>
+          )}
 
           <div className="createusers-action-row">
             {user ? (

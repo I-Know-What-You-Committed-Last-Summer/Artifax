@@ -55,8 +55,8 @@ if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Ho
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
 
-// Register OrderProductionService as a background service
-builder.Services.AddHostedService<OrderProductionService>();
+// Register the background service for order time tracking
+builder.Services.AddHostedService<OrderTimeTrackingService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(option => {
