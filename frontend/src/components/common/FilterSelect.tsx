@@ -5,7 +5,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 // - `value`: current selected value
 // - `onChange`: called with the new value string
 // - `options`: array of { label, value }
-function FilterSelect({ value, onChange, options, className = '', ariaLabel = 'Filter options' }) {
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  className = '',
+  ariaLabel = 'Filter options',
+  disabled = false,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -15,6 +22,11 @@ function FilterSelect({ value, onChange, options, className = '', ariaLabel = 'F
   );
 
   useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+      return undefined;
+    }
+
     const handlePointerDown = (event) => {
       if (!rootRef.current || rootRef.current.contains(event.target)) {
         return;
@@ -36,9 +48,13 @@ function FilterSelect({ value, onChange, options, className = '', ariaLabel = 'F
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [disabled]);
 
   const handleSelect = (nextValue) => {
+    if (disabled) {
+      return;
+    }
+
     onChange(nextValue);
     setIsOpen(false);
   };
@@ -51,7 +67,12 @@ function FilterSelect({ value, onChange, options, className = '', ariaLabel = 'F
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel}
-        onClick={() => setIsOpen((previous) => !previous)}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen((previous) => !previous);
+          }
+        }}
       >
         <span className="artifax-select-value">{selectedOption?.label ?? ''}</span>
         <span className="artifax-select-icon" aria-hidden="true">
@@ -61,7 +82,7 @@ function FilterSelect({ value, onChange, options, className = '', ariaLabel = 'F
         </span>
       </button>
 
-      {isOpen ? (
+      {isOpen && !disabled ? (
         <div className="artifax-select-menu" role="listbox" aria-label={ariaLabel}>
           {options.map((option) => {
             const isSelected = option.value === value;

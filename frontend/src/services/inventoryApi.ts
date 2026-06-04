@@ -1,0 +1,407 @@
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+
+const DEFAULT_MIN_STOCK = 5;
+
+type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number };
+type BranchDto = { BranchID: number; BranchName: string };
+type BranchItemCapacityDto = { BranchItemCapacityID: number; BranchID: number; ItemID: number; ItemQuantity: number };
+type InventoryRowDto = {
+  inventoryItemId: number;
+  inventoryItemName: string;
+  inventoryItemCategory: string;
+  inventoryItemProductionTime: number;
+  inventoryItemQuantity: number;
+  inventoryItemBranchName: string;
+};
+
+type IngredientBlueprintDto = {
+  ingredientID: number;
+  itemName: string;
+  itemCategory: string;
+  quantity: number;
+};
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Fetch error ${res.status} ${res.statusText}`);
+  return (await res.json()) as T;
+}
+
+function normalizeItemDto(row: Record<string, unknown>): ItemDto {
+  return {
+    ItemID: Number(row.ItemID ?? row.itemID ?? row.itemId ?? 0),
+    ItemName: String(row.ItemName ?? row.itemName ?? ''),
+    ItemCategory: String(row.ItemCategory ?? row.itemCategory ?? ''),
+    ProductionTime: Number(row.ProductionTime ?? row.productionTime ?? 0),
+  };
+}
+
+export async function getItems(): Promise<ItemDto[]> {
+  const rows = await fetchJson<Array<Record<string, unknown>>>(`${API_BASE}/Item/item/`);
+  return rows.map(normalizeItemDto);
+}
+
+export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
+  return fetchJson<BranchItemCapacityDto[]>(`${API_BASE}/Item/Branch`);
+}
+
+export async function getBranches(): Promise<BranchDto[]> {
+  return fetchJson<BranchDto[]>(`${API_BASE}/Branch`);
+}
+
+export type InventoryItemUpdate = {
+  itemName: string;
+  itemCategory: string;
+  productionTime: number;
+};
+
+export type InventoryItemCreate = InventoryItemUpdate;
+
+export type InventoryCreatedItem = {
+  itemID: number;
+  itemName: string;
+  itemCategory: string;
+  productionTime: number;
+};
+
+export type InventoryItemIngredientCreate = {
+  productID: number;
+  ingredientID: number;
+  ingredientQuantity: number;
+};
+
+export type DashboardPreviewRow = { id: string | number; name: string; qty: number; location: string; status: string };
+
+export type InventoryStat = {
+  id: string;
+  label: string;
+  value: string | number;
+};
+
+export type InventoryTab = {
+  id: string;
+  label: string;
+};
+
+type InventoryCategoryDefinition = {
+  label: string;
+  aliases: string[];
+};
+
+const INVENTORY_CATEGORY_DEFINITIONS: InventoryCategoryDefinition[] = [
+  { label: 'Furniture', aliases: ['furniture'] },
+  { label: 'Stationery', aliases: ['stationery'] },
+  { label: 'Metals', aliases: ['metal', 'metals'] },
+  { label: 'Fasteners', aliases: ['fastener', 'fasteners'] },
+  { label: 'Plastic', aliases: ['plastic', 'plastics', 'polymer', 'polymers'] },
+  { label: 'Electronics', aliases: ['electronics', 'electronic'] },
+  { label: 'Textile', aliases: ['textile', 'textiles', 'fabric', 'fabrics'] },
+  { label: 'Glass', aliases: ['glass'] },
+  { label: 'Others', aliases: ['other', 'others', 'misc', 'miscellaneous', 'uncategorized'] },
+];
+
+export type InventoryOverview = {
+  items: InventoryItem[];
+  previewRows: DashboardPreviewRow[];
+  alerts: string[];
+  stats: InventoryStat[];
+  tabs: InventoryTab[];
+};
+
+export type InventoryMaterialBranch = {
+  branchName: string;
+  quantity: number;
+};
+
+export type InventoryMaterialIngredient = {
+  ingredientId: number;
+  name: string;
+  category: string;
+  requiredQuantity: number;
+  availableQuantity: number;
+  branches: InventoryMaterialBranch[];
+};
+
+export type InventoryMaterialDetails = {
+  itemId: number;
+  itemName: string;
+  category: string;
+  productionTime: number;
+  ingredients: InventoryMaterialIngredient[];
+};
+
+function slugifyCategory(category: string): string {
+  return category.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'misc';
+}
+
+function normalizeCategoryKey(category: string | null | undefined): string {
+  return normalizeCategory(category).trim().toLowerCase();
+}
+
+function normalizeCategory(category: string | null | undefined): string {
+  return category?.trim() || 'Misc';
+}
+
+function normalizeLocation(location: string | null | undefined): string {
+  return location?.trim() || 'Unassigned';
+}
+
+function normalizeMaterialBranchRows(rows: InventoryRowDto[], ingredientId: number): InventoryMaterialBranch[] {
+  const branchMap = new Map<string, number>();
+
+  rows
+    .filter((row) => row.inventoryItemId === ingredientId)
+    .forEach((row) => {
+      const branchName = normalizeLocation(row.inventoryItemBranchName);
+      branchMap.set(branchName, (branchMap.get(branchName) ?? 0) + (row.inventoryItemQuantity ?? 0));
+    });
+
+  return Array.from(branchMap.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([branchName, quantity]) => ({ branchName, quantity }));
+}
+
+export function buildInventoryOverview(items: InventoryItem[]): InventoryOverview {
+  const categoryCounts = new Map<string, number>();
+  const lowStockItems = items.filter((item) => item.status === 'LOW');
+
+  items.forEach((item) => {
+    const categoryKey = normalizeCategoryKey(item.category);
+    categoryCounts.set(categoryKey, (categoryCounts.get(categoryKey) ?? 0) + 1);
+  });
+
+  const previewRows: DashboardPreviewRow[] = items.slice(0, 8).map((item) => ({
+    id: item.id,
+    name: item.name,
+    qty: item.quantity,
+    location: item.location,
+    status: item.status,
+  }));
+
+  const tabs: InventoryTab[] = [
+    { id: 'all', label: `All (${items.length})` },
+    ...INVENTORY_CATEGORY_DEFINITIONS.map((definition) => {
+      const count = definition.aliases.reduce((sum, alias) => sum + (categoryCounts.get(alias) ?? 0), 0);
+      return {
+        id: slugifyCategory(definition.label),
+        label: `${definition.label} (${count})`,
+      };
+    }),
+  ];
+
+  const knownCategoryKeys = new Set(INVENTORY_CATEGORY_DEFINITIONS.flatMap((definition) => definition.aliases));
+  const extraTabs = Array.from(categoryCounts.entries())
+    .filter(([category]) => !knownCategoryKeys.has(category))
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([category, count]) => ({
+      id: slugifyCategory(category),
+      label: `${category} (${count})`,
+    }));
+
+  tabs.push(...extraTabs);
+
+  const alerts = lowStockItems.slice(0, 3).map((item) => `${item.name} (${item.quantity} remaining)`);
+  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  return {
+    items,
+    previewRows,
+    alerts,
+    stats: [
+      { id: 'totalItems', label: 'Total Items', value: items.length },
+      { id: 'lowStock', label: 'Low Stock', value: lowStockItems.length },
+      { id: 'totalUnits', label: 'Total Units', value: totalUnits.toLocaleString('en-ZA') },
+      { id: 'categories', label: 'Categories', value: tabs.length - 1 },
+    ],
+    tabs,
+  };
+}
+
+export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
+  const overview = await getInventoryOverview();
+  return overview.previewRows;
+}
+
+export async function getItemMaterialDetails(itemId: number): Promise<InventoryMaterialDetails | null> {
+  const [itemResponse, ingredientResponse, inventoryRows] = await Promise.all([
+    fetchJson<Record<string, unknown>>(`${API_BASE}/Item/item/${itemId}`).catch((error) => {
+      if (String(error).includes('404')) {
+        return null;
+      }
+
+      throw error;
+    }),
+    fetchJson<IngredientBlueprintDto[]>(`${API_BASE}/Item/itemIngredient/item/${itemId}`).catch((error) => {
+      if (String(error).includes('404')) {
+        return [];
+      }
+
+      throw error;
+    }),
+    fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
+  ]);
+
+  if (!itemResponse) {
+    return null;
+  }
+
+  const ingredients: InventoryMaterialIngredient[] = ingredientResponse.map((ingredient) => {
+    const branches = normalizeMaterialBranchRows(inventoryRows, ingredient.ingredientID);
+    const availableQuantity = branches.reduce((sum, branch) => sum + branch.quantity, 0);
+
+    return {
+      ingredientId: ingredient.ingredientID,
+      name: ingredient.itemName,
+      category: normalizeCategory(ingredient.itemCategory),
+      requiredQuantity: ingredient.quantity,
+      availableQuantity,
+      branches,
+    };
+  });
+
+  return {
+    itemId: Number(itemResponse.ItemID ?? itemResponse.itemID ?? itemResponse.itemId ?? itemId),
+    itemName: String(itemResponse.ItemName ?? itemResponse.itemName ?? `Item ${itemId}`),
+    category: normalizeCategory(String(itemResponse.ItemCategory ?? itemResponse.itemCategory ?? 'Misc')),
+    productionTime: Number(itemResponse.ProductionTime ?? itemResponse.productionTime ?? 0),
+    ingredients,
+  };
+}
+
+export async function updateInventoryItem(itemId: number, payload: InventoryItemUpdate): Promise<void> {
+  const response = await fetch(`${API_BASE}/Item/${itemId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+}
+
+export async function createInventoryItem(payload: InventoryItemCreate): Promise<InventoryCreatedItem> {
+  const response = await fetch(`${API_BASE}/Item/item/CreateItemDefaultQuantity`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+
+  const body = (await response.json()) as Record<string, unknown>;
+
+  return {
+    itemID: Number(body.itemID ?? body.ItemID ?? 0),
+    itemName: String(body.itemName ?? body.ItemName ?? payload.itemName),
+    itemCategory: String(body.itemCategory ?? body.ItemCategory ?? payload.itemCategory),
+    productionTime: Number(body.productionTime ?? body.ProductionTime ?? payload.productionTime),
+  };
+}
+
+export async function createInventoryItemIngredient(payload: InventoryItemIngredientCreate): Promise<void> {
+  const response = await fetch(`${API_BASE}/Item/itemIngredient/`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ProductID: payload.productID,
+      IngredientID: payload.ingredientID,
+      IngredientQuantity: payload.ingredientQuantity,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+}
+
+export type InventoryItem = {
+  id: string | number;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  minStock: number;
+  location: string;
+  status: string;
+  productionTime: number;
+  tab?: string;
+};
+
+export async function getInventoryItems(): Promise<InventoryItem[]> {
+  const rows = await fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`);
+
+  // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; locations: Record<string, number>; productionTime?: number }>();
+
+  for (const r of rows) {
+    const id = r.inventoryItemId;
+    const category = normalizeCategory(r.inventoryItemCategory);
+    const name = r.inventoryItemName || `Item ${id}`;
+    const sku = `${category.slice(0, 3).toUpperCase()}-${id}`;
+    const qty = r.inventoryItemQuantity ?? 0;
+    const loc = normalizeLocation(r.inventoryItemBranchName);
+
+    if (!map.has(id)) {
+      map.set(id, { id, name, category, sku, quantity: qty, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
+    } else {
+      const entry = map.get(id)!;
+      entry.quantity += qty;
+      entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
+    }
+  }
+
+  const items: InventoryItem[] = Array.from(map.values()).map((e) => {
+    // pick primary location as the one with highest quantity
+    const primaryLocation = Object.entries(e.locations).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unassigned';
+    const minStock = DEFAULT_MIN_STOCK;
+    const status = e.quantity <= minStock ? 'LOW' : 'OK';
+
+    return {
+      id: e.id,
+      name: e.name,
+      sku: e.sku,
+      category: e.category,
+      quantity: e.quantity,
+      minStock,
+      location: primaryLocation,
+      status,
+      productionTime: e.productionTime ?? 0,
+      tab: slugifyCategory(e.category),
+    };
+  });
+
+  return items.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getInventoryOverview(): Promise<InventoryOverview> {
+  const items = await getInventoryItems();
+  return buildInventoryOverview(items);
+}
+
+const inventoryApi = {
+  getItems,
+  getBranchItems,
+  getBranches,
+  getDashboardPreview,
+  getItemMaterialDetails,
+  getInventoryItems,
+  getInventoryOverview,
+  createInventoryItem,
+  createInventoryItemIngredient,
+  updateInventoryItem,
+  buildInventoryOverview,
+};
+
+export default inventoryApi;

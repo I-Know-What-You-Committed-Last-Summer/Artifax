@@ -193,3 +193,7 @@
   color: #ef4444;
   font-size: 13px;
 }
+
+html[data-theme='synthwave'] .blueprint-error {
+  color: #ff6b9d;
+}

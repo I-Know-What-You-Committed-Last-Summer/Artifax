@@ -28,6 +28,9 @@ interface BlueprintPanelProps {
 const categories: Category[] = [
   { id: 'all', label: 'All' },
   { id: 'metal', label: 'Metal' },
+  { id: 'mechanical', label: 'Mechanical' },
+  { id: 'electronics', label: 'Electronics' },
+  { id: 'furniture', label: 'Furniture' },
   { id: 'other', label: 'Other' },
 ];
 
@@ -105,7 +108,12 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
       // Map API shape into our local Blueprint type.
       const blueprints: Blueprint[] = apiBlueprints.map((item: any) => {
         const rawCategory = (item.itemCategory ?? 'other').toLowerCase();
-        const normalizedCategory = rawCategory.includes('metal') ? 'metal' : 'other';
+        // Map to valid categories
+        let normalizedCategory = 'other';
+        if (rawCategory.includes('metal')) normalizedCategory = 'metal';
+        else if (rawCategory.includes('mechanical')) normalizedCategory = 'mechanical';
+        else if (rawCategory.includes('electronics')) normalizedCategory = 'electronics';
+        else if (rawCategory.includes('furniture')) normalizedCategory = 'furniture';
 
         const materials = (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => ({
           name: ing.itemName,

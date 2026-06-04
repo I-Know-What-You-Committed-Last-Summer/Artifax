@@ -51,21 +51,6 @@
   color: var(--muted);
 }
 
-.history-search input {
-  width: 100%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  border-radius: 16px;
-  min-height: 48px;
-  padding: 0 16px;
-  font-size: 14px;
-}
-
-.history-search input::placeholder {
-  color: var(--muted);
-}
-
 .history-filters {
   display: contents;
 }
@@ -137,22 +122,6 @@
 
 .history-table tbody tr:hover {
   background: var(--bg);
-}
-
-.history-arrow-column {
-  width: 42px;
-}
-
-.history-row-arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--bg);
-  border-radius: 50%;
-  color: var(--muted);
-  font-size: 18px;
 }
 
 .history-item-cell {
@@ -260,10 +229,6 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .history-search input {
-    width: 100%;
   }
 
   .history-filters {

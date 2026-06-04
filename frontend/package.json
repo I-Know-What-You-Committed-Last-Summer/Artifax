@@ -26,7 +26,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:coverage": "cross-env CI=true react-scripts test --coverage --watchAll=false --runInBand"
   },
   "eslintConfig": {
     "extends": [
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
+    "cross-env": "^10.1.0",
     "daisyui": "^4.12.22",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11"

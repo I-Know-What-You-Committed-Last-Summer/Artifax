@@ -4,6 +4,8 @@ using Artifax.Models;
 using Artifax.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
+using System;
 
 namespace Artifax.Controllers
 {
@@ -75,6 +77,42 @@ namespace Artifax.Controllers
                 });
             }
         #endregion
+
+        #region DevHelpers
+        // Development-only endpoint to seed an admin account for local testing.
+        [HttpPost("seed/admin")]
+        public async Task<ActionResult<EmployeeReadDto>> SeedAdmin([FromBody] EmployeeWriteDto incoming)
+        {
+            // Only allow in Development environment
+            var env = HttpContext.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+            if (env == null || !env.EnvironmentName.Equals("Development", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            if (incoming == null || string.IsNullOrWhiteSpace(incoming.EmployeeEmail))
+            {
+                return BadRequest("Missing admin details");
+            }
+
+            bool exists = await context.Employees.AnyAsync(e => e.EmployeeEmail == incoming.EmployeeEmail);
+            if (exists) return Conflict("Email already exists");
+
+            var _employee = new Employee()
+            {
+                BranchId = incoming.BranchID,
+                EmployeeEmail = incoming.EmployeeEmail,
+                EmployeeName = incoming.EmployeeName,
+                EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword),
+                EmployeeLevel = EmployeeLevels.Admin.ToString()
+            };
+
+            context.Employees.Add(_employee);
+            await context.SaveChangesAsync();
+
+            return Ok(EmployeeReadDto.ToDto(_employee));
+        }
+        #endregion
         
         #region PostRoutes
 
@@ -135,6 +173,61 @@ namespace Artifax.Controllers
 
         #endregion
         
+        #region DevFixes
+        // Development-only helper to ensure the Orders table has a Status column.
+        [HttpPost("dev/fix/orders-status")]
+        public async Task<IActionResult> EnsureOrdersStatusColumn()
+        {
+            var env = HttpContext.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+            if (env == null || !env.EnvironmentName.Equals("Development", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                // Use a raw SQL command to add the column if it does not exist. This is a short-lived dev helper.
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Orders\" ADD COLUMN IF NOT EXISTS \"Status\" text DEFAULT 'Pending';");
+                return Ok(new { message = "Orders.Status column ensured" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("dev/cleanup/test-admins")]
+        public async Task<IActionResult> CleanupTestAdmins()
+        {
+            var env = HttpContext.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+            if (env == null || !env.EnvironmentName.Equals("Development", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var testAdminEmails = new[]
+            {
+                "localadmin@localhost",
+                "localadmin@localhost.com",
+                "test.user@gmail.com",
+            };
+
+            var testAdmins = await context.Employees
+                .Where(employee => testAdminEmails.Contains(employee.EmployeeEmail))
+                .ToListAsync();
+
+            if (testAdmins.Count == 0)
+            {
+                return Ok(new { deleted = 0 });
+            }
+
+            context.Employees.RemoveRange(testAdmins);
+            await context.SaveChangesAsync();
+
+            return Ok(new { deleted = testAdmins.Count });
+        }
+        #endregion
+        
         #region UpdateRoutes
 
             // summary
@@ -188,7 +281,11 @@ namespace Artifax.Controllers
                 //Update details
                 _employee.EmployeeEmail = incoming.EmployeeEmail;
                 _employee.EmployeeName = incoming.EmployeeName;
-                _employee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword);
+                // Only update password hash when a new password is provided
+                if (!string.IsNullOrWhiteSpace(incoming.EmployeePassword))
+                {
+                    _employee.EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(incoming.EmployeePassword);
+                }
                 
                 //Save changes
                 await context.SaveChangesAsync();

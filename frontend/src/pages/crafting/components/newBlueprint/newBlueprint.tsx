@@ -1,5 +1,7 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
+import FilterSelect from '../../../../components/common/FilterSelect';
+import { useApi } from '../../../../hooks';
 import './newBlueprint.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
@@ -13,6 +15,11 @@ interface NewBlueprintProps {
   onCancel: () => void;
 }
 
+interface ItemOption {
+  value: string;
+  label: string;
+}
+
 const categoryOptions = [
   { value: 'metal', label: 'Metal' },
   { value: 'mechanical', label: 'Mechanical' },
@@ -21,23 +28,38 @@ const categoryOptions = [
   { value: 'other', label: 'Other' },
 ];
 
-const materialOptions = [
-  { value: 'Metal', label: 'Metal' },
-  { value: 'Copper Wire', label: 'Copper Wire' },
-  { value: 'Steel Rod', label: 'Steel Rod' },
-  { value: 'Plastic Sheet', label: 'Plastic Sheet' },
-  { value: 'Wood Handle', label: 'Wood Handle' },
-  { value: 'Glass Panel', label: 'Glass Panel' },
-];
-
 const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
+  const api = useApi();
   const [blueprintName, setBlueprintName] = useState('');
   const [category, setCategory] = useState('metal');
+  const [craftTimeMinutes, setCraftTimeMinutes] = useState(1);
   const [materials, setMaterials] = useState<MaterialRow[]>([
     { id: 'mat-1', item: 'Metal', amount: 1 },
     { id: 'mat-2', item: '', amount: 1 },
     { id: 'mat-3', item: '', amount: 1 },
   ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [itemOptions, setItemOptions] = useState<ItemOption[]>([]);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await api.get('/Item/item/');
+        const items = response.data || [];
+        const options = items
+          .filter((item: any) => item?.itemName)
+          .map((item: any) => ({
+            value: item.itemName,
+            label: item.itemName,
+          }));
+        setItemOptions(options);
+      } catch (error) {
+        console.error('Failed to load item options:', error);
+      }
+    };
+
+    fetchItems();
+  }, [api]);
 
   const handleMaterialChange = (id: string, field: 'item' | 'amount', value: string | number) => {
     setMaterials((current) =>
@@ -63,18 +85,99 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     setMaterials((current) => current.filter((material) => material.id !== id));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const validMaterials = materials.filter((material) => material.item.trim());
-    const payload = {
-      name: blueprintName.trim(),
-      category,
-      materials: validMaterials,
-    };
+    if (!blueprintName.trim() || validMaterials.length === 0) {
+      alert('Please add a blueprint name and at least one material.');
+      return;
+    }
 
-    console.log('Create blueprint', payload);
-    alert('Blueprint created! (placeholder)');
-    onCancel();
+    setIsSubmitting(true);
+
+    try {
+      const itemsResponse = await api.get('/Item/item/');
+      const existingItems: any[] = itemsResponse.data || [];
+      const nameToId = existingItems.reduce<Record<string, number>>((map, item) => {
+        if (item?.itemName && item?.itemID) {
+          map[item.itemName] = item.itemID;
+        }
+        return map;
+      }, {});
+
+      let itemId = nameToId[blueprintName.trim()];
+      if (!itemId) {
+        const itemPayload = {
+          itemName: blueprintName.trim(),
+          itemCategory: category,
+          productionTime: craftTimeMinutes,
+        };
+
+        const createdItemResponse = await api.post('/Item/item/', itemPayload);
+        itemId = createdItemResponse.data?.itemID;
+        if (!itemId) {
+          throw new Error('Unable to create the item for this blueprint.');
+        }
+      }
+
+      const ingredientPayloads = [];
+      for (const material of validMaterials) {
+        const materialName = material.item.trim();
+        if (!materialName) {
+          continue;
+        }
+
+        let ingredientId = nameToId[materialName];
+        if (!ingredientId) {
+          const createdIngredientResponse = await api.post('/Item/item/', {
+            itemName: materialName,
+            itemCategory: 'other',
+            productionTime: 1,
+          });
+          ingredientId = createdIngredientResponse.data?.itemID;
+          if (ingredientId) {
+            nameToId[materialName] = ingredientId;
+          }
+        }
+
+        if (ingredientId) {
+          ingredientPayloads.push({
+            ingredientID: ingredientId,
+            ingredientQuantity: material.amount,
+            productID: itemId,
+          });
+        }
+      }
+
+      const blueprintPayload = {
+        itemID: itemId,
+        productionTime: craftTimeMinutes,
+        ingredients: ingredientPayloads,
+      };
+      await api.put(`/Item/item/${itemId}/blueprint`, blueprintPayload);
+
+      try {
+        const branchesResponse = await api.get('/Branch');
+        const branches: any[] = branchesResponse.data || [];
+        if (branches.length > 0) {
+          await api.post('/Item/Branch', {
+            branchID: branches[0].branchID,
+            itemID: itemId,
+            itemQuantity: 0,
+          });
+        }
+      } catch (branchError) {
+        // optional inventory zero-quantity creation; ignore if branch data is unavailable
+      }
+
+      alert('Blueprint created successfully. Returning to crafting page.');
+      onCancel();
+    } catch (error) {
+      console.error('Error creating blueprint:', error);
+      alert('Unable to save blueprint. Please fix the issue and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const hasValidName = blueprintName.trim().length > 0;
@@ -101,41 +204,50 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
               className="field-input"
             />
           </div>
+        </div>
+
+        <div className="field-row field-row--split">
+          <div className="field-group field-group--craft-time">
+            <label htmlFor="craftTimeMinutes">Craft Time (min)</label>
+            <input
+              id="craftTimeMinutes"
+              type="number"
+              min={1}
+              step={1}
+              value={craftTimeMinutes}
+              onChange={(event) => setCraftTimeMinutes(Math.max(1, Number(event.target.value) || 1))}
+              className="field-input craft-time-input"
+            />
+          </div>
 
           <div className="field-group field-group--category">
             <label htmlFor="blueprintCategory">Category of Blueprint</label>
-            <select
-              id="blueprintCategory"
+            <FilterSelect
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={setCategory}
+              options={categoryOptions}
               className="field-select"
-            >
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              ariaLabel="Select blueprint category"
+            />
           </div>
         </div>
  <label htmlFor="blueprintCategory">Required materials</label>
         <div className="material-list">
           {materials.map((material) => (
             <div key={material.id} className="materials-row">
-              <select
+              <FilterSelect
                 value={material.item}
-                onChange={(event) => handleMaterialChange(material.id, 'item', event.target.value)}
+                onChange={(value) => handleMaterialChange(material.id, 'item', value)}
+                options={[
+                  { value: '', label: 'None selected' },
+                  ...itemOptions,
+                ]}
                 className="field-select material-select"
-              >
-                <option value="">None selected</option>
-                {materialOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                ariaLabel="Select material"
+              />
 
               <div className="amount-line">
+                <span className="amount-caption">Amount Needed</span>
                 <button
                   type="button"
                   className="amount-button"
@@ -153,7 +265,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
                 >
                   +
                 </button>
-                <span className="amount-caption">Amount Needed</span>
+                
               </div>
 
               {materials.length > 1 && (
@@ -175,8 +287,8 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
         </button>
 
         <div className="new-blueprint-actions">
-            <Button type="submit" disabled={!hasValidName}>
-            Add Blueprint
+          <Button type="submit" disabled={!hasValidName || isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Add Blueprint'}
           </Button>
           <Button variant="secondary" type="button" onClick={onCancel}>
             Cancel

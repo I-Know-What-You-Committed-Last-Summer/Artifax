@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useCurrentUser } from '../../utils/currentUser';
 
 // Mapping route segments to friendly breadcrumb labels
 const ROUTE_LABELS = {
@@ -31,6 +32,7 @@ function getBreadcrumbItems(pathname) {
 
 function Topbar() {
   const { pathname } = useLocation();
+  const currentUser = useCurrentUser();
   // `isSynthwave` tracks whether the synthwave/dark theme is active
   const [isSynthwave, setIsSynthwave] = useState(() => {
     if (typeof window === 'undefined') {
@@ -168,7 +170,7 @@ function Topbar() {
             Alerts
           </button>
           <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
-            D. Dastardly
+            {currentUser?.name ?? 'D. Dastardly'}
           </div>
         </div>
       </div>

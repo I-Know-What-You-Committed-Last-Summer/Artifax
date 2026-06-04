@@ -6,6 +6,7 @@ namespace Artifax.DTOs
     {
         public int ItemID {get;set;}
         public int ProductionTime {get;set;}
+        public float? Price {get;set;}
         public List<IngredientBlueprintWriteDto> Ingredients {get;set;} = new List<IngredientBlueprintWriteDto>();
     }
 }

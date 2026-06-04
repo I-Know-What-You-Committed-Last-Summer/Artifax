@@ -109,6 +109,9 @@ namespace Backend.Migrations
                     b.Property<string>("ItemName")
                         .HasColumnType("text");
 
+                    b.Property<float?>("Price")
+                        .HasColumnType("real");
+
                     b.Property<int>("ProductionTime")
                         .HasColumnType("integer");
 
@@ -177,6 +180,12 @@ namespace Backend.Migrations
                     b.Property<DateTime?>("StartedDateTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -192,6 +201,12 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<int>("TimeElapsed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalTime")
+                        .HasColumnType("integer");
 
                     b.HasKey("OrderID");
 

@@ -8,6 +8,7 @@ namespace Artifax.DTOs
         public string ItemName {get;set;}
         public string ItemCategory {get;set;}
         public int ProductionTime {get;set;}
+        public float? Price {get;set;}
         public static ItemReadDto ToDto (Item incoming)
         {
             ItemReadDto _result = new()
@@ -15,7 +16,8 @@ namespace Artifax.DTOs
                 ItemID = incoming.ItemID,
                 ItemName = incoming.ItemName,
                 ItemCategory = incoming.ItemCategory,
-                ProductionTime = incoming.ProductionTime
+                ProductionTime = incoming.ProductionTime,
+                Price = incoming.Price
             };
 
             return _result;
