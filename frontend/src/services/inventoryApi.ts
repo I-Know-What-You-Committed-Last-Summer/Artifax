@@ -210,7 +210,7 @@ export function buildInventoryOverview(items: InventoryItem[]): InventoryOvervie
 
   tabs.push(...extraTabs);
 
-  const alerts = lowStockItems.slice(0, 3).map((item) => `${item.name} (${item.quantity} remaining)`);
+  const alerts = lowStockItems.map((item) => `${item.name} (${item.quantity} remaining)`);
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return {

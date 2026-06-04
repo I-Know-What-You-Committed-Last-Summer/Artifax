@@ -6,7 +6,7 @@ import StatCard from '../../components/common/StatCard';
 import StatusBadge from '../../components/common/StatusBadge';
 
 import { buildInventoryOverview, getInventoryItems, InventoryItem, DashboardPreviewRow } from '../../services/inventoryApi';
-import { deleteOrder, getActiveAndQueuedJobs, updateOrderStatus, CraftingJob } from '../../services/orderApi';
+import { getCraftingQueue, QueueJob } from '../../services/orderApi';
 import '../crafting/components/craftingItems/craftingItems.css';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
@@ -15,8 +15,8 @@ function DashboardPage() {
   const currentDate = getCurrentDateSAST();
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loadingInventory, setLoadingInventory] = useState<boolean>(true);
-  const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
-  const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
+  const [activeJobs, setActiveJobs] = useState<QueueJob[]>([]);
+  const [queuedJobs, setQueuedJobs] = useState<QueueJob[]>([]);
   const isFetchingRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -28,7 +28,7 @@ function DashboardPage() {
     isFetchingRef.current = true;
 
     try {
-      const { activeItems, queuedItems } = await getActiveAndQueuedJobs();
+      const { activeItems, queuedItems } = await getCraftingQueue();
 
       if (!mountedRef.current) {
         return;
@@ -47,43 +47,6 @@ function DashboardPage() {
       isFetchingRef.current = false;
     }
   }, []);
-
-  const getOrderIdFromJobId = (jobId: string): number => {
-    const numeric = Number(jobId.replace(/^order-/, ''));
-    return Number.isNaN(numeric) ? 0 : numeric;
-  };
-
-  const handlePauseResume = async (job: CraftingJob): Promise<void> => {
-    const orderId = getOrderIdFromJobId(job.id);
-
-    if (!orderId) {
-      return;
-    }
-
-    const nextStatus = job.status === 'Paused' ? 'In Progress' : 'Pending';
-
-    try {
-      await updateOrderStatus(orderId, nextStatus);
-      await refreshJobs();
-    } catch (err) {
-      console.error(`Failed to update order ${orderId}`, err);
-    }
-  };
-
-  const handleCancel = async (job: CraftingJob): Promise<void> => {
-    const orderId = getOrderIdFromJobId(job.id);
-
-    if (!orderId) {
-      return;
-    }
-
-    try {
-      await deleteOrder(orderId);
-      await refreshJobs();
-    } catch (err) {
-      console.error(`Failed to delete order ${orderId}`, err);
-    }
-  };
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -212,9 +175,7 @@ function DashboardPage() {
                       </div>
 
                       <div className="card-actions mt-3 flex gap-2">
-                        <button type="button" className="btn-action pause" onClick={() => { void handlePauseResume(job); }}>
-                          {job.status === 'Paused' ? 'Resume' : 'Pause'}
-                        </button>
+                        <div className="text-xs text-muted">{job.employeeName}</div>
                       </div>
                     </div>
                   ))}
@@ -246,9 +207,7 @@ function DashboardPage() {
                       </div>
 
                       <div className="card-actions mt-3 flex gap-2">
-                        <button type="button" className="btn-cancel" onClick={() => { void handleCancel(job); }}>
-                          Cancel
-                        </button>
+                        <div className="text-xs text-muted">Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(job.createdDateTime))}</div>
                       </div>
                     </div>
                   ))}
