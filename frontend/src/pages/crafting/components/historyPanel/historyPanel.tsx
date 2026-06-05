@@ -2,9 +2,27 @@ import React, { FC, useMemo, useState, useEffect } from 'react';
 import './historyPanel.css';
 import SearchInput from '../../../../components/common/SearchInput';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { historyData, HistoryItem } from '../historyData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import viewIcon from '../../../../assets/images/View Icon.png';
+import { useApi } from '../../../../hooks';
+
+interface OrderHistoryDto {
+  orderID: number;
+  itemID: number;
+  itemName: string;
+  quantity: number;
+  completedDateTime?: string | null;
+  createdDateTime?: string | null;
+  status: string;
+  employeeName?: string;
+}
+
+interface IngredientDto {
+  ingredientID?: number;
+  itemID?: number;
+  itemName?: string;
+  quantity?: number;
+}
 
 interface SelectOption {
   label: string;
@@ -14,71 +32,86 @@ interface SelectOption {
 interface StatusCounts {
   [key: string]: number;
   All: number;
-  Crafted: number;
+  Complete: number;
   Cancelled: number;
 }
 
 const STATUS_TABS: SelectOption[] = [
   { label: 'All', value: 'All' },
-  { label: 'Crafted', value: 'Crafted' },
+  { label: 'Complete', value: 'Complete' },
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
 const SORT_OPTIONS: SelectOption[] = [
-  { label: 'Name', value: 'name' },
+  { label: 'Item Name', value: 'itemName' },
   { label: 'Date', value: 'date' },
   { label: 'Qty', value: 'qty' },
-  { label: 'Operator', value: 'operator' }
+  { label: 'Employee', value: 'employee' }
 ];
 
 const HistoryPanel: FC = () => {
+  const api = useApi();
   const [activeTab, setActiveTab] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [typeFilter, setTypeFilter] = useState<string>('All');
-  const [sortKey, setSortKey] = useState<string>('name');
+  const [sortKey, setSortKey] = useState<string>('itemName');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [historyData, setHistoryData] = useState<OrderHistoryDto[]>([]);
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [ingredientsByOrderId, setIngredientsByOrderId] = useState<Record<number, IngredientDto[]>>({});
+  const [loadingIngredientsOrderId, setLoadingIngredientsOrderId] = useState<number | null>(null);
   const ITEMS_PER_PAGE = 10;
 
-  const typeOptions = useMemo(() => [
-    'All',
-    ...Array.from(new Set(historyData.map((item) => item.type)))
-  ], []);
+  useEffect(() => {
+    const loadHistory = async (): Promise<void> => {
+      try {
+        const response = await api.get<OrderHistoryDto[]>('/Order/history/all');
+        setHistoryData(response.data || []);
+      } catch (error) {
+        console.error('Failed to load order history', error);
+        setHistoryData([]);
+      }
+    };
+    void loadHistory();
+  }, [api]);
 
   const statusCounts: StatusCounts = useMemo(() => {
     return historyData.reduce(
-      (counts, item) => {
+      (counts, order) => {
+        const status = order.status || 'Unknown';
         counts.All += 1;
-        if (item.status === 'Crafted') counts.Crafted += 1;
-        if (item.status === 'Cancelled') counts.Cancelled += 1;
+        if (status === 'Complete') counts.Complete += 1;
+        if (status === 'Cancelled') counts.Cancelled += 1;
         return counts;
       },
-      { All: 0, Crafted: 0, Cancelled: 0 }
+      { All: 0, Complete: 0, Cancelled: 0 }
     );
-  }, []);
+  }, [historyData]);
 
-  const filteredData: HistoryItem[] = useMemo(() => {
+  const filteredData = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
     return historyData
-      .filter((item) => {
-        if (activeTab !== 'All' && item.status !== activeTab) return false;
-        if (statusFilter !== 'All' && item.status !== statusFilter) return false;
-        if (typeFilter !== 'All' && item.type !== typeFilter) return false;
+      .filter((order) => {
+        const status = order.status || 'Unknown';
+        if (activeTab !== 'All' && status !== activeTab) return false;
+        if (statusFilter !== 'All' && status !== statusFilter) return false;
 
         if (!normalizedSearch) return true;
-        return [item.name, item.id, item.operator, item.type, item.location]
+        return [order.itemName, order.employeeName || '', status]
           .some((value) => value.toLowerCase().includes(normalizedSearch));
       })
       .sort((a, b) => {
-        if (sortKey === 'qty') return b.qty - a.qty;
-        if (sortKey === 'date') return a.date.localeCompare(b.date);
-        return a[sortKey as keyof HistoryItem].toString().localeCompare(b[sortKey as keyof HistoryItem].toString());
+        if (sortKey === 'qty') return (b.quantity || 0) - (a.quantity || 0);
+        if (sortKey === 'date') return new Date(b.createdDateTime || 0).getTime() - new Date(a.createdDateTime || 0).getTime();
+        if (sortKey === 'itemName') return (a.itemName || '').localeCompare(b.itemName || '');
+        if (sortKey === 'employee') return (a.employeeName || '').localeCompare(b.employeeName || '');
+        return 0;
       });
-  }, [activeTab, statusFilter, typeFilter, sortKey, searchQuery]);
+  }, [activeTab, statusFilter, sortKey, searchQuery, historyData]);
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData: HistoryItem[] = useMemo(() => {
+  const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredData, currentPage]);
@@ -89,9 +122,50 @@ const HistoryPanel: FC = () => {
     }
   };
 
+  const handleViewClick = async (order: OrderHistoryDto): Promise<void> => {
+    if (expandedOrderId === order.orderID) {
+      setExpandedOrderId(null);
+      return;
+    }
+
+    setExpandedOrderId(order.orderID);
+
+    if (ingredientsByOrderId[order.orderID]) {
+      return;
+    }
+
+    setLoadingIngredientsOrderId(order.orderID);
+    try {
+      const response = await api.get<IngredientDto[]>(`/Item/itemIngredient/item/${order.itemID}`);
+      setIngredientsByOrderId((prev) => ({
+        ...prev,
+        [order.orderID]: response.data || [],
+      }));
+    } catch (error) {
+      console.error(`Failed to load ingredients for item ${order.itemID}`, error);
+      setIngredientsByOrderId((prev) => ({
+        ...prev,
+        [order.orderID]: [],
+      }));
+    } finally {
+      setLoadingIngredientsOrderId(null);
+    }
+  };
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, statusFilter, typeFilter, sortKey, searchQuery]);
+  }, [activeTab, statusFilter, sortKey, searchQuery]);
+
+  const formatDate = (dateString: string | undefined | null): string => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) return 'N/A';
+      return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+    } catch {
+      return 'N/A';
+    }
+  };
 
   return (
     <section className="history-panel">
@@ -99,7 +173,7 @@ const HistoryPanel: FC = () => {
         <div className="history-title-group">
           <div>
             <h2>Crafting History</h2>
-            <p className="history-meta">{historyData.length} items</p>
+            <p className="history-meta">{historyData.length} orders</p>
           </div>
         </div>
 
@@ -108,7 +182,7 @@ const HistoryPanel: FC = () => {
             <label className="history-search-label" htmlFor="history-search-input">Search:</label>
             <SearchInput
               id="history-search-input"
-              placeholder="Search items, SKU, location..."
+              placeholder="Search items, employee..."
               value={searchQuery}
               onChange={setSearchQuery}
             />
@@ -121,21 +195,9 @@ const HistoryPanel: FC = () => {
               ariaLabel="Status filter"
               options={[
                 { label: 'All', value: 'All' },
-                { label: 'Crafted', value: 'Crafted' },
+                { label: 'Complete', value: 'Complete' },
                 { label: 'Cancelled', value: 'Cancelled' },
               ]}
-            />
-          </div>
-          <div className="history-select-wrapper">
-            <label>Type:</label>
-            <FilterSelect
-              value={typeFilter}
-              onChange={setTypeFilter}
-              ariaLabel="Type filter"
-              options={typeOptions.map((type) => ({
-                label: type.charAt(0).toUpperCase() + type.slice(1),
-                value: type,
-              }))}
             />
           </div>
           <div className="history-select-wrapper">
@@ -170,47 +232,83 @@ const HistoryPanel: FC = () => {
               <th>ITEM</th>
               <th>DATE</th>
               <th>QTY</th>
-              <th>MIN</th>
-              <th>OPERATOR</th>
+              <th>EMPLOYEE</th>
               <th>STATUS</th>
               <th>VIEW</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((item) => (
-              <tr key={`${item.id}-${item.operator}`}>
-                <td>
-                  <div className="history-item-cell">
-                    <img src={unitIcon} alt="item icon" className="table-item-icon" />
-                    <div>
-                      <div className="item-name">{item.name}</div>
-                      <div className="item-subtitle">{item.id}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>{item.date}</td>
-                <td>{item.qty}</td>
-                <td>{item.min}</td>
-                <td>{item.operator}</td>
-                <td>
-                  <span className={`status-pill ${item.status.toLowerCase()}`}>
-                    {item.status}
-                  </span>
-                </td>
-                <td>
-                  <button type="button" className="icon-action-button" aria-label={`View ${item.name}`}>
-                    <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
-                    <span className="sr-only">View</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {paginatedData.map((order) => {
+              const isExpanded = expandedOrderId === order.orderID;
+              const ingredients = ingredientsByOrderId[order.orderID] || [];
+              const isLoading = loadingIngredientsOrderId === order.orderID;
+
+              return (
+                <React.Fragment key={order.orderID}>
+                  <tr>
+                    <td>
+                      <div className="history-item-cell">
+                        <img src={unitIcon} alt="item icon" className="table-item-icon" />
+                        <div>
+                          <div className="item-name">{order.itemName}</div>
+                          <div className="item-subtitle">{`Order #${order.orderID}`}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{formatDate(order.completedDateTime || order.createdDateTime)}</td>
+                    <td>{order.quantity}</td>
+                    <td>{order.employeeName || 'Unknown'}</td>
+                    <td>
+                      <span className={`status-pill ${(order.status || 'unknown').toLowerCase().replace(' ', '-')}`}>
+                        {order.status || 'Unknown'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className={`icon-action-button ${isExpanded ? 'active' : ''}`}
+                        aria-label={`View ${order.itemName}`}
+                        onClick={() => {
+                          void handleViewClick(order);
+                        }}
+                      >
+                        <img src={viewIcon} alt="" aria-hidden="true" className="icon-action-button-icon" />
+                        <span className="sr-only">View</span>
+                      </button>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr className="history-expanded-row">
+                      <td colSpan={6}>
+                        <div className="history-ingredients-panel">
+                          <h4 className="ingredients-title">Ingredients Used</h4>
+                          {isLoading ? (
+                            <p className="loading-text">Loading ingredients...</p>
+                          ) : ingredients.length === 0 ? (
+                            <p className="empty-text">No ingredients recorded for this item.</p>
+                          ) : (
+                            <div className="ingredients-grid">
+                              {ingredients.map((ingredient, idx) => (
+                                <div key={idx} className="ingredient-item">
+                                  <span className="ingredient-name">{ingredient.itemName}</span>
+                                  <span className="ingredient-qty">×{ingredient.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       <div className="history-footer">
-        <span>Showing {paginatedData.length} of {filteredData.length} items · Rows per page 25</span>
+        <span>Showing {paginatedData.length} of {filteredData.length} items · Rows per page {ITEMS_PER_PAGE}</span>
         <div className="history-pagination-controls">
           <button
             type="button"

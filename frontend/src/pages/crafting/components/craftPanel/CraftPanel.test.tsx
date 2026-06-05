@@ -26,7 +26,9 @@ describe('CraftPanel', () => {
       <CraftPanel
         blueprint={blueprint}
         amount={1}
+        orderExpedite={false}
         onAmountChange={onAmountChange}
+        onToggleExpedite={() => {}}
         onCraft={onCraft}
         onEdit={onEdit}
         onDelete={onDelete}
@@ -51,7 +53,9 @@ describe('CraftPanel', () => {
       <CraftPanel
         blueprint={blueprint}
         amount={1}
+        orderExpedite={false}
         onAmountChange={onAmountChange}
+        onToggleExpedite={() => {}}
         onCraft={onCraft}
         onEdit={onEdit}
         onDelete={onDelete}
