@@ -35,6 +35,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
   const [blueprintName, setBlueprintName] = useState('');
   const [category, setCategory] = useState('metal');
   const [craftTimeMinutes, setCraftTimeMinutes] = useState(1);
+  const [price, setPrice] = useState<number>(0);
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemOptions, setItemOptions] = useState<ItemOption[]>([]);
@@ -66,6 +67,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
         setBlueprintName(item.itemName || '');
         setCategory(item.itemCategory || 'metal');
         setCraftTimeMinutes(item.productionTime || 1);
+        setPrice(item.price ?? item.Price ?? 0);
         setMaterials(
           ingredients.map((material: any, index: number) => ({
             id: `mat-${index + 1}-${Date.now()}`,
@@ -132,6 +134,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
         itemName: blueprintName.trim(),
         itemCategory: category,
         productionTime: craftTimeMinutes,
+        price: Number(price) || 0,
       });
 
       const ingredientPayloads: Array<{ ingredientID: number; ingredientQuantity: number }> = [];
@@ -246,6 +249,21 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
               className="field-select"
               ariaLabel="Select blueprint category"
             />
+          </div>
+          <div className="field-group field-group--price">
+            <label htmlFor="blueprintPrice">Price (ZAR)</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                id="blueprintPrice"
+                type="number"
+                min={0}
+                step={0.01}
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value || 0))}
+                className="field-input"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 

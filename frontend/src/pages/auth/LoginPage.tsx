@@ -41,7 +41,7 @@ function LoginPage() {
 
   const passwordError = useMemo(() => {
     if (!password.trim()) return 'Password is required';
-    if (password.trim().length < 8) return 'Password must be at least 8 characters';
+    if (password.trim().length < 5) return 'Password must be at least 8 characters';
     return '';
   }, [password]);
 

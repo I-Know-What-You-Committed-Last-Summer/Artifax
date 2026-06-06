@@ -65,8 +65,14 @@ const HistoryPanel: FC = () => {
   useEffect(() => {
     const loadHistory = async (): Promise<void> => {
       try {
-        const response = await api.get<OrderHistoryDto[]>('/Order/history/all');
-        setHistoryData(response.data || []);
+        const response = await api.get<OrderHistoryDto[]>('/Order');
+        // Only include completed orders in the history panel
+        const allOrders = response.data || [];
+        const completedOrders = allOrders.filter((o) => {
+          const s = (o.status || '').toLowerCase();
+          return s === 'complete' || s === 'completed';
+        });
+        setHistoryData(completedOrders);
       } catch (error) {
         console.error('Failed to load order history', error);
         setHistoryData([]);
@@ -78,10 +84,10 @@ const HistoryPanel: FC = () => {
   const statusCounts: StatusCounts = useMemo(() => {
     return historyData.reduce(
       (counts, order) => {
-        const status = order.status || 'Unknown';
+        const status = (order.status || 'Unknown').toLowerCase();
         counts.All += 1;
-        if (status === 'Complete') counts.Complete += 1;
-        if (status === 'Cancelled') counts.Cancelled += 1;
+        if (status === 'complete' || status === 'completed') counts.Complete += 1;
+        if (status === 'cancelled' || status === 'canceled') counts.Cancelled += 1;
         return counts;
       },
       { All: 0, Complete: 0, Cancelled: 0 }
@@ -93,9 +99,11 @@ const HistoryPanel: FC = () => {
 
     return historyData
       .filter((order) => {
-        const status = order.status || 'Unknown';
-        if (activeTab !== 'All' && status !== activeTab) return false;
-        if (statusFilter !== 'All' && status !== statusFilter) return false;
+        const status = (order.status || 'Unknown').toLowerCase();
+        const normActive = activeTab.toLowerCase();
+        const normFilter = statusFilter.toLowerCase();
+        if (activeTab !== 'All' && status !== normActive) return false;
+        if (statusFilter !== 'All' && status !== normFilter) return false;
 
         if (!normalizedSearch) return true;
         return [order.itemName, order.employeeName || '', status]

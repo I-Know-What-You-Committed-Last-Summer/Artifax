@@ -55,7 +55,9 @@
 }
 
 .field-row--split {
-  grid-template-columns: 20% 80%;
+  width: 96%;
+  margin: 0;
+  grid-template-columns: 20% 60% 20%;
   gap: 16px;
   align-items: center;
 }
@@ -185,6 +187,8 @@
   background: var(--surface-2);
 }
 
+/* price-preview removed per design change */
+
 .new-blueprint-actions {
   display: flex;
   flex-direction: column;
@@ -201,6 +205,9 @@
 @media (max-width: 860px) {
   .field-row,
   .field-row--sub {
+    grid-template-columns: 1fr;
+  }
+  .field-row--split {
     grid-template-columns: 1fr;
   }
 

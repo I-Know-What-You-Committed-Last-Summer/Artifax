@@ -55,7 +55,9 @@
 }
 
 .field-row--split {
-  grid-template-columns: 20% 80%;
+  width: 97.3%;
+  margin: 0;
+  grid-template-columns: 20% 60% 20%;
   gap: 16px;
   align-items: center;
 }
@@ -196,4 +198,12 @@
 
 .new-blueprint-actions button {
   width: 100%;
+}
+
+/* price-preview removed per design change */
+
+@media (max-width: 860px) {
+  .field-row--split {
+    grid-template-columns: 1fr;
+  }
 }
