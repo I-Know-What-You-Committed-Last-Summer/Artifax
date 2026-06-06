@@ -120,6 +120,13 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
         if (!itemId) {
           throw new Error('Unable to create the item for this blueprint.');
         }
+      } else {
+        await api.put(`/Item/${itemId}`, {
+          itemName: blueprintName.trim(),
+          itemCategory: category,
+          productionTime: craftTimeMinutes,
+          price: Number(price) || 0,
+        });
       }
 
       const ingredientPayloads = [];
@@ -154,6 +161,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
       const blueprintPayload = {
         itemID: itemId,
         productionTime: craftTimeMinutes,
+        price: Number(price) || 0,
         ingredients: ingredientPayloads,
       };
       await api.put(`/Item/item/${itemId}/blueprint`, blueprintPayload);

@@ -168,6 +168,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
       await api.put(`/Item/item/${itemId}/blueprint/edit`, {
         itemID: itemId,
         productionTime: craftTimeMinutes,
+        price: Number(price) || 0,
         ingredients: ingredientPayloads,
       });
 

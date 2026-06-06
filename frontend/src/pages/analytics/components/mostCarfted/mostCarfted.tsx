@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './mostCarfted.css';
-import { blueprintData } from '../../../../pages/crafting/components/craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import FilterSelect from '../../../../components/common/FilterSelect';
+import { useApi } from '../../../../hooks/useApi';
 
 type SortOrder = 'high' | 'low';
 
@@ -11,14 +11,9 @@ type SortOption = {
   label: string;
 };
 
-type Blueprint = {
-  id: string;
+type CraftedBlueprint = {
   name: string;
-  description: string;
-  category: string;
-  have: number;
-  craft: number;
-  materials: Array<{ name: string; need: number; have: number }>;
+  crafted: number;
 };
 
 const sortOptions: SortOption[] = [
@@ -26,15 +21,56 @@ const sortOptions: SortOption[] = [
   { value: 'low', label: 'Low to high' },
 ];
 
-const MostCrafted: React.FC = () => {
-  const [sortOrder, setSortOrder] = useState<SortOrder>('high');
+function normalizeString(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase();
+}
 
-  const sortedBlueprints = useMemo<Blueprint[]>(() => {
-    return [...blueprintData].sort((a, b) => {
-      if (sortOrder === 'low') return a.craft - b.craft;
-      return b.craft - a.craft;
+const MostCrafted: React.FC = () => {
+  const api = useApi();
+  const [sortOrder, setSortOrder] = useState<SortOrder>('high');
+  const [blueprints, setBlueprints] = useState<CraftedBlueprint[]>([]);
+
+  useEffect(() => {
+    const loadMostCrafted = async () => {
+      try {
+        const response = await api.get<any[]>('/Order');
+        const orders = response.data ?? [];
+
+        const totals = orders.reduce((map: Map<string, number>, order) => {
+          const status = normalizeString(order.status);
+          if (status !== 'complete' && status !== 'completed') {
+            return map;
+          }
+
+          const itemName = String(order.itemName ?? order.ItemName ?? '').trim();
+          const itemQuantity = Number(order.quantity ?? order.Quantity ?? 0);
+
+          if (!itemName || itemQuantity <= 0) {
+            return map;
+          }
+
+          map.set(itemName, (map.get(itemName) ?? 0) + itemQuantity);
+          return map;
+        }, new Map<string, number>());
+
+        setBlueprints(
+          Array.from(totals.entries()).map(([name, crafted]) => ({ name, crafted })),
+        );
+      } catch (error) {
+        console.error('Unable to load most crafted blueprints', error);
+        setBlueprints([]);
+      }
+    };
+
+    loadMostCrafted();
+  }, [api]);
+
+  const sortedBlueprints = useMemo(() => {
+    return [...blueprints].sort((a, b) => {
+      if (sortOrder === 'low') return a.crafted - b.crafted;
+      return b.crafted - a.crafted;
     });
-  }, [sortOrder]);
+  }, [blueprints, sortOrder]);
 
   return (
     <section className="blueprint-panel most-crafted-card">
@@ -43,7 +79,7 @@ const MostCrafted: React.FC = () => {
           <h3>Most Crafted Blueprints</h3>
         </div>
         <div className="blueprint-filter">
-          <label htmlFor="mostCraftedSort">Filter Blueprints</label>
+          <label htmlFor="mostCraftedSort">Sort</label>
           <FilterSelect
             value={sortOrder}
             onChange={(nextValue) => setSortOrder(nextValue as SortOrder)}
@@ -54,22 +90,26 @@ const MostCrafted: React.FC = () => {
       </div>
 
       <div className="blueprint-list most-crafted-list">
-        {sortedBlueprints.map((blueprint) => (
-          <button key={blueprint.id} type="button" className="blueprint-card">
-            <div className="blueprint-card-main">
-              <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
-              <div>
-                <h4>{blueprint.name}</h4>
+        {sortedBlueprints.length === 0 ? (
+          <p className="most-crafted-empty">No completed craft data available yet.</p>
+        ) : (
+          sortedBlueprints.map((blueprint) => (
+            <button key={blueprint.name} type="button" className="blueprint-card">
+              <div className="blueprint-card-main">
+                <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
+                <div>
+                  <h4>{blueprint.name}</h4>
+                </div>
               </div>
-            </div>
-            <div className="blueprint-card-meta">
-              <div className="meta-block">
-                <span className="meta-label">Crafted</span>
-                <strong>{blueprint.craft}</strong>
+              <div className="blueprint-card-meta">
+                <div className="meta-block">
+                  <span className="meta-label">Crafted</span>
+                  <strong>{blueprint.crafted}</strong>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))
+        )}
       </div>
     </section>
   );
