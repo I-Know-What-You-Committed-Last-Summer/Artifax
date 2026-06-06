@@ -177,6 +177,16 @@ const CraftingItems: FC = () => {
     }));
   };
 
+  const handleCancel = async (job: CraftingJob): Promise<void> => {
+    try {
+      await api.put(`/Order/${job.orderID}/status`, { status: 'Cancelled' });
+      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
+      await loadActiveJobs();
+    } catch (error) {
+      console.error(`Unable to cancel order ${job.orderID}`, error);
+    }
+  };
+
   const handlePauseResume = async (job: CraftingJob): Promise<void> => {
     const nextStatus = job.status === 'Paused' ? 'Active' : 'Paused';
     try {
@@ -234,7 +244,9 @@ const CraftingItems: FC = () => {
           </div>
 
           <div className="card-actions">
-            <button className="btn-cancel" type="button">Cancel</button>
+            <button className="btn-cancel" type="button" onClick={() => void handleCancel(job)}>
+              Cancel
+            </button>
             <button
               className={`btn-action ${job.status === 'Paused' ? 'resume' : 'pause'}`}
               type="button"

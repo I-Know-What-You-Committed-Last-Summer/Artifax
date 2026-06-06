@@ -66,13 +66,12 @@ const HistoryPanel: FC = () => {
     const loadHistory = async (): Promise<void> => {
       try {
         const response = await api.get<OrderHistoryDto[]>('/Order');
-        // Only include completed orders in the history panel
         const allOrders = response.data || [];
-        const completedOrders = allOrders.filter((o) => {
+        const historyOrders = allOrders.filter((o) => {
           const s = (o.status || '').toLowerCase();
-          return s === 'complete' || s === 'completed';
+          return s === 'complete' || s === 'completed' || s === 'cancelled' || s === 'canceled';
         });
-        setHistoryData(completedOrders);
+        setHistoryData(historyOrders);
       } catch (error) {
         console.error('Failed to load order history', error);
         setHistoryData([]);
