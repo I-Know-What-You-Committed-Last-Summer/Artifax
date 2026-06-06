@@ -107,6 +107,21 @@
   background: var(--surface);
 }
 
+.material-select .artifax-select-menu {
+  max-height: 12rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.material-select .artifax-select-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.material-select .artifax-select-menu::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
+}
+
 .material-list {
   display: grid;
   gap: 14px;

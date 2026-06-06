@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import './crafting.css';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
@@ -13,8 +13,8 @@ import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import BlueprintEdit from './components/blueprintEdit/BlueprintEdit';
 import { useApi } from '../../hooks';
+import { getInventoryOverview } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
-import { craftingAlerts } from '../../data/fallback';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 interface PageProps {
@@ -199,6 +199,7 @@ const Crafting: FC = () => {
   const [orderExpedite, setOrderExpedite] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [editItemId, setEditItemId] = useState<number | null>(null);
+  const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
   const api = useApi();
   const currentDate = getCurrentDateSAST();
 
@@ -333,6 +334,19 @@ const Crafting: FC = () => {
     }
   };
 
+  useEffect(() => {
+    const loadLowStock = async (): Promise<void> => {
+      try {
+        const overview = await getInventoryOverview();
+        setLowStockAlerts(overview.alerts);
+      } catch (error) {
+        console.error('Failed to load low stock alerts', error);
+      }
+    };
+
+    void loadLowStock();
+  }, []);
+
   return (
     <div className="page-content">
       <div className="space-y-4 sm:space-y-5">
@@ -340,7 +354,7 @@ const Crafting: FC = () => {
           title="Crafting Management"
           subtitle={`Crafting Dashboard · ${currentDate}`}
         />
-        <AlertStrip label="Active Jobs:" items={craftingAlerts} />
+        <AlertStrip label={`Low Stock: ${lowStockAlerts.length}`} items={lowStockAlerts} />
 
         <div className="crafting-page">
           {activeTab === 'active' && <ActiveJobsPage />}
