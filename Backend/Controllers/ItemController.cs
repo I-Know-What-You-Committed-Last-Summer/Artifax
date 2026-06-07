@@ -410,6 +410,21 @@ namespace Artifax.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpPut("Branch/{branchId}/Item/{itemId}")]
+        public async Task<IActionResult> UpdateBICQuantity(int branchId, int itemId, [FromQuery] int quantity)
+        {
+            
+            var branchItemCapacity = await _context.BranchItemCapacities
+                .FirstOrDefaultAsync(bic => bic.BranchID == branchId && bic.ItemID == itemId);
+            if (branchItemCapacity == null)
+            {
+                return NotFound($"No capacity record found for Branch ID {branchId} and Item ID {itemId}.");
+            }
+            branchItemCapacity.ItemQuantity = quantity;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
 
 
         #endregion
