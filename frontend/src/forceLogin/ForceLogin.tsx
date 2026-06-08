@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useCurrentUser } from '../utils/currentUser';
 import { getCurrentUserFromSession } from '../services/authApi';
 import './forceLogin.css';
 
 const ForceLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const currentUser = useCurrentUser();
   const [showModal, setShowModal] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Don't show modal or call /User/me on any login-related route
+  // Don't show modal or call /User/me on any login-related route or root redirect page
   const normalizedPath = location.pathname.toLowerCase();
-  const isLoginPage = normalizedPath === '/login' || normalizedPath.startsWith('/login');
+  const isLoginPage =
+    normalizedPath === '/' ||
+    normalizedPath === '/login' ||
+    normalizedPath.startsWith('/login');
 
   useEffect(() => {
-    // Skip check on login page
+    // Skip check on login page or when the app is landing on the root redirect
     if (isLoginPage) {
       setShowModal(false);
       setIsChecking(false);
