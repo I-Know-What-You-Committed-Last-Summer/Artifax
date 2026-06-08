@@ -35,6 +35,7 @@ type InventoryRowDto = {
   inventoryItemQuantity: number;
   inventoryItemPrice?: number | null;
   inventoryItemBranchName: string;
+  inventoryItemBranchId: number;
 };
 
 type IngredientBlueprintDto = {
@@ -92,6 +93,7 @@ export type InventoryItemUpdate = {
   productionTime: number;
   price: number | null;
   quantity: number;
+  branchId: number;
 };
 
 export type InventoryItemCreate = {
@@ -312,7 +314,10 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
   };
 }
 
-export async function updateInventoryItem(itemId: number, payload: InventoryItemUpdate): Promise<void> {
+export async function updateInventoryItem(
+  itemId: number, 
+  payload: InventoryItemUpdate & { branchId: number }
+): Promise<void> {
   try {
     await apiClient.put(`/Item/${itemId}`, {
       itemName: payload.itemName,
@@ -320,54 +325,16 @@ export async function updateInventoryItem(itemId: number, payload: InventoryItem
       productionTime: payload.productionTime,
       price: payload.price,
     });
-
-    // if (payload.quantity < 0) {
-    //   throw new Error('Quantity cannot be negative.');
-    // }
-
-    const branchRows = (await getBranchItems())
-      .filter((row) => row.ItemID === itemId)
-      .sort((left, right) => right.ItemQuantity - left.ItemQuantity || left.BranchItemCapacityID - right.BranchItemCapacityID);
-
-    if (branchRows.length === 0) {
-      throw new Error(`No branch capacity records found for item ${itemId}.`);
+    if (payload.quantity < 0) {
+      throw new Error('Quantity cannot be negative.');
     }
-
-    const currentTotal = branchRows.reduce((sum, row) => sum + row.ItemQuantity, 0);
-
-    if (currentTotal === payload.quantity) {
-      return;
+    if (!payload.branchId) {
+      throw new Error(`Cannot update quantity: No branchId provided for item ${itemId}.`);
     }
+    await apiClient.put(`/Item/Branch/${payload.branchId}/Item/${itemId}`, null, {
+      params: { quantity: payload.quantity },
+    });
 
-    if (payload.quantity > currentTotal) {
-      const targetRow = branchRows[0];
-      const quantityToAdd = payload.quantity - currentTotal;
-      const nextQuantity = targetRow.ItemQuantity + quantityToAdd;
-
-      await apiClient.put(`/Item/Branch/${targetRow.BranchID}/Item/${itemId}`, null, {
-        params: { quantity: nextQuantity },
-      });
-      return;
-    }
-
-    let quantityToRemove = currentTotal - payload.quantity;
-
-    for (const row of branchRows) {
-      if (quantityToRemove <= 0) {
-        break;
-      }
-
-      const removed = Math.min(row.ItemQuantity, quantityToRemove);
-      const nextQuantity = row.ItemQuantity - removed;
-
-      if (nextQuantity !== row.ItemQuantity) {
-        await apiClient.put(`/Item/Branch/${row.BranchID}/Item/${itemId}`, null, {
-          params: { quantity: nextQuantity },
-        });
-      }
-
-      quantityToRemove -= removed;
-    }
   } catch (error) {
     throw toFetchStyleError(error);
   }
@@ -417,6 +384,7 @@ export type InventoryItem = {
   price: number | null;
   minStock: number;
   location: string;
+  branchId: number;
   status: string;
   productionTime: number;
   tab?: string;
@@ -426,7 +394,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
   const rows = await fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems');
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
-  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; productionTime?: number }>();
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; branchId: number ; productionTime?: number }>();
 
   for (const r of rows) {
     const id = r.inventoryItemId;
@@ -435,6 +403,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const sku = `${category.slice(0, 3).toUpperCase()}-${id}`;
     const qty = r.inventoryItemQuantity ?? 0;
     const loc = normalizeLocation(r.inventoryItemBranchName);
+    const branchId = r.inventoryItemBranchId;
 
     if (!map.has(id)) {
       map.set(id, {
@@ -445,6 +414,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
         quantity: qty,
         price: r.inventoryItemPrice == null ? null : Number(r.inventoryItemPrice),
         locations: { [loc]: qty },
+        branchId,
         productionTime: r.inventoryItemProductionTime,
       });
     } else {
@@ -472,6 +442,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
       price: e.price,
       minStock,
       location: primaryLocation,
+      branchId: e.branchId,
       status,
       productionTime: e.productionTime ?? 0,
       tab: slugifyCategory(e.category),

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+const API_BASE = process.env.REACT_APP_API_BASE || 'https://artifax-5lqg.onrender.com/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE,

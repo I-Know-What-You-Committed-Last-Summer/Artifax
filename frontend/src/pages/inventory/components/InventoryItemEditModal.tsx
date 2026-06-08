@@ -18,6 +18,7 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
     productionTime: 0,
     price: null,
     quantity: 0,
+    branchId: -1
   });
 
   useEffect(() => {
@@ -28,6 +29,7 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
         productionTime: item.productionTime,
         price: item.price,
         quantity: item.quantity,
+        branchId: item.branchId
       });
     }
   }, [item]);
