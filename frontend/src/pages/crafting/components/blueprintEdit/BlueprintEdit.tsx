@@ -28,6 +28,8 @@ const categoryOptions = [
   { value: 'mechanical', label: 'Mechanical' },
   { value: 'electronics', label: 'Electronics' },
   { value: 'furniture', label: 'Furniture' },
+  { value: 'paper', label: 'Paper' },
+  { value: 'plastic', label: 'Plastic' },
   { value: 'other', label: 'Other' },
 ];
 

@@ -12,6 +12,7 @@ export interface CraftingItem {
 }
 
 export interface BlueprintMaterial {
+  itemId?: number;
   name: string;
   need: number;
   have: number;

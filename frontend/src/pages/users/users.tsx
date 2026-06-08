@@ -4,6 +4,7 @@ import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import { useApi } from '../../hooks';
+import { getCurrentUser, setCurrentUser } from '../../utils/currentUser';
 import { showError, showSuccess } from '../../utils/toast';
 
 
@@ -126,6 +127,15 @@ const Users: React.FC = () => {
         await api.patch(branchUrl);
         await fetchUsers();
         setSelectedUserId(user.id);
+
+        const currentUser = getCurrentUser();
+        if (currentUser?.email?.toLowerCase() === originalEmail.toLowerCase()) {
+          setCurrentUser({
+            ...currentUser,
+            branchId: Number(user.branch),
+          });
+        }
+
         showSuccess('User updated successfully.');
         return;
       }
@@ -146,6 +156,19 @@ const Users: React.FC = () => {
       await api.patch(updUrl, updatePayload);
       await fetchUsers();
       setSelectedUserId(user.id);
+
+      const currentUser = getCurrentUser();
+      if (currentUser?.email?.toLowerCase() === originalEmail.toLowerCase()) {
+        setCurrentUser({
+          ...currentUser,
+          branchId: Number(user.branch),
+          branchName: branchMap[Number(user.branch)] ?? currentUser.branchName,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        });
+      }
+
       showSuccess('User updated successfully.');
     } catch (err) {
       console.error('Save user failed', err);
