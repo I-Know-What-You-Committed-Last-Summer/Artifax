@@ -25,13 +25,13 @@ The core objective of the system is to deliver a highly scalable backend archite
 
 ## Test Coverage
 
-### Front End
+### Frontend
 
 We implemented unit and integration testing to verify our frontend code, which resulted in 17 passed and 4 failed test suites out of 21 total, and 35 passed and 4 failed individual tests out of 39 total as shown in image. The 4 failing tests belong to features that are still in production, so they are expected to fail until that development wraps up. 
 
 As seen in image, our current code coverage metrics are 57.39% for Statements, 43.63% for Branches, 56.41% for Functions, and 57.9% for Lines, with the uncovered pages currently being fixed and refactored. For the core features that are completely finished like the components tested in BlueprintPanel.test.tsx, CraftingQueue.test.tsx, and NewBlueprint.test.tsx, the tests thoroughly check that data loads correctly from the backend, form buttons lock when inputs are missing and errors are handled safely. 
 
-### Back End
+### Backend
 
 We wrote unit tests throughout the backend on the majority of our controllers that test the functions we use on our endpoints in isolation. Our test suite was built using xUnit and we used both EF’ In-Memory Database and Moq to run our testing. Our total line coverage is only about 30%, but that number is being dropped significantly by files made by Entity Framework Core and Dotnet. We have especially high coverage on all of our controllers. We wrote 77 tests in total, all passed. Every test we wrote follows the Arrange Act Assert pattern to ensure readability and predictability. The tests primarily validated the Controllers.
 
@@ -45,8 +45,8 @@ This included verifying standard CRUD operations, complex relational updates, an
 ![Insomnia](https://img.shields.io/badge/Insomnia-black?style=for-the-badge&logo=insomnia&logoColor=5849BE)
 
 In terms of testing we employed a suite of technologies in order to engage in various forms of both manual and automatic. This includes:
-- Jest and xUnit for
-- Swagger and Insomnia
+- Jest and xUnit for automated testing of our frontend and backend applications. These two technologies were also built in additions to react and dotnet.
+- Swagger and Insomnia for manual testing of backend during early to mid and later development accordingly.
 
 ## Technologies used
 
@@ -54,7 +54,7 @@ The following section outlines all the technologies used for development and dep
 
 ---
 
-### Front End Technologies
+### Frontend Technologies
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F.svg?style=for-the-badge&logo=node.js&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white)
@@ -76,7 +76,7 @@ The following section outlines all the technologies used for development and dep
 
 ---
 
-### Back End Technologies
+### Backend Technologies
 ![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 
@@ -92,10 +92,10 @@ The following section outlines all the technologies used for development and dep
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Electron.js](https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=Electron&logoColor=white)
 
-- **GitHub Actions** - 
-- **Docker** - 
-- **Render** - 
-- **Electron** - 
+- **GitHub Actions** - Github Actions provides us with with the ability to create workflows that to build and deploy our backend api to our Docker container.
+- **Docker** - Docker packages applications and their dependencies into standardized, isolated containers. These container could then be passed along to our Render server.
+- **Render** - Render is our cloud platform of choice which we used to build and deploy our api contained within our docker application.
+- **Electron** - Electron is used for the deployment of the web app in the form of a sharable executable application. 
 
 
 ## Acknowledgements
