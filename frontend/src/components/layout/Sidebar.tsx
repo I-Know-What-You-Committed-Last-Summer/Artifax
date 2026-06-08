@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 import dashboardIcon from '../../assets/images/dashboardIcon.png';
@@ -5,9 +6,9 @@ import inventoryIcon from '../../assets/images/inventoryIcon.png';
 import craftingIcon from '../../assets/images/craftingIcon.png';
 import analyticsIcon from '../../assets/images/analyticsIcon.png';
 import usersIcon from '../../assets/images/usersIcon.png';
-import { useCurrentUser } from '../../utils/currentUser';
-import { clearCurrentUser } from '../../utils/currentUser';
+import { useCurrentUser, clearCurrentUser } from '../../utils/currentUser';
 import { clearAuthToken } from '../../utils/authToken';
+import { getCurrentUserFromSession, CurrentUserResponse } from '../../services/authApi';
 
 const MENU_DATA = {
   logo: {
@@ -19,9 +20,9 @@ const MENU_DATA = {
     { id: 'dashboard', label: 'Dashboard', icon: dashboardIcon, path: '/dashboard' },
     { id: 'inventory', label: 'Inventory', icon: inventoryIcon, path: '/inventory' },
     { id: 'crafting', label: 'Crafting', icon: craftingIcon, path: '/crafting' },
-    { id: 'analytics', label: 'Analytics', icon: analyticsIcon, path: '/analytics' },
   ],
   adminMenu: [
+    { id: 'analytics', label: 'Analytics', icon: analyticsIcon, path: '/analytics', badge: 'Admin' },
     { id: 'users', label: 'Users', icon: usersIcon, path: '/users', badge: 'Admin' },
   ],
   user: {
@@ -60,8 +61,34 @@ function SidebarNavGroup({ title, items }) {
 function Sidebar() {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
-  const userName = currentUser?.name ?? MENU_DATA.user.name;
-  const userRole = currentUser?.role ?? MENU_DATA.user.role;
+  const [sessionUser, setSessionUser] = useState<CurrentUserResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const me = await getCurrentUserFromSession();
+        console.log('Sidebar /User/me response:', me);
+        if (mounted) {
+          setSessionUser(me);
+        }
+      } catch (error) {
+        console.log('Sidebar /User/me failed:', error);
+        // Ignore errors and fall back to stored user data if available.
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const userName =
+    sessionUser?.Username ?? sessionUser?.username ?? currentUser?.name ?? MENU_DATA.user.name;
+  const userRole =
+    sessionUser?.UserLevel ?? sessionUser?.userLevel ?? currentUser?.role ?? MENU_DATA.user.role;
+  const isAdmin = userRole?.toString().toLowerCase() === 'admin';
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -84,7 +111,7 @@ function Sidebar() {
 
       <div className="sidebar-content">
         <SidebarNavGroup title="MAIN MENU" items={MENU_DATA.mainMenu} />
-        <SidebarNavGroup title="ADMIN" items={MENU_DATA.adminMenu} />
+        {isAdmin && <SidebarNavGroup title="ADMIN" items={MENU_DATA.adminMenu} />}
       </div>
 
       <div className="sidebar-footer">

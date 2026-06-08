@@ -49,6 +49,9 @@ describe('Users page', () => {
         if (url === '/Branch') {
           return Promise.resolve({ data: branchList });
         }
+        if (url === '/User/me') {
+          return Promise.resolve({ data: { employeeEmail: 'admin.one@example.com' } });
+        }
         return Promise.reject(new Error(`Unexpected GET ${url}`));
       }),
       post: jest.fn(() => {

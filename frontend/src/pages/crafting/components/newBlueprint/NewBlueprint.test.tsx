@@ -2,17 +2,23 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import NewBlueprint from './newBlueprint';
 import { useApi } from '../../../../hooks';
+import { showSuccess, showError } from '../../../../utils/toast';
 
 jest.mock('../../../../hooks', () => ({
   useApi: jest.fn(),
 }));
+jest.mock('../../../../utils/toast', () => ({
+  showSuccess: jest.fn(),
+  showError: jest.fn(),
+}));
 
 describe('NewBlueprint', () => {
-  const originalAlert = window.alert;
   const mockedUseApi = useApi as jest.MockedFunction<typeof useApi>;
+  const mockedShowSuccess = showSuccess as jest.MockedFunction<typeof showSuccess>;
+  const mockedShowError = showError as jest.MockedFunction<typeof showError>;
 
   beforeEach(() => {
-    window.alert = jest.fn();
+    jest.clearAllMocks();
     mockedUseApi.mockReturnValue({
       get: jest.fn().mockResolvedValue({ data: [] }),
       post: jest.fn(),
@@ -21,7 +27,6 @@ describe('NewBlueprint', () => {
   });
 
   afterEach(() => {
-    window.alert = originalAlert;
     jest.restoreAllMocks();
   });
 
@@ -86,7 +91,7 @@ describe('NewBlueprint', () => {
     fireEvent.click(screen.getByRole('button', { name: /Add Blueprint/i }));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith(
+      expect(mockedShowSuccess).toHaveBeenCalledWith(
         'Blueprint created successfully. Returning to crafting page.'
       );
       expect(onCancel).toHaveBeenCalledTimes(1);
@@ -118,7 +123,7 @@ describe('NewBlueprint', () => {
     fireEvent.click(screen.getByRole('button', { name: /Add Blueprint/i }));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith(
+      expect(mockedShowError).toHaveBeenCalledWith(
         'Unable to save blueprint. Please fix the issue and try again.'
       );
       expect(onCancel).not.toHaveBeenCalled();

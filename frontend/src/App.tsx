@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 import AppLayout from './layouts/AppLayout';
 import CraftingPage from './pages/crafting/crafting';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -11,7 +13,6 @@ import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
 import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
 import { useEffect } from 'react';
-import axios from 'axios';
 import { useApi } from './hooks';
 
 function App() {
@@ -51,6 +52,17 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </BrowserRouter>
   );
 }

@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
 import FilterSelect from '../../../../components/common/FilterSelect';
 import { useApi } from '../../../../hooks';
+import { showError, showSuccess } from '../../../../utils/toast';
 import './newBlueprint.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 
@@ -90,7 +91,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     event.preventDefault();
     const validMaterials = materials.filter((material) => material.item.trim());
     if (!blueprintName.trim() || validMaterials.length === 0) {
-      alert('Please add a blueprint name and at least one material.');
+      showError('Please add a blueprint name and at least one material.');
       return;
     }
 
@@ -180,11 +181,11 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
         // optional inventory zero-quantity creation; ignore if branch data is unavailable
       }
 
-      alert('Blueprint created successfully. Returning to crafting page.');
+      showSuccess('Blueprint created successfully. Returning to crafting page.');
       onCancel();
     } catch (error) {
       console.error('Error creating blueprint:', error);
-      alert('Unable to save blueprint. Please fix the issue and try again.');
+      showError('Unable to save blueprint. Please fix the issue and try again.');
     } finally {
       setIsSubmitting(false);
     }

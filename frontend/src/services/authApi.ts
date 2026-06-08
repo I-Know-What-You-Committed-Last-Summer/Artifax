@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import apiClient from './apiClient';
+import { api } from '../hooks/useApi';
 
 export type LoginRequest = {
   email: string;
@@ -16,9 +16,12 @@ export type LoginEmployeeResponse = {
 };
 
 export type CurrentUserResponse = {
-  UserLevel: string;
+  UserLevel?: string;
   UserEmail?: string;
   Username?: string;
+  userLevel?: string;
+  userEmail?: string;
+  username?: string;
 };
 
 export type EmployeeDetailsResponse = {
@@ -58,7 +61,7 @@ async function withAxios<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
 
 export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeResponse> {
   return withAxios<LoginEmployeeResponse>(
-    apiClient.post('/User/employees/login', {
+    api.post('/User/employees/login', {
       email: payload.email,
       password: payload.password,
     }),
@@ -66,15 +69,19 @@ export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeRespo
 }
 
 export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
-  return withAxios<CurrentUserResponse>(apiClient.get('/User/me'));
+  return withAxios<CurrentUserResponse>(api.get('/User/me'));
 }
 
+// Variant that explicitly does not send cookies/credentials (frontend-only use)
+export function getCurrentUserFromSessionNoCreds(): Promise<CurrentUserResponse> {
+  return withAxios<CurrentUserResponse>(api.get('/User/me', { withCredentials: false }));
+}
 export function getEmployeeByEmail(email: string): Promise<EmployeeDetailsResponse> {
   return withAxios<EmployeeDetailsResponse>(
-    apiClient.get(`/User/employee/${encodeURIComponent(email)}`),
+    api.get(`/User/employee/${encodeURIComponent(email)}`),
   );
 }
 
 export function getBranches(): Promise<BranchDto[]> {
-  return withAxios<BranchDto[]>(apiClient.get('/Branch'));
+  return withAxios<BranchDto[]>(api.get('/Branch'));
 }

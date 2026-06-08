@@ -1,5 +1,27 @@
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from './craftingUtils';
-import apiClient, { toFetchStyleError } from './apiClient';
+import { api as apiClient } from '../hooks/useApi';
+import axios from 'axios';
+
+function toFetchStyleError(error: unknown): Error {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+
+    if (status != null) {
+      return new Error(`Fetch error ${status} ${statusText ?? ''}`.trim());
+    }
+
+    if (error.message) {
+      return new Error(error.message);
+    }
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error('Request failed');
+}
 
 type OrderItemDto = {
   itemName: string;
