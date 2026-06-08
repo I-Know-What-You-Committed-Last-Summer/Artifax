@@ -389,6 +389,7 @@ const Crafting: FC = () => {
       setSelectedBlueprintId('');
       setAmount(1);
       setActiveTab('active');
+      setBlueprintRefreshKey((prev) => prev + 1);
     } catch (error) {
       console.error('Error deleting blueprint:', error);
       showError('Unable to delete blueprint. Please try again.');
