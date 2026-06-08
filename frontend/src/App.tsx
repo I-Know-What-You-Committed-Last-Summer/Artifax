@@ -12,6 +12,7 @@ import OtpVerifyPage from './pages/auth/OtpVerifyPage';
 import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
 import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
+import ForceLogin from './forceLogin/ForceLogin';
 import { useEffect } from 'react';
 import { useApi } from './hooks';
 
@@ -37,6 +38,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
+      <ForceLogin />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/login/verify" element={<OtpVerifyPage />} />

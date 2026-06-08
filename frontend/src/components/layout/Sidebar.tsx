@@ -9,6 +9,7 @@ import usersIcon from '../../assets/images/usersIcon.png';
 import { useCurrentUser, clearCurrentUser } from '../../utils/currentUser';
 import { clearAuthToken } from '../../utils/authToken';
 import { getCurrentUserFromSession, CurrentUserResponse } from '../../services/authApi';
+import { useApi } from '../../hooks';
 
 const MENU_DATA = {
   logo: {
@@ -60,6 +61,7 @@ function SidebarNavGroup({ title, items }) {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const api = useApi();
   const currentUser = useCurrentUser();
   const [sessionUser, setSessionUser] = useState<CurrentUserResponse | null>(null);
 
@@ -90,7 +92,16 @@ function Sidebar() {
     sessionUser?.UserLevel ?? sessionUser?.userLevel ?? currentUser?.role ?? MENU_DATA.user.role;
   const isAdmin = userRole?.toString().toLowerCase() === 'admin';
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Call backend logout endpoint to clear server-side session
+    try {
+      await api.post('/User/logout');
+    } catch (error) {
+      // Continue with logout even if backend call fails
+      console.error('Logout API call failed:', error);
+    }
+
+    // Clear all client-side data
     sessionStorage.clear();
     clearAuthToken();
     clearCurrentUser();
