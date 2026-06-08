@@ -60,8 +60,13 @@ namespace Artifax.Controllers
                 OrderID = o.OrderID,
                 ItemID = o.ItemID,
                 ItemName = o.Item?.ItemName ?? "Unknown",
+                Quantity = o.Quantity,
+                CreatedDateTime = o.CreatedDateTime,
+                StartedDateTime = o.StartedDateTime,
+                CompletedDateTime = o.CompletedDateTime,
+                TotalTime = o.TotalTime,
+                TimeElapsed = o.TimeElapsed,
                 Status = o.Status,
-                OrderDateTime = o.OrderDateTime,
                 BranchID = o.BranchID,
                 EmployeeID = o.EmployeeID,
                 OrderExpedite = o.OrderExpedite
@@ -74,10 +79,7 @@ namespace Artifax.Controllers
         [HttpGet("{id}/history")]
         public async Task<IActionResult> GetOrderHistory(int id)
         {
-            var order = await context.Orders.FindAsync(id);
-            if (order == null)
-                return NotFound($"Order with ID {id} not found.");
-
+            // Note: We don't check if order exists - return history regardless (empty if order doesn't exist)
             var history = await context.OrderHistories
                 .Where(oh => oh.OrderID == id)
                 .Include(oh => oh.ChangedByEmployee)
@@ -116,8 +118,13 @@ namespace Artifax.Controllers
                 OrderID = order.OrderID,
                 ItemID = order.ItemID,
                 ItemName = order.Item?.ItemName ?? "Unknown",
+                Quantity = order.Quantity,
+                CreatedDateTime = order.CreatedDateTime,
+                StartedDateTime = order.StartedDateTime,
+                CompletedDateTime = order.CompletedDateTime,
+                TotalTime = order.TotalTime,
+                TimeElapsed = order.TimeElapsed,
                 Status = order.Status,
-                OrderDateTime = order.OrderDateTime,
                 BranchID = order.BranchID,
                 EmployeeID = order.EmployeeID,
                 OrderExpedite = order.OrderExpedite
@@ -131,7 +138,7 @@ namespace Artifax.Controllers
         #region CreateRoutes
 
         // POST /api/Order/create — Creates a new order with a single item
-        // Request body: { itemID, branchID, employeeID, orderExpedite }
+        // Request body: { itemID, quantity, branchID, employeeID, orderExpedite }
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto newOrderDto)
         {
@@ -150,15 +157,33 @@ namespace Artifax.Controllers
             if (employee == null)
                 return BadRequest($"Employee with ID {newOrderDto.EmployeeID} does not exist.");
 
+            // Calculate total production time
+            int totalTime = newOrderDto.Quantity * item.ProductionTime;
+
+            // Check if this branch already has 3 active orders
+            int activeOrderCount = await context.Orders
+                .Where(o => o.BranchID == newOrderDto.BranchID && o.Status == "Active")
+                .CountAsync();
+
+            string initialStatus = (activeOrderCount < 3 && newOrderDto.OrderExpedite) 
+                ? "Active" 
+                : "Queued";
+
+            DateTime? startedDateTime = initialStatus == "Active" ? DateTime.UtcNow : null;
+
             // Create the order
             var newOrder = new Order
             {
                 ItemID = newOrderDto.ItemID,
+                Quantity = newOrderDto.Quantity,
                 BranchID = newOrderDto.BranchID,
                 EmployeeID = newOrderDto.EmployeeID,
                 OrderExpedite = newOrderDto.OrderExpedite,
-                Status = "Pending",
-                OrderDateTime = DateTime.UtcNow
+                Status = initialStatus,
+                CreatedDateTime = DateTime.UtcNow,
+                StartedDateTime = startedDateTime,
+                TotalTime = totalTime,
+                TimeElapsed = 0
             };
 
             context.Orders.Add(newOrder);
@@ -175,8 +200,13 @@ namespace Artifax.Controllers
                 OrderID = created.OrderID,
                 ItemID = created.ItemID,
                 ItemName = created.Item?.ItemName ?? "Unknown",
+                Quantity = created.Quantity,
+                CreatedDateTime = created.CreatedDateTime,
+                StartedDateTime = created.StartedDateTime,
+                CompletedDateTime = created.CompletedDateTime,
+                TotalTime = created.TotalTime,
+                TimeElapsed = created.TimeElapsed,
                 Status = created.Status,
-                OrderDateTime = created.OrderDateTime,
                 BranchID = created.BranchID,
                 EmployeeID = created.EmployeeID,
                 OrderExpedite = created.OrderExpedite
@@ -200,9 +230,9 @@ namespace Artifax.Controllers
             if (existingOrder == null)
                 return NotFound($"Order with ID {id} not found.");
 
-            // Prevent updates to completed orders
-            if (existingOrder.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Cannot update a completed order.");
+            // Prevent updates to completed or cancelled orders
+            if (existingOrder.Status == "Complete" || existingOrder.Status == "Cancelled")
+                return BadRequest($"Cannot update an order with status '{existingOrder.Status}'.");
 
             // Validate the item exists
             var item = await context.Items.FindAsync(updatedOrderDto.ItemID);
@@ -221,9 +251,17 @@ namespace Artifax.Controllers
 
             // Update fields
             existingOrder.ItemID = updatedOrderDto.ItemID;
+            existingOrder.Quantity = updatedOrderDto.Quantity;
             existingOrder.BranchID = updatedOrderDto.BranchID;
             existingOrder.EmployeeID = updatedOrderDto.EmployeeID;
             existingOrder.OrderExpedite = updatedOrderDto.OrderExpedite;
+
+            // Recalculate TotalTime if Item or Quantity changed
+            var updatedItem = await context.Items.FindAsync(updatedOrderDto.ItemID);
+            if (updatedItem != null)
+            {
+                existingOrder.TotalTime = updatedOrderDto.Quantity * updatedItem.ProductionTime;
+            }
 
             await context.SaveChangesAsync();
 
@@ -238,8 +276,13 @@ namespace Artifax.Controllers
                 OrderID = result.OrderID,
                 ItemID = result.ItemID,
                 ItemName = result.Item?.ItemName ?? "Unknown",
+                Quantity = result.Quantity,
+                CreatedDateTime = result.CreatedDateTime,
+                StartedDateTime = result.StartedDateTime,
+                CompletedDateTime = result.CompletedDateTime,
+                TotalTime = result.TotalTime,
+                TimeElapsed = result.TimeElapsed,
                 Status = result.Status,
-                OrderDateTime = result.OrderDateTime,
                 BranchID = result.BranchID,
                 EmployeeID = result.EmployeeID,
                 OrderExpedite = result.OrderExpedite
@@ -248,7 +291,7 @@ namespace Artifax.Controllers
             return Ok(resultDto);
         }
 
-        // PUT /api/Order/{id}/status — Update order status
+        // PUT /api/Order/{id}/status — Update order status with validation and constraints
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] OrderStatusUpdateDto statusDto)
         {
@@ -256,7 +299,40 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
+            // Validate status value
+            var validStatuses = new[] { "Queued", "Active", "Paused", "Cancelled", "Complete" };
+            if (!validStatuses.Contains(statusDto.Status))
+                return BadRequest($"Invalid status '{statusDto.Status}'. Valid statuses are: Queued, Active, Paused, Cancelled, Complete.");
+
             string previousStatus = order.Status;
+
+            // Prevent transitions from Complete or Cancelled
+            if (previousStatus == "Complete" || previousStatus == "Cancelled")
+                return BadRequest($"Cannot transition from '{previousStatus}' status.");
+
+            // Check 3-active constraint when transitioning to Active
+            if (statusDto.Status == "Active" && previousStatus != "Active")
+            {
+                int activeOrderCount = await context.Orders
+                    .Where(o => o.BranchID == order.BranchID && o.Status == "Active")
+                    .CountAsync();
+
+                if (activeOrderCount >= 3)
+                    return BadRequest($"Cannot activate order. Branch {order.BranchID} already has 3 active orders.");
+            }
+
+            // Set StartedDateTime when transitioning to Active
+            if (statusDto.Status == "Active" && previousStatus != "Active")
+            {
+                order.StartedDateTime = DateTime.UtcNow;
+            }
+
+            // Set CompletedDateTime when transitioning to Complete
+            if (statusDto.Status == "Complete")
+            {
+                order.CompletedDateTime = DateTime.UtcNow;
+            }
+
             order.Status = statusDto.Status;
 
             // Create history entry
@@ -289,71 +365,14 @@ namespace Artifax.Controllers
             if (order == null)
                 return NotFound($"Order with ID {id} not found.");
 
-            // Prevent deletion of completed orders
-            if (order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Cannot delete a completed order.");
+            // Prevent deletion of completed or cancelled orders
+            if (order.Status == "Complete" || order.Status == "Cancelled")
+                return BadRequest($"Cannot delete an order with status '{order.Status}'.");
 
             context.Orders.Remove(order);
             await context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        #endregion
-
-        #region HistoryRoutes
-
-        // GET /api/Order/{id}/history — Returns the complete history of status changes for an order
-        [HttpGet("{id}/history")]
-        public async Task<IActionResult> GetOrderHistory(int id)
-        {
-            var order = await context.Orders.FindAsync(id);
-            if (order == null)
-                return NotFound($"Order with ID {id} not found.");
-
-            var history = await context.OrderHistories
-                .Where(oh => oh.OrderID == id)
-                .Include(oh => oh.ChangedByEmployee)
-                .OrderByDescending(oh => oh.ChangedDateTime)
-                .ToListAsync();
-
-            var historyDtos = history.Select(h => new OrderHistoryReadDto
-            {
-                OrderHistoryID = h.OrderHistoryID,
-                OrderID = h.OrderID,
-                PreviousStatus = h.PreviousStatus,
-                NewStatus = h.NewStatus,
-                ChangedDateTime = h.ChangedDateTime,
-                ChangedByEmployeeID = h.ChangedByEmployeeID,
-                ChangedByEmployeeName = h.ChangedByEmployee?.EmployeeName ?? "System",
-                ChangeReason = h.ChangeReason
-            }).ToList();
-
-            return Ok(historyDtos);
-        }
-
-        // GET /api/Order/history/all — Returns history for all orders
-        [HttpGet("history/all")]
-        public async Task<IActionResult> GetAllOrderHistory()
-        {
-            var history = await context.OrderHistories
-                .Include(oh => oh.ChangedByEmployee)
-                .OrderByDescending(oh => oh.ChangedDateTime)
-                .ToListAsync();
-
-            var historyDtos = history.Select(h => new OrderHistoryReadDto
-            {
-                OrderHistoryID = h.OrderHistoryID,
-                OrderID = h.OrderID,
-                PreviousStatus = h.PreviousStatus,
-                NewStatus = h.NewStatus,
-                ChangedDateTime = h.ChangedDateTime,
-                ChangedByEmployeeID = h.ChangedByEmployeeID,
-                ChangedByEmployeeName = h.ChangedByEmployee?.EmployeeName ?? "System",
-                ChangeReason = h.ChangeReason
-            }).ToList();
-
-            return Ok(historyDtos);
         }
 
         #endregion

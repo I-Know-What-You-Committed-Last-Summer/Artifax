@@ -7,6 +7,7 @@
   flex-direction: column;
   gap: 18px;
   margin-bottom: 20px;
+  max-width: 505px;
 }
 
 .blueprint-header {
@@ -192,4 +193,8 @@
   border-radius: 12px;
   color: #ef4444;
   font-size: 13px;
+}
+
+html[data-theme='synthwave'] .blueprint-error {
+  color: #ff6b9d;
 }

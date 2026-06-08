@@ -1,48 +1,100 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import AppLayout from './layouts/AppLayout';
-import PlaceholderPage from './pages/PlaceholderPage';
 import CraftingPage from './pages/crafting/crafting';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import InventoryPage from './pages/inventory/InventoryPage';
 import AnalyticsPage from './pages/analytics/analytics';
 import LoginPage from './pages/auth/LoginPage';
+import OtpVerifyPage from './pages/auth/OtpVerifyPage';
+import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
+import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
-import { useEffect } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { clearCurrentUser, setCurrentUser } from './utils/currentUser';
+import { clearAuthToken } from './utils/authToken';
+import { getCurrentUserFromSession } from './services/authApi';
 
-function App() {
-  // Backend integration commented out - requires .NET SDK installation
-  // TODO: Uncomment when backend is running on localhost:5253
+type RequireSessionProps = {
+  children: JSX.Element;
+};
 
+function RequireSession({ children }: RequireSessionProps) {
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    
-    const url = 'http://localhost:5253/api/Item/item';
-    
-    const fetchData = (async () => {
+    let mounted = true;
+
+    const checkSession = async () => {
       try {
-        const result = await axios.get(url);
-        console.log(result);
-        return result;
-      } catch (error) {
-        console.log("Error:"+error);
+        const sessionUser = await getCurrentUserFromSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        setCurrentUser({
+          name: sessionUser.Username || sessionUser.UserEmail || 'User',
+          role: sessionUser.UserLevel || 'Employee',
+          email: sessionUser.UserEmail,
+        });
+        setIsAuthenticated(true);
+      } catch {
+        if (!mounted) {
+          return;
+        }
+
+        clearAuthToken();
+        clearCurrentUser();
+        setIsAuthenticated(false);
+      } finally {
+        if (mounted) {
+          setIsChecking(false);
+        }
       }
-    })();
-    
+    };
+
+    void checkSession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (isChecking) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<AppLayout />}>
+        <Route path="/login/verify" element={<OtpVerifyPage />} />
+        <Route path="/login/verify-success" element={<OtpVerifySuccessPage />} />
+        <Route path="/login/verify-failed" element={<OtpVerifyFailedPage />} />
+        <Route
+          path="/"
+          element={(
+            <RequireSession>
+              <AppLayout />
+            </RequireSession>
+          )}
+        >
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="crafting" element={<CraftingPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="users" element={<UsersPage />} />
-          <Route path="profile" element={<PlaceholderPage title="Profile" />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>

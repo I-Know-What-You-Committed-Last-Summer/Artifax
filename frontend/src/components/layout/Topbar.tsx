@@ -166,11 +166,8 @@ function Topbar() {
           <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
             Warehouse A
           </button>
-          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
-            Alerts
-          </button>
           <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
-            {currentUser?.name ?? 'D. Dastardly'}
+            {currentUser?.name ?? 'User'}
           </div>
         </div>
       </div>

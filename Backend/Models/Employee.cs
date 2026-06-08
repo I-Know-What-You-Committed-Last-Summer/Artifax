@@ -6,6 +6,13 @@ namespace Artifax.Models
         public string EmployeeEmail { get; set; }
         public string EmployeeName { get; set; }
         public string EmployeePasswordHash { get; set; }
+        public string TotpSecret { get; set; }
+        public bool TotpEnabled { get; set; }
+        public string RecoveryCodesHash { get; set; }
+        public int FailedLoginAttempts { get; set; }
+        public DateTime? LockedUntilUtc { get; set; }
+        public int FailedOtpAttempts { get; set; }
+        public DateTime? OtpLockedUntilUtc { get; set; }
         public int BranchId { get; set; }
         public string EmployeeLevel { get; set; }
         public Branch? Branch { get; set; }

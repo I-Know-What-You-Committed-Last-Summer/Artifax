@@ -11,9 +11,9 @@
 
 .graph-card-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 18px;
   align-items: flex-start;
-  gap: 16px;
 }
 
 .graph-card-header h3 {
@@ -27,8 +27,58 @@
   font-size: 0.95rem;
 }
 
-.graph-select {
-  min-width: 160px;
+.graph-card-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.graph-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.graph-filter-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.graph-select-shell {
+  width: 100%;
+}
+
+.graph-card-bottom-controls {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.graph-filter-search {
+  flex: 1 1 60%;
+  min-width: 220px;
+}
+
+.graph-filter-range {
+  flex: 0 0 180px;
+  min-width: 170px;
+}
+
+.graph-search-shell {
+  position: relative;
+  width: 100%;
+}
+
+.graph-search-input {
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--surface);
@@ -37,8 +87,33 @@
   font-size: 0.95rem;
 }
 
-.graph-select-shell {
-  width: 190px;
+.graph-search-options {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-top: 8px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.graph-search-option {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.graph-search-option:hover,
+.graph-search-option:focus {
+  background: rgba(60, 99, 255, 0.08);
 }
 
 .graph-figure {

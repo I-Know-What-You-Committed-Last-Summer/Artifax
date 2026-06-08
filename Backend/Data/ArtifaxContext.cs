@@ -30,6 +30,23 @@ namespace Artifax.Data
             modelBuilder.Entity<Order>().HasOne(o => o.Item).WithMany().HasForeignKey(o => o.ItemID);
             modelBuilder.Entity<Order>().HasOne(o => o.Employee).WithMany().HasForeignKey(o => o.EmployeeID);
             
+            // Order column configurations
+            modelBuilder.Entity<Order>()
+                .Property(o => o.Status)
+                .HasDefaultValue("Queued");
+            
+            modelBuilder.Entity<Order>()
+                .Property(o => o.OrderExpedite)
+                .HasDefaultValue(false);
+            
+            modelBuilder.Entity<Order>()
+                .Property(o => o.TimeElapsed)
+                .HasDefaultValue(0);
+            
+            modelBuilder.Entity<Order>()
+                .Property(o => o.TotalTime)
+                .HasDefaultValue(0);
+            
             // OrderHistory relationships
             modelBuilder.Entity<OrderHistory>().HasOne(oh => oh.Order).WithMany(o => o.OrderHistories).HasForeignKey(oh => oh.OrderID);
             modelBuilder.Entity<OrderHistory>().HasOne(oh => oh.ChangedByEmployee).WithMany().HasForeignKey(oh => oh.ChangedByEmployeeID).IsRequired(false);

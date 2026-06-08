@@ -1,4 +1,6 @@
 using Artifax.Data;
+using Artifax.Models;
+using Artifax.Services;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +34,7 @@ builder.Services.AddOpenApi();
 
 // Prefer configured connection string (appsettings/user-secrets), then fall back to DATABASE_* vars.
 var connectionString = builder.Configuration.GetConnectionString("ArtifaxDatabase");
+Console.WriteLine($"[CRITICAL DEBUG] String starts with: '{connectionString?.Substring(0, Math.Min(connectionString?.Length ?? 0, 10))}'");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -53,6 +56,9 @@ if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Ho
 // (debug prefix removed)
 
 builder.Services.AddDbContext<ArtifaxContext>(options => options.UseNpgsql(connectionString));
+
+// Register the background service for order time tracking
+builder.Services.AddHostedService<OrderTimeTrackingService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(option => {
@@ -78,7 +84,84 @@ using (var scope = app.Services.CreateScope())
 
         CREATE INDEX IF NOT EXISTS ""IX_OrderItems_ItemID"" ON ""OrderItems"" (""ItemID"");
         CREATE INDEX IF NOT EXISTS ""IX_OrderItems_OrderID"" ON ""OrderItems"" (""OrderID"");
+
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""TotpSecret"" text;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""TotpEnabled"" boolean NOT NULL DEFAULT false;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""RecoveryCodesHash"" text;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""FailedLoginAttempts"" integer NOT NULL DEFAULT 0;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""LockedUntilUtc"" timestamp with time zone;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""FailedOtpAttempts"" integer NOT NULL DEFAULT 0;
+        ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""OtpLockedUntilUtc"" timestamp with time zone;
     ");
+
+    dbContext.Database.ExecuteSqlRaw(@"
+        SELECT setval(
+            pg_get_serial_sequence('""Branches""', 'BranchID'),
+            COALESCE((SELECT MAX(""BranchID"") FROM ""Branches""), 1),
+            true
+        );
+
+        SELECT setval(
+            pg_get_serial_sequence('""Employees""', 'EmployeeId'),
+            COALESCE((SELECT MAX(""EmployeeId"") FROM ""Employees""), 1),
+            true
+        );
+    ");
+
+    if (app.Environment.IsDevelopment())
+    {
+        const string defaultBranchName = "Main Branch";
+        const string defaultAdminEmail = "admin@artifax.local";
+        const string defaultAdminName = "Dev Admin";
+        const string defaultAdminPassword = "Artifax123!";
+        const string defaultEmployeeEmail = "employee@artifax.local";
+        const string defaultEmployeeName = "Dev Employee";
+        const string defaultEmployeePassword = "Artifax123!";
+
+        var defaultBranch = await dbContext.Branches.FirstOrDefaultAsync(branch => branch.BranchName == defaultBranchName);
+        if (defaultBranch == null)
+        {
+            defaultBranch = new Branch { BranchName = defaultBranchName };
+            dbContext.Branches.Add(defaultBranch);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var defaultAdmin = await dbContext.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == defaultAdminEmail);
+        if (defaultAdmin == null)
+        {
+            defaultAdmin = new Employee
+            {
+                BranchId = defaultBranch.BranchID,
+                EmployeeEmail = defaultAdminEmail,
+                EmployeeName = defaultAdminName,
+                EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(defaultAdminPassword),
+                EmployeeLevel = "Admin",
+                TotpEnabled = false,
+            };
+
+            dbContext.Employees.Add(defaultAdmin);
+            await dbContext.SaveChangesAsync();
+            Console.WriteLine($"[DEV SEED] Created default admin {defaultAdminEmail} with password {defaultAdminPassword}");
+        }
+
+        var defaultEmployee = await dbContext.Employees.FirstOrDefaultAsync(employee => employee.EmployeeEmail == defaultEmployeeEmail);
+        if (defaultEmployee == null)
+        {
+            defaultEmployee = new Employee
+            {
+                BranchId = defaultBranch.BranchID,
+                EmployeeEmail = defaultEmployeeEmail,
+                EmployeeName = defaultEmployeeName,
+                EmployeePasswordHash = BCrypt.Net.BCrypt.HashPassword(defaultEmployeePassword),
+                EmployeeLevel = "Employee",
+                TotpEnabled = false,
+            };
+
+            dbContext.Employees.Add(defaultEmployee);
+            await dbContext.SaveChangesAsync();
+            Console.WriteLine($"[DEV SEED] Created default employee {defaultEmployeeEmail} with password {defaultEmployeePassword}");
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -94,6 +177,37 @@ app.UseCors("AllowReactApp");
 app.UseHttpsRedirection();
 
 app.UseSession();
+
+app.Use(async (context, next) =>
+{
+    if (HttpMethods.IsOptions(context.Request.Method))
+    {
+        await next();
+        return;
+    }
+
+    var path = context.Request.Path;
+    var isApiRequest = path.StartsWithSegments("/api");
+    var isAuthExempt =
+        path.StartsWithSegments("/api/User/employees/login") ||
+        path.StartsWithSegments("/api/User/employees/login/verify") ||
+        path.StartsWithSegments("/api/User/seed/admin") ||
+        path.StartsWithSegments("/api/User/seed/employee") ||
+        path.StartsWithSegments("/api/User/dev");
+
+    if (isApiRequest && !isAuthExempt)
+    {
+        var userLevel = context.Session.GetString("UserLevel");
+        if (string.IsNullOrWhiteSpace(userLevel))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new { message = "Authentication required." });
+            return;
+        }
+    }
+
+    await next();
+});
 
 app.UseAuthorization();
 

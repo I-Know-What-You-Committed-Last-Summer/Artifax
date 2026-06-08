@@ -1,21 +1,142 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import './craftingQueue.css';
-import { craftingData, CraftingItem } from '../craftingData';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import { useApi } from '../../../../hooks';
+import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
 const itemsPerPage = 3;
 
-const CraftingQueue: FC = () => {
-  const [page, setPage] = useState<number>(1);
-  const activeItems: CraftingItem[] = craftingData.filter((item) => item.status !== 'Queued');
-  const queuedItems: CraftingItem[] = craftingData.filter((item) => item.status === 'Queued');
-  const activeCount = activeItems.length;
-  const totalPages = Math.max(1, Math.ceil(queuedItems.length / itemsPerPage));
+type OrderDto = {
+  orderID: number;
+  itemID: number;
+  itemName: string;
+  quantity: number;
+  createdDateTime: string;
+  totalTime?: number;
+  timeElapsed?: number;
+  status: string;
+  employeeID?: number;
+  orderExpedite?: boolean;
+};
 
-  const pageItems = queuedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+type EmployeeDto = {
+  employeeId: number;
+  employeeName: string;
+};
+
+type CraftingJob = {
+  orderID: number;
+  itemID: number;
+  name: string;
+  qty: number;
+  status: QueueJobStatus;
+  progress: number;
+  timeLeft: string;
+  materials: string[];
+  employeeName: string;
+  createdDateTime: string;
+};
+
+const CraftingQueue: FC = () => {
+  const api = useApi();
+  const [page, setPage] = useState<number>(1);
+  const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
+  const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
+
+  useEffect(() => {
+    const REFRESH_INTERVAL_MS = 60_000;
+    let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const loadJobs = async (): Promise<void> => {
+      try {
+        const [ordersResponse, userResponse] = await Promise.all([
+          api.get<OrderDto[]>('/Order'),
+          api.get<EmployeeDto[]>('/User'),
+        ]);
+
+        const employees = userResponse.data.reduce<Record<number, string>>((map, user) => {
+          if (user.employeeId != null) {
+            map[user.employeeId] = user.employeeName;
+          }
+          return map;
+        }, {});
+
+        const orders = ordersResponse.data
+          .slice()
+          .sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime())
+          .filter((order) => {
+            const status = normalizeQueueStatus(order.status);
+            return status === 'Queued' || status === 'Active' || status === 'Paused';
+          });
+
+        const jobs = orders.map((order) => {
+          const expedited = order.orderExpedite === true;
+          const status = normalizeQueueStatus(order.status) ?? 'Queued';
+
+          return {
+            orderID: order.orderID,
+            itemID: order.itemID,
+            name: order.itemName || `Order ${order.orderID}`,
+            qty: order.quantity ?? 1,
+            status,
+            progress: calculateProgress(order.totalTime, order.timeElapsed, expedited),
+            timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed, expedited),
+            materials: [order.itemName || `Item ${order.itemID}`],
+            employeeName: employees[order.employeeID ?? 0] ?? 'Unknown Employee',
+            createdDateTime: order.createdDateTime,
+          };
+        });
+
+        if (!isMounted) return;
+
+        setActiveJobs(jobs.filter((job) => job.status === 'Active' || job.status === 'Paused'));
+        setQueuedJobs(jobs.filter((job) => job.status === 'Queued'));
+      } catch (error) {
+        console.error('Failed to load crafting queue orders', error);
+      }
+    };
+
+    const refreshJobs = async (): Promise<void> => {
+      if (!isMounted) return;
+      await loadJobs();
+    };
+
+    const listener = (): void => {
+      if (isMounted) {
+        void refreshJobs();
+      }
+    };
+
+    void refreshJobs();
+    intervalId = setInterval(() => {
+      void refreshJobs();
+    }, REFRESH_INTERVAL_MS);
+
+    window.addEventListener('crafting-order-updated', listener);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      window.removeEventListener('crafting-order-updated', listener);
+    };
+  }, [api]);
+
+  const queuedPageCount = Math.ceil(queuedJobs.length / itemsPerPage);
+  const totalPages = queuedPageCount > 0 ? queuedPageCount + 1 : 1;
+  const pageItems = page > 1
+    ? queuedJobs.slice((page - 2) * itemsPerPage, (page - 1) * itemsPerPage)
+    : [];
+  const activeCount = activeJobs.length;
 
   const handlePrevious = (): void => setPage((prev) => Math.max(1, prev - 1));
   const handleNext = (): void => setPage((prev) => Math.min(totalPages, prev + 1));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   return (
     <div className="queue-sidebar">
@@ -27,55 +148,57 @@ const CraftingQueue: FC = () => {
         <p className="limit-note">Maximum 3 active crafts per location</p>
       </div>
 
-      <div className="queue-section">
-        <h4 className="queue-section-title">Active Crafts</h4>
-        {activeItems.length === 0 && <p className="empty-state">No active crafts right now.</p>}
-        {activeItems.map((item) => (
-          <div key={item.id} className="queue-item">
-            <div className="queue-item-header">
-              <div className="item-info">
-                <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
-                <div>
-                  <h4>{item.name} x{item.qty}</h4>
-                  <p>{item.status} · {item.location || 'Warehouse A'}</p>
+      {page === 1 ? (
+        <div className="queue-section">
+          <h4 className="queue-section-title">Active Crafts</h4>
+          {activeJobs.length === 0 && <p className="empty-state">No active crafts right now.</p>}
+          {activeJobs.map((item) => (
+            <div key={item.orderID} className="queue-item">
+              <div className="queue-item-header">
+                <div className="item-info">
+                  <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
+                  <div>
+                    <h4>{item.name} x{item.qty}</h4>
+                    <p>{item.status} · {item.employeeName}</p>
+                  </div>
                 </div>
+                <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
+                  {item.status}
+                </span>
               </div>
-              <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
-                {item.status}
-              </span>
+              <div className="waiting-status">
+                <span>{item.progress}% complete</span>
+                <span>{item.timeLeft}</span>
+              </div>
             </div>
-            <div className="waiting-status">
-              <span>{item.progress}% complete</span>
-              <span>{item.timeLeft}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="queue-section">
-        <h4 className="queue-section-title">Up Next</h4>
-        {pageItems.length === 0 && <p className="empty-state">No queued items ready yet.</p>}
-        {pageItems.map((item) => (
-          <div key={item.id} className="queue-item">
-            <div className="queue-item-header">
-              <div className="item-info">
-                <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
-                <div>
-                  <h4>{item.name} x{item.qty}</h4>
-                  <p>Queued · {item.location || 'Warehouse A'}</p>
+          ))}
+        </div>
+      ) : (
+        <div className="queue-section">
+          <h4 className="queue-section-title">Up Next</h4>
+          {pageItems.length === 0 && <p className="empty-state">No queued items ready yet.</p>}
+          {pageItems.map((item) => (
+            <div key={item.orderID} className="queue-item">
+              <div className="queue-item-header">
+                <div className="item-info">
+                  <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
+                  <div>
+                    <h4>{item.name} x{item.qty}</h4>
+                    <p>Queued · Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdDateTime))}</p>
+                  </div>
                 </div>
+                <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
+                  {item.status}
+                </span>
               </div>
-              <span className={`queue-badge ${item.status.toLowerCase().replace(' ', '-')}`}>
-                {item.status}
-              </span>
+              <div className="waiting-status">
+                <span>Waiting to start</span>
+                <span>{item.timeLeft}</span>
+              </div>
             </div>
-            <div className="waiting-status">
-              <span>Waiting to start</span>
-              <span>{item.timeLeft}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="queue-footer">
         <button type="button" onClick={handlePrevious} disabled={page === 1}>Prev</button>

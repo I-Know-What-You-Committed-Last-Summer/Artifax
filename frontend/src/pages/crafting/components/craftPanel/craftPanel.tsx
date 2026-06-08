@@ -5,12 +5,20 @@ import { Blueprint } from '../craftingData';
 interface CraftPanelProps {
   blueprint: Blueprint;
   amount: number;
+  orderExpedite: boolean;
   onAmountChange: (amount: number) => void;
-  onCraft: () => void;
+  onToggleExpedite: () => void;
+  onCraft: () => Promise<void>;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, onCraft }) => {
+const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, orderExpedite, onAmountChange, onToggleExpedite, onCraft, onEdit, onDelete }) => {
   const canCraft = blueprint.materials.every(item => item.have >= item.need * amount);
+  const rawCraftTime = blueprint.productionTime ?? blueprint.craft;
+  const timeUnit = blueprint.productionTime != null ? 'min' : 'min';
+  const effectiveTime = Math.ceil(rawCraftTime * amount / (orderExpedite ? 2 : 1));
+  const craftTimeText = `Estimated craft time: ${effectiveTime}${timeUnit}${orderExpedite ? ' (expedited)' : ''}`;
 
   const handleDecrement = (): void => {
     onAmountChange(Math.max(1, amount - 1));
@@ -56,6 +64,19 @@ const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, on
             />
             <button type="button" className="amount-btn" onClick={handleIncrement}>+</button>
           </div>
+          <div className="expedite-control">
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={orderExpedite}
+                onChange={() => { onToggleExpedite(); }}
+                aria-label="Order Expedite"
+              />
+              <span className="slider" />
+            </label>
+            <span className="expedite-label">Order Expedite</span>
+          </div>
+          <p className="craft-time-estimate">{craftTimeText}</p>
         </div>
         <div className="craft-summary">
           <span className="summary-label">Have</span>
@@ -86,11 +107,19 @@ const CraftPanel: FC<CraftPanelProps> = ({ blueprint, amount, onAmountChange, on
       <button
         type="button"
         className={`craft-action-btn ${canCraft ? '' : 'disabled'}`}
-        onClick={onCraft}
+        onClick={() => { onCraft(); }}
         disabled={!canCraft}
       >
         Craft Item
       </button>
+      <div className="craft-additional-actions">
+        <button type="button" className="craft-secondary-btn" onClick={onEdit}>
+          Edit Blueprint
+        </button>
+        <button type="button" className="craft-secondary-btn craft-delete-btn" onClick={onDelete}>
+          Delete Blueprint
+        </button>
+      </div>
       <p className="craft-hint">Button enabled when all materials are available.</p>
     </div>
   );

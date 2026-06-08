@@ -109,6 +109,9 @@ namespace Backend.Migrations
                     b.Property<string>("ItemName")
                         .HasColumnType("text");
 
+                    b.Property<float?>("Price")
+                        .HasColumnType("real");
+
                     b.Property<int>("ProductionTime")
                         .HasColumnType("integer");
 
@@ -154,21 +157,56 @@ namespace Backend.Migrations
                     b.Property<int>("BranchID")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("CompletedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("EmployeeID")
                         .HasColumnType("integer");
 
                     b.Property<int>("ItemID")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("OrderDateTime")
+                    b.Property<bool>("OrderExpedite")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedDateTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("OrderExpedite")
-                        .HasColumnType("boolean");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedDateTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Queued");
+
+                    b.Property<int>("TimeElapsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("TotalTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("TimeElapsed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalTime")
+                        .HasColumnType("integer");
 
                     b.HasKey("OrderID");
 

@@ -4,6 +4,7 @@ import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
 import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
+import { useCurrentUser } from '../../utils/currentUser';
 import { useApi } from '../../hooks/useApi';
 
 type User = {
@@ -17,6 +18,8 @@ type User = {
 
 const Users: React.FC = () => {
   const currentDate = getCurrentDateSAST();
+  const currentUser = useCurrentUser();
+  const isAdmin = currentUser?.role === 'Admin';
   const api = useApi();
   // `api` is an axios instance configured in `src/hooks/useApi.ts`.
   // All backend HTTP calls in this file use `api` and the base URL `http://localhost:5253/api`.
@@ -48,7 +51,12 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const [usersResp, branchesResp] = await Promise.all([api.get('/User'), api.get('/Branch')]);
+      const [adminsResp, employeesResp, branchesResp] = await Promise.all([
+        api.get('/User/admins'),
+        api.get('/User/employees'),
+        api.get('/Branch'),
+      ]);
+
       const branches = branchesResp.data ?? [];
       const map: Record<number, string> = {};
       branches.forEach((b: any) => {
@@ -58,23 +66,25 @@ const Users: React.FC = () => {
       });
       setBranchMap(map);
 
-      const usersData = (usersResp.data ?? []).map((e: any) => {
+      const makeUser = (e: any, role: 'Admin' | 'Employee') => {
         const id = e.employeeId ?? e.EmployeeId ?? e.EmployeeID ?? 0;
         const name = e.employeeName ?? e.EmployeeName ?? e.employeeName ?? '';
         const email = e.employeeEmail ?? e.EmployeeEmail ?? '';
         const branchId = e.branchId ?? e.BranchId ?? e.BranchID ?? 0;
-        const role = e.employeeLevel ?? e.EmployeeLevel ?? 'Employee';
         return {
           id,
           name,
           email,
           branch: String(branchId),
-          role: role === 'Admin' ? 'Admin' : 'Staff',
+          role,
           status: 'Active',
         } as User;
-      });
+      };
 
-      setUsers(usersData);
+      const adminUsers = (adminsResp.data ?? []).map((e: any) => makeUser(e, 'Admin'));
+      const employeeUsers = (employeesResp.data ?? []).map((e: any) => makeUser(e, 'Employee'));
+
+      setUsers([...adminUsers, ...employeeUsers]);
     } catch (err) {
       console.error('Fetch users failed', err);
     } finally {
@@ -143,6 +153,13 @@ const Users: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!isAdmin) {
+      setUsers([]);
+      setBranchMap({});
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
     if (usersFetchedRef.current) return; // already attempted fetch
     usersFetchedRef.current = true;
@@ -166,7 +183,25 @@ const Users: React.FC = () => {
     })();
 
     return () => { mounted = false; clearTimeout(timeoutId); };
-  }, [api]);
+  }, [api, isAdmin]);
+
+  if (!isAdmin) {
+    return (
+      <div className="page-content">
+        <div className="space-y-4 sm:space-y-5">
+          <PageHeader
+            title="User Management"
+            subtitle={`View-only access · ${currentDate}`}
+          />
+
+          <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted">
+            <p className="text-base font-semibold text-text">Employee access only</p>
+            <p className="mt-2">You do not have permission to create, edit, or delete users.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-content">
@@ -191,6 +226,7 @@ const Users: React.FC = () => {
               loading={loading}
               onSelectUser={handleSelectUser}
               onCreateNewUser={handleCreateNewUser}
+              branchMap={branchMap}
             />
           </div>
         </div>

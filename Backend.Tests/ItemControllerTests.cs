@@ -674,5 +674,55 @@ namespace Backend.Tests
             // ASSERT
             Assert.IsType<NotFoundResult>(result); 
         }
+        [Fact]
+        public async Task UpdateQuantityByKeys_ExistingCapacityPassed_UpdatesQuantityAndReturnsNoContent()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            
+            var existingCapacity = new BranchItemCapacity 
+            { 
+                BranchItemCapacityID = 1, 
+                BranchID = 7, 
+                ItemID = 707, 
+                ItemQuantity = 10 
+            };
+            context.BranchItemCapacities.Add(existingCapacity);
+            await context.SaveChangesAsync();
+
+            var controller = new ItemController(context);
+            int newQuantity = 85;
+
+            // ACT
+            var result = await controller.UpdateBICQuantity(7, 707, newQuantity);
+
+            // ASSERT
+            Assert.IsType<NoContentResult>(result);
+            var updatedCapacity = await context.BranchItemCapacities.FindAsync(1);
+            Assert.Equal(newQuantity, updatedCapacity.ItemQuantity);
+        }
+
+        [Fact]
+        public async Task UpdateQuantityByKeys_NonExistingCapacityPassed_ReturnsNotFoundObjectResult()
+        {
+            // ARRANGE
+            var options = GetDbContextOptions();
+            using var context = new ArtifaxContext(options);
+            var existingCapacity = new BranchItemCapacity 
+            { 
+                BranchItemCapacityID = 1, 
+                BranchID = 1, 
+                ItemID = 1, 
+                ItemQuantity = 10 
+            };
+            context.BranchItemCapacities.Add(existingCapacity);
+            await context.SaveChangesAsync();
+            var controller = new ItemController(context);
+            // ACT
+            var result = await controller.UpdateBICQuantity(99, 999, 50);
+            // ASSERT
+            Assert.IsType<NotFoundObjectResult>(result);
+        }
     }
 }

@@ -1,13 +1,14 @@
-import React, { FC, useState, ReactNode } from 'react';
+import React, { FC, useEffect, useMemo, useState, ReactNode } from 'react';
 import './stats.css';
 import recipesIcon from '../../../../assets/images/recipesIcon.png';
 import activeJodIcon from '../../../../assets/images/activeJodIcon.png';
 import completedIcon from '../../../../assets/images/completeIcon.png';
 import blockedIcon from '../../../../assets/images/blockedIcon.png';
+import { useApi } from '../../../../hooks/useApi';
 
 interface StatItem {
   label: string;
-  value: number;
+  value: number | string;
   icon: ReactNode;
 }
 
@@ -15,30 +16,64 @@ interface TiltsState {
   [key: number]: string;
 }
 
-const statsData: StatItem[] = [
-  {
-    label: "Recipes",
-    value: 8,
-    icon: <img src={recipesIcon} alt="Recipes" />
-  },
-  {
-    label: "Active Jobs",
-    value: 3,
-    icon: <img src={activeJodIcon} alt="Active Jobs" />
-  },
-  {
-    label: "Completed",
-    value: 41,
-    icon: <img src={completedIcon} alt="Completed" />
-  },
-  {
-    label: "Blocked",
-    value: 2,
-    icon: <img src={blockedIcon} alt="Blocked" />
-  }
-];
-
 const StatsGrid: FC = () => {
+  const api = useApi();
+  const [recipeCount, setRecipeCount] = useState<number>(0);
+  const [activeJobs, setActiveJobs] = useState<number>(0);
+  const [completedJobs, setCompletedJobs] = useState<number>(0);
+  const [cancelledJobs, setCancelledJobs] = useState<number>(0);
+
+  useEffect(() => {
+    const loadStats = async (): Promise<void> => {
+      try {
+        const [blueprintsResponse, ordersResponse] = await Promise.all([
+          api.get<any[]>('/Item/item/allItemBlueprints'),
+          api.get<any[]>('/Order'),
+        ]);
+
+        const blueprints = blueprintsResponse.data ?? [];
+        const orders = ordersResponse.data ?? [];
+
+        setRecipeCount(Array.isArray(blueprints) ? blueprints.length : 0);
+
+        const normalizedStatuses = orders.map((order) => String(order.status ?? '').trim().toLowerCase());
+        setActiveJobs(normalizedStatuses.filter((status) => status === 'active').length);
+        setCompletedJobs(normalizedStatuses.filter((status) => status === 'complete' || status === 'completed').length);
+        setCancelledJobs(normalizedStatuses.filter((status) => status === 'cancelled' || status === 'canceled').length);
+      } catch (error) {
+        console.error('Failed to load crafting stats', error);
+      }
+    };
+
+    void loadStats();
+  }, [api]);
+
+  const statsData: StatItem[] = useMemo(
+    () => [
+      {
+        label: 'Recipes',
+        value: recipeCount,
+        icon: <img src={recipesIcon} alt="Recipes" />,
+      },
+      {
+        label: 'Active Jobs',
+        value: activeJobs,
+        icon: <img src={activeJodIcon} alt="Active Jobs" />,
+      },
+      {
+        label: 'Completed',
+        value: completedJobs,
+        icon: <img src={completedIcon} alt="Completed" />,
+      },
+      {
+        label: 'Cancelled',
+        value: cancelledJobs,
+        icon: <img src={blockedIcon} alt="Cancelled" />,
+      },
+    ],
+    [recipeCount, activeJobs, completedJobs, cancelledJobs],
+  );
+
   const [tilts, setTilts] = useState<TiltsState>({});
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number): void => {

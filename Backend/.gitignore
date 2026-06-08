@@ -1,4 +1,5 @@
 .env
+/database
 /bin
 /obj
 bin

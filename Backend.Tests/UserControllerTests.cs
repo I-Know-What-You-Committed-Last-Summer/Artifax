@@ -10,11 +10,26 @@ using System.Threading.Tasks;
 using Moq;
 using Microsoft.AspNetCore.Http;
 using System.Text;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Backend.Tests
 {
     public class UserControllerTests
     {
+        #region classes
+            class FakeSession : ISession {
+                private readonly Dictionary<string, byte[]> _sessionStorage = new();
+                public bool IsAvailable => true;
+                public string Id => Guid.NewGuid().ToString();
+                public IEnumerable<string> Keys => _sessionStorage.Keys;
+                public void Set(string key, byte[] value) => _sessionStorage[key] = value;
+                public bool TryGetValue(string key, out byte[] value) => _sessionStorage.TryGetValue(key, out value);
+                public void Remove(string key) => _sessionStorage.Remove(key);
+                public void Clear() => _sessionStorage.Clear();
+                public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+                public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+            }
+        #endregion
 
         Employee[] testEmployees = [
             new Employee {EmployeeEmail="employee1@artifax.com",EmployeeName="Emp1",EmployeePasswordHash="123", EmployeeLevel="Employee"}, 
@@ -23,6 +38,13 @@ namespace Backend.Tests
             new Employee {EmployeeEmail="admin1@artifax.com",EmployeeName="Ad1",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
             new Employee {EmployeeEmail="admin2@artifax.com",EmployeeName="Ad2",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
             new Employee {EmployeeEmail="admin3@artifax.com",EmployeeName="Ad3",EmployeePasswordHash="123", EmployeeLevel="Admin"}, 
+        ];
+
+        Branch[] testBranches = [
+            new Branch {BranchID=1,BranchName="Johannesburg" },
+            new Branch {BranchID=2,BranchName="Centurion" },
+            new Branch {BranchID=3,BranchName="Durban" },
+            new Branch {BranchID=4,BranchName="Head Office" },
         ];
 
         // Helper method to build an isolated, clean in-memory database context for every test
@@ -36,7 +58,7 @@ namespace Backend.Tests
         async Task<UserController> GetEmptyDummyController ()
         {
             var _options = GetDbContextOptions();
-            using var _context = new ArtifaxContext(_options);
+            var _context = new ArtifaxContext(_options);
 
             var _controller = new UserController(_context);
 
@@ -54,6 +76,11 @@ namespace Backend.Tests
                 _context.Employees.Add(testEmployee);
             }
 
+            foreach (var testBranch in testBranches)
+            {
+                _context.Branches.Add(testBranch);
+            }
+
             await _context.SaveChangesAsync();
             var _controller = new UserController(_context);
 
@@ -62,17 +89,11 @@ namespace Backend.Tests
 
         Mock<HttpContext> GetMockSession ()
         {
-            var sessionMock = new Mock<ISession>();
-            var sessionKey = "UserSessionKey";
-            byte[] sessionBytes = Encoding.UTF8.GetBytes("my-session-value");
+            var _fakeSession = new FakeSession();
 
-            // Setup the TryGetValue function to return a specific byte array and return true
-            sessionMock.Setup(s => s.TryGetValue(sessionKey, out sessionBytes))
-                       .Returns(true);
-
-            var httpContextMock = new Mock<HttpContext>();
-            httpContextMock.Setup(c => c.Session).Returns(sessionMock.Object);
-            return httpContextMock;
+            var _httpContextMock = new Mock<HttpContext>();
+            _httpContextMock.Setup(c => c.Session).Returns(_fakeSession);
+            return _httpContextMock;
         }
 
         [Fact]
@@ -80,6 +101,12 @@ namespace Backend.Tests
         {
             //ARRANGE
             var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
 
             //ACT
             var _result = await _controller.GetEmployeeByEmail("employee1@artifax.com");
@@ -95,17 +122,23 @@ namespace Backend.Tests
         {
             //ARRANGE
             var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
 
             //ACT
             var _result = await _controller.GetEmployeeByEmail("admin5@artifax.com");
 
             //ASSERT
             var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>>(_result);
-            Assert.IsNotType<EmployeeReadDto>(_actionResult.Value);
+            Assert.IsType<NotFoundResult>(_actionResult.Result);
         }
 
         [Fact]
-        public async Task TestName()
+        public async Task LoginEmployee_WhenEmployeeExist()
         {
             // Given
             var _controller = await GetPopulatedDummyController();
@@ -119,10 +152,74 @@ namespace Backend.Tests
             var _dto = await _controller.LoginEmployee(new (){Email="employee1@artifax.com", Password="123"});
         
             // Then
-            var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_dto);
+            var _actionResult = Assert.IsType<ActionResult<LoginChallengeDto>> (_dto);
             var _returnedOk = Assert.IsType<OkObjectResult>(_actionResult.Result);
-            var _returnedDto = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
-            Assert.Equal("Emp1", _returnedDto.EmployeeName);
+            var _returnedDto = Assert.IsType<LoginChallengeDto>(_returnedOk.Value);
+            Assert.Equal("Emp1", _returnedDto.Username);
+            Assert.True(_returnedDto.RequiresTwoFactor);
+        }
+
+        [Fact]
+        public async Task LoginEmployee_WhenEmployeeDoesNotExist()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContextMock.Object
+            };
+        
+            // When
+            var _dto = await _controller.LoginEmployee(new (){Email="test@artifax.com", Password="testPass"});
+        
+            // Then
+            var _actionResult = Assert.IsType<ActionResult<LoginChallengeDto>> (_dto);
+            Assert.IsType<UnauthorizedObjectResult>(_actionResult.Result);
+        }
+
+        [Fact]
+        public async Task ChangeExistingEmployeeBranch()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+        
+            // When
+            var _response = await _controller.ChangeEmployeeBranch("employee1@artifax.com", 2);
+        
+            // Then
+            var _baseResult = Assert.IsType<ActionResult<EmployeeReadDto>>(_response);
+            var _returnedOk = Assert.IsType<OkObjectResult>(_baseResult.Result);
+            var _result = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
+
+            Assert.Equal(2, _result.BranchId);
+            Assert.Equal("employee1@artifax.com", _result.EmployeeEmail);
+            Assert.Equal("Emp1", _result.EmployeeName);
+        }
+
+        [Fact]
+        public async Task DeleteNonExistingEmployee()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+        
+            // When
+            var _response = await _controller.DeleteEmployee(100);
+        
+            // Then
+            Assert.IsType<NotFoundObjectResult>(_response);
         }
     }
 }

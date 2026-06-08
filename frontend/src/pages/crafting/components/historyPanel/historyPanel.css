@@ -169,6 +169,16 @@
   color: var(--ok-text);
 }
 
+.status-pill.complete {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+.status-pill.unknown {
+  background: var(--bg);
+  color: var(--muted);
+}
+
 .status-pill.in-progress {
   background: var(--ok-bg);
   color: var(--ok-text);
@@ -237,4 +247,74 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+}
+
+.history-expanded-row {
+  background: var(--bg);
+}
+
+.history-expanded-row td {
+  padding: 24px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-ingredients-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ingredients-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.loading-text,
+.empty-text {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.ingredients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  gap: 8px;
+}
+
+.ingredient-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingredient-qty {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+.icon-action-button.active {
+  opacity: 0.6;
 }

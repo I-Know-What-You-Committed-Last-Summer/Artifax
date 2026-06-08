@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../crafting/crafting.css';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
@@ -6,11 +6,25 @@ import GraphCard from './components/graph/graph';
 import MostCrafted from './components/mostCarfted/mostCarfted';
 import StatsGrid from '../crafting/components/stats/stats';
 import './analytics.css';
-import { analyticsAlerts } from '../../data/fallback';
+import { getInventoryOverview } from '../../services/inventoryApi';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 const AnalyticsPage: React.FC = () => {
   const currentDate = getCurrentDateSAST();
+  const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadLowStockAlerts = async (): Promise<void> => {
+      try {
+        const overview = await getInventoryOverview();
+        setLowStockAlerts(overview.alerts);
+      } catch (error) {
+        console.error('Failed to load analytics low stock alerts', error);
+      }
+    };
+
+    void loadLowStockAlerts();
+  }, []);
 
   return (
     <div className="page-content">
@@ -19,7 +33,7 @@ const AnalyticsPage: React.FC = () => {
           title="Analytics"
           subtitle={`Crafting Analytics · ${currentDate}`}
         />
-        <AlertStrip label="Trending:" items={analyticsAlerts} />
+        <AlertStrip label={`Low Stock: ${lowStockAlerts.length}`} items={lowStockAlerts} />
 
         <div className="crafting-page">
           <div className="crafting-panel analytics-top-panel">

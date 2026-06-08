@@ -55,7 +55,9 @@
 }
 
 .field-row--split {
-  grid-template-columns: 20% 80%;
+  width: 96%;
+  margin: 0;
+  grid-template-columns: 20% 60% 20%;
   gap: 16px;
   align-items: center;
 }
@@ -103,6 +105,21 @@
   padding: 0.8rem 2.35rem 0.8rem 0.95rem;
   border-radius: 8px;
   background: var(--surface);
+}
+
+.material-select .artifax-select-menu {
+  max-height: 12rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.material-select .artifax-select-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.material-select .artifax-select-menu::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
 }
 
 .material-list {
@@ -185,6 +202,8 @@
   background: var(--surface-2);
 }
 
+/* price-preview removed per design change */
+
 .new-blueprint-actions {
   display: flex;
   flex-direction: column;
@@ -201,6 +220,9 @@
 @media (max-width: 860px) {
   .field-row,
   .field-row--sub {
+    grid-template-columns: 1fr;
+  }
+  .field-row--split {
     grid-template-columns: 1fr;
   }
 
