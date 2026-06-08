@@ -69,7 +69,7 @@ namespace Artifax.Controllers
                 }
 
                 // Return an anonymous object (or create a new CurrentUserDto) with the display details
-                return Ok(new 
+                return Ok(new CurrentUserDto
                 {
                     UserLevel = _userLevel,
                     UserEmail = HttpContext.Session.GetString("UserEmail"),

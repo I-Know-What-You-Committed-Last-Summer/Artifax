@@ -11,6 +11,7 @@ using Moq;
 using Microsoft.AspNetCore.Http;
 using System.Text;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore.InMemory.Query.Internal;
 
 namespace Backend.Tests
 {
@@ -207,6 +208,30 @@ namespace Backend.Tests
         
             // Then
             Assert.IsType<NotFoundObjectResult>(_response);
+        }
+
+        [Fact]
+        public async Task Fetch_CorrectSessionDetails_WhenLoggingIn()
+        {
+            // Given
+            var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
+            await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
+        
+            // When
+            var _response = _controller.GetCurrentUser();
+        
+            // Then
+            var _returnedOk = Assert.IsType<OkObjectResult>(_response);
+            var _result = Assert.IsType<CurrentUserDto>(_returnedOk.Value);
+
+            Assert.Equal( "Admin", _result.UserLevel);
+            Assert.Equal("admin1@artifax.com", _result.UserEmail);
+            Assert.Equal("Ad1", _result.Username);
         }
     }
 }
