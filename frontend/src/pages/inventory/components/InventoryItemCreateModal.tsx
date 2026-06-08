@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import FilterSelect from '../../../components/common/FilterSelect';
 import { InventoryCreatedItem, InventoryItemCreate } from '../../../services/inventoryApi';
 
 type InventoryItemCreateModalProps = {
   open: boolean;
   saving: boolean;
+  categoryOptions: string[];
   onClose: () => void;
   onCreate: (payload: InventoryItemCreate) => Promise<InventoryCreatedItem>;
 };
 
-function InventoryItemCreateModal({ open, saving, onClose, onCreate }: InventoryItemCreateModalProps) {
+function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCreate }: InventoryItemCreateModalProps) {
   const [formValues, setFormValues] = useState<InventoryItemCreate>({
     itemName: '',
     itemCategory: '',
@@ -22,10 +24,10 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
 
     setFormValues({
       itemName: '',
-      itemCategory: '',
+      itemCategory: categoryOptions[0] ?? '',
       productionTime: 0,
     });
-  }, [open]);
+  }, [categoryOptions, open]);
 
   useEffect(() => {
     if (!open) {
@@ -52,7 +54,12 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4" role="presentation" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: 'var(--overlay-backdrop)' }}
+      role="presentation"
+      onMouseDown={onClose}
+    >
       <div
         className="w-full max-w-xl rounded-2xl border border-border bg-surface shadow-[0_30px_80px_rgba(15,23,42,0.28)]"
         role="dialog"
@@ -85,11 +92,11 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
 
             <label className="space-y-2 text-sm text-text">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Category</span>
-              <input
+              <FilterSelect
                 value={formValues.itemCategory}
-                onChange={(event) => setFormValues((current) => ({ ...current, itemCategory: event.target.value }))}
-                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
-                required
+                onChange={(value) => setFormValues((current) => ({ ...current, itemCategory: value }))}
+                options={categoryOptions.map((option) => ({ value: option, label: option }))}
+                ariaLabel="Select item category"
               />
             </label>
           </div>
@@ -118,7 +125,12 @@ function InventoryItemCreateModal({ open, saving, onClose, onCreate }: Inventory
             <button type="button" onClick={onClose} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:border-primary">
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primaryDark disabled:cursor-not-allowed disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium transition hover:bg-primaryDark disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ color: 'var(--on-primary)' }}
+            >
               {saving ? 'Saving...' : 'Create item'}
             </button>
           </div>

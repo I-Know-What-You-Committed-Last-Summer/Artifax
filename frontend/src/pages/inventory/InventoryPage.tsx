@@ -12,7 +12,7 @@ import InventoryMaterialsPopover from './components/InventoryMaterialsPopover';
 import InventoryItemEditModal from './components/InventoryItemEditModal';
 import InventoryItemCreateModal from './components/InventoryItemCreateModal';
 import InventoryItemIngredientModal from './components/InventoryItemIngredientModal';
-import { createInventoryItem, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
+import { createInventoryItem, getItemCategoryOptions, getItems, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
@@ -26,6 +26,7 @@ function InventoryPage() {
   const [sortBy, setSortBy] = useState('NAME');
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [inventoryOverview, setInventoryOverview] = useState<InventoryOverview>({ items: [], previewRows: [], alerts: [], stats: [], tabs: [] });
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [expandedViewItemId, setExpandedViewItemId] = useState<number | null>(null);
   const [materialDetailsById, setMaterialDetailsById] = useState<Record<number, InventoryMaterialDetails | null>>({});
   const [loadingMaterialItemId, setLoadingMaterialItemId] = useState<number | null>(null);
@@ -38,17 +39,20 @@ function InventoryPage() {
   useEffect(() => {
     let mounted = true;
 
-    // Prefer fetching the overview (aggregated items + stats) so UI stays consistent
-    getInventoryOverview()
-      .then((overview) => {
+    Promise.all([getInventoryOverview(), getItems()])
+      .then(([overview, items]) => {
         if (mounted) {
           setInventoryItems(overview.items);
           setInventoryOverview(overview);
+          setCategoryOptions(getItemCategoryOptions(items));
         }
       })
       .catch((error) => {
         console.error('Failed to load inventory items', error);
-        if (mounted) setInventoryItems([]);
+        if (mounted) {
+          setInventoryItems([]);
+          setCategoryOptions([]);
+        }
       });
 
     return () => {
@@ -354,11 +358,13 @@ function InventoryPage() {
             saving={savingEditItemId === editingItemId}
             onClose={closeEditModal}
             onSave={handleSaveEdit}
+            categoryOptions={categoryOptions}
           />
 
           <InventoryItemCreateModal
             open={createItemOpen}
             saving={creatingItem}
+            categoryOptions={categoryOptions}
             onClose={closeCreateModal}
             onCreate={handleCreateItem}
           />
