@@ -93,22 +93,19 @@ function Sidebar() {
   const isAdmin = userRole?.toString().toLowerCase() === 'admin';
 
   const handleLogout = async () => {
-    // Call backend logout endpoint to clear server-side session
     try {
       await api.post('/User/logout');
     } catch (error) {
-      // Continue with logout even if backend call fails
       console.error('Logout API call failed:', error);
+    } finally {
+      sessionStorage.clear();
+      clearAuthToken();
+      clearCurrentUser();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('session');
+      navigate('/login', { replace: true });
     }
-
-    // Clear all client-side data
-    sessionStorage.clear();
-    clearAuthToken();
-    clearCurrentUser();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('session');
-    navigate('/login', { replace: true });
   };
 
   return (
