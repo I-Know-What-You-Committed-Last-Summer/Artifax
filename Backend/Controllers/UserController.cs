@@ -314,6 +314,22 @@ namespace Artifax.Controllers
                 await context.SaveChangesAsync();
                 return NoContent();
             }
+
+            [HttpDelete("logout")]
+            public IActionResult LogOutUser ()
+            {
+                // Check if a session exists
+                var _userLevel = HttpContext.Session.GetString("UserLevel");
+
+                if (string.IsNullOrEmpty(_userLevel))
+                {
+                    return Unauthorized("No active session.");
+                }
+
+                HttpContext.Session.Clear();
+
+                return NoContent();
+            }
         #endregion
     }
 }
