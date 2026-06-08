@@ -37,6 +37,13 @@ type IngredientDto = {
   quantity?: number;
 };
 
+type BranchDto = {
+  BranchID?: number;
+  branchID?: number;
+  BranchName?: string;
+  branchName?: string;
+};
+
 type CraftingJob = {
   orderID: number;
   itemID: number;
@@ -47,7 +54,10 @@ type CraftingJob = {
   timeLeft: string;
   materials: string[];
   employeeName: string;
+  employeeID?: number;
+  expedited: boolean;
   branchID: number;
+  branchName: string;
 };
 
 const CraftingItems: FC = () => {
@@ -55,15 +65,28 @@ const CraftingItems: FC = () => {
   const currentUser = useCurrentUser();
   const [tilts, setTilts] = useState<TiltsState>({});
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
+  const [branchMap, setBranchMap] = useState<Record<number, string>>({});
 
   const ORDER_REFRESH_INTERVAL_MS = 60_000;
 
   const loadActiveJobs = async (): Promise<void> => {
     try {
-      const [ordersResponse, usersResponse] = await Promise.all([
+      const [ordersResponse, usersResponse, branchesResponse] = await Promise.all([
         api.get<OrderDto[]>('/Order'),
         api.get<EmployeeDto[]>('/User'),
+        api.get<BranchDto[]>('/Branch'),
       ]);
+
+      const branchMapFromApi = (branchesResponse.data ?? []).reduce<Record<number, string>>((map, branch) => {
+        const branchId = branch.BranchID ?? branch.branchID ?? 0;
+        const branchName = branch.BranchName ?? branch.branchName ?? '';
+        if (branchId > 0 && branchName) {
+          map[branchId] = branchName;
+        }
+        return map;
+      }, {});
+
+      setBranchMap(branchMapFromApi);
 
       const employees = (usersResponse.data as EmployeeDto[]).reduce<Record<number, string>>((map, user) => {
         if (user.employeeId != null) {
@@ -98,6 +121,7 @@ const CraftingItems: FC = () => {
       const jobs = sortedOrders.map((order) => {
         const expedited = order.orderExpedite === true;
         const status = normalizeQueueStatus(order.status) ?? 'Paused';
+        const branchID = order.branchID ?? order.BranchID ?? 0;
 
         return {
           orderID: order.orderID,
@@ -109,7 +133,10 @@ const CraftingItems: FC = () => {
           timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed, expedited),
           materials: [order.itemName || `Item ${order.itemID}`],
           employeeName: employees[order.employeeID ?? 0] ?? 'Unknown Employee',
-          branchID: order.branchID ?? order.BranchID ?? 0,
+          employeeID: order.employeeID ?? undefined,
+          expedited,
+          branchID,
+          branchName: branchMapFromApi[branchID] ?? `Branch ${branchID}`,
         };
       });
 
@@ -222,6 +249,23 @@ const CraftingItems: FC = () => {
     }
   };
 
+  const handleToggleExpedite = async (job: CraftingJob): Promise<void> => {
+    const nextExpedite = !job.expedited;
+    try {
+      await api.put(`/Order/${job.orderID}`, {
+        itemID: job.itemID,
+        quantity: job.qty,
+        branchID: job.branchID,
+        employeeID: job.employeeID ?? currentUser?.employeeId ?? 0,
+        orderExpedite: nextExpedite,
+      });
+      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
+      await loadActiveJobs();
+    } catch (error) {
+      console.error(`Unable to update expedite for order ${job.orderID}`, error);
+    }
+  };
+
   return (
     <div className="active-grid">
       {activeJobs.length === 0 && <p className="empty-state">No active jobs available.</p>}
@@ -240,7 +284,7 @@ const CraftingItems: FC = () => {
               </div>
               <div className="job-titles">
                 <h3>{job.name}</h3>
-                <p>Employee: {job.employeeName} · Qty: {job.qty} · B{job.branchID}</p>
+                <p>Employee: {job.employeeName} · Qty: {job.qty} · {job.branchName}</p>
               </div>
             </div>
             <span className={`status-badge ${job.status.toLowerCase().replace(' ', '-')}`}>
@@ -255,6 +299,24 @@ const CraftingItems: FC = () => {
             </div>
             <div className="progress-bar-bg">
               <div className="progress-bar-fill" style={{ width: `${job.progress}%` }}></div>
+            </div>
+          </div>
+
+          <div className="expedite-section">
+            <div className="expedite-control">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={job.expedited}
+                  onChange={() => void handleToggleExpedite(job)}
+                  aria-label={`Order Expedite for ${job.name}`}
+                />
+                <span className="slider" />
+              </label>
+              <div className="expedite-labels">
+                <span className="expedite-title">Order Expedite</span>
+                <span className="expedite-status">{job.expedited ? 'Half time active' : 'Standard production'}</span>
+              </div>
             </div>
           </div>
 
