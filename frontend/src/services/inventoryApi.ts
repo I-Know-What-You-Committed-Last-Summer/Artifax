@@ -2,7 +2,7 @@ import apiClient, { toFetchStyleError } from './apiClient';
 
 const DEFAULT_MIN_STOCK = 5;
 
-type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number };
+type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number; Price?: number | null };
 type BranchDto = { BranchID: number; BranchName: string };
 type BranchItemCapacityDto = { BranchItemCapacityID: number; BranchID: number; ItemID: number; ItemQuantity: number };
 type InventoryRowDto = {
@@ -11,6 +11,7 @@ type InventoryRowDto = {
   inventoryItemCategory: string;
   inventoryItemProductionTime: number;
   inventoryItemQuantity: number;
+  inventoryItemPrice?: number | null;
   inventoryItemBranchName: string;
 };
 
@@ -36,6 +37,7 @@ function normalizeItemDto(row: Record<string, unknown>): ItemDto {
     ItemName: String(row.ItemName ?? row.itemName ?? ''),
     ItemCategory: String(row.ItemCategory ?? row.itemCategory ?? ''),
     ProductionTime: Number(row.ProductionTime ?? row.productionTime ?? 0),
+    Price: row.Price == null && row.price == null ? null : Number(row.Price ?? row.price ?? 0),
   };
 }
 
@@ -66,9 +68,16 @@ export type InventoryItemUpdate = {
   itemName: string;
   itemCategory: string;
   productionTime: number;
+  price: number | null;
+  quantity: number;
 };
 
-export type InventoryItemCreate = InventoryItemUpdate;
+export type InventoryItemCreate = {
+  itemName: string;
+  itemCategory: string;
+  productionTime: number;
+  price: number | null;
+};
 
 export type InventoryCreatedItem = {
   itemID: number;
@@ -283,7 +292,60 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
 
 export async function updateInventoryItem(itemId: number, payload: InventoryItemUpdate): Promise<void> {
   try {
-    await apiClient.put(`/Item/${itemId}`, payload);
+    await apiClient.put(`/Item/${itemId}`, {
+      itemName: payload.itemName,
+      itemCategory: payload.itemCategory,
+      productionTime: payload.productionTime,
+      price: payload.price,
+    });
+
+    if (payload.quantity < 0) {
+      throw new Error('Quantity cannot be negative.');
+    }
+
+    const branchRows = (await getBranchItems())
+      .filter((row) => row.ItemID === itemId)
+      .sort((left, right) => right.ItemQuantity - left.ItemQuantity || left.BranchItemCapacityID - right.BranchItemCapacityID);
+
+    if (branchRows.length === 0) {
+      throw new Error(`No branch capacity records found for item ${itemId}.`);
+    }
+
+    const currentTotal = branchRows.reduce((sum, row) => sum + row.ItemQuantity, 0);
+
+    if (currentTotal === payload.quantity) {
+      return;
+    }
+
+    if (payload.quantity > currentTotal) {
+      const targetRow = branchRows[0];
+      const quantityToAdd = payload.quantity - currentTotal;
+      const nextQuantity = targetRow.ItemQuantity + quantityToAdd;
+
+      await apiClient.put(`/Item/Branch/${targetRow.BranchID}/Item/${itemId}`, null, {
+        params: { quantity: nextQuantity },
+      });
+      return;
+    }
+
+    let quantityToRemove = currentTotal - payload.quantity;
+
+    for (const row of branchRows) {
+      if (quantityToRemove <= 0) {
+        break;
+      }
+
+      const removed = Math.min(row.ItemQuantity, quantityToRemove);
+      const nextQuantity = row.ItemQuantity - removed;
+
+      if (nextQuantity !== row.ItemQuantity) {
+        await apiClient.put(`/Item/Branch/${row.BranchID}/Item/${itemId}`, null, {
+          params: { quantity: nextQuantity },
+        });
+      }
+
+      quantityToRemove -= removed;
+    }
   } catch (error) {
     throw toFetchStyleError(error);
   }
@@ -293,7 +355,12 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
   let body: Record<string, unknown>;
 
   try {
-    const response = await apiClient.post<Record<string, unknown>>('/Item/item/CreateItemDefaultQuantity', payload);
+    const response = await apiClient.post<Record<string, unknown>>('/Item/item/CreateItemDefaultQuantity', {
+      itemName: payload.itemName,
+      itemCategory: payload.itemCategory,
+      productionTime: payload.productionTime,
+      price: payload.price,
+    });
     body = response.data;
   } catch (error) {
     throw toFetchStyleError(error);
@@ -325,6 +392,7 @@ export type InventoryItem = {
   sku: string;
   category: string;
   quantity: number;
+  price: number | null;
   minStock: number;
   location: string;
   status: string;
@@ -336,7 +404,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
   const rows = await fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems');
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
-  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; locations: Record<string, number>; productionTime?: number }>();
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; productionTime?: number }>();
 
   for (const r of rows) {
     const id = r.inventoryItemId;
@@ -347,11 +415,23 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const loc = normalizeLocation(r.inventoryItemBranchName);
 
     if (!map.has(id)) {
-      map.set(id, { id, name, category, sku, quantity: qty, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
+      map.set(id, {
+        id,
+        name,
+        category,
+        sku,
+        quantity: qty,
+        price: r.inventoryItemPrice == null ? null : Number(r.inventoryItemPrice),
+        locations: { [loc]: qty },
+        productionTime: r.inventoryItemProductionTime,
+      });
     } else {
       const entry = map.get(id)!;
       entry.quantity += qty;
       entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
+      if (entry.price == null && r.inventoryItemPrice != null) {
+        entry.price = Number(r.inventoryItemPrice);
+      }
     }
   }
 
@@ -367,6 +447,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
       sku: e.sku,
       category: e.category,
       quantity: e.quantity,
+      price: e.price,
       minStock,
       location: primaryLocation,
       status,
