@@ -1,10 +1,11 @@
 import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { showError, showSuccess } from '../../../../utils/toast';
 import './newBlueprint.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 
 interface MaterialRow {
   id: string;
@@ -77,6 +78,8 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
       )
     );
   };
+
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
 
   const addMaterialRow = () => {
     setMaterials((current) => [
@@ -199,7 +202,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     <div className="new-blueprint-panel">
       <div className="new-blueprint-header">
         <div className="new-blueprint-heading">
-          <img src={unitIcon} alt="Blueprint icon" className="new-blueprint-icon" />
+          <img src={unitIconSrc} alt="Blueprint icon" className="new-blueprint-icon" />
           <span className="new-blueprint-tag">New Blueprint</span>
         </div>
       </div>

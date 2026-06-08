@@ -1,7 +1,8 @@
 import React, { FC, useEffect, useState } from 'react';
 import './craftingQueue.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
-import { useApi } from '../../../../hooks';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { useCurrentUser } from '../../../../utils/currentUser';
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
@@ -47,6 +48,8 @@ const CraftingQueue: FC = () => {
   const [page, setPage] = useState<number>(1);
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
   const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
+
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
 
   useEffect(() => {
     const REFRESH_INTERVAL_MS = 60_000;
@@ -177,7 +180,7 @@ const CraftingQueue: FC = () => {
             <div key={item.orderID} className="queue-item">
               <div className="queue-item-header">
                 <div className="item-info">
-                  <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
+                  <img src={unitIconSrc} alt={`${item.name} icon`} className="queue-item-icon" />
                   <div>
                     <h4>{item.name} x{item.qty} · B{item.branchID}</h4>
                     <p>{item.status} · {item.employeeName}</p>
@@ -202,7 +205,7 @@ const CraftingQueue: FC = () => {
             <div key={item.orderID} className="queue-item">
               <div className="queue-item-header">
                 <div className="item-info">
-                  <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
+                  <img src={unitIconSrc} alt={`${item.name} icon`} className="queue-item-icon" />
                   <div>
                     <h4>{item.name} x{item.qty} · B{item.branchID}</h4>
                     <p>Queued · Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdDateTime))}</p>

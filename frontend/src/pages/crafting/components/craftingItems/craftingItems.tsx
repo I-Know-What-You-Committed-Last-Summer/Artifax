@@ -1,7 +1,8 @@
 import React, { FC, useEffect, useState } from 'react';
 import './craftingItems.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
-import { useApi } from '../../../../hooks';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { useCurrentUser } from '../../../../utils/currentUser';
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
@@ -176,6 +177,8 @@ const CraftingItems: FC = () => {
     };
 }, [api, currentUser]);
 
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -233,7 +236,7 @@ const CraftingItems: FC = () => {
           <div className="card-header">
             <div className="job-info-main">
               <div className="job-icon-box">
-                <img src={unitIcon} alt={`${job.name} icon`} className="job-icon" />
+                <img src={unitIconSrc} alt={`${job.name} icon`} className="job-icon" />
               </div>
               <div className="job-titles">
                 <h3>{job.name}</h3>

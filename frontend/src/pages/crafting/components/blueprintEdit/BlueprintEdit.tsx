@@ -1,10 +1,11 @@
 import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { showError, showSuccess } from '../../../../utils/toast';
 import './blueprintEdit.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 
 interface MaterialRow {
   id: string;
@@ -44,6 +45,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
   const [itemOptions, setItemOptions] = useState<ItemOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
 
   useEffect(() => {
     const loadBlueprint = async () => {
@@ -210,7 +212,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
     <div className="new-blueprint-panel">
       <div className="new-blueprint-header">
         <div className="new-blueprint-heading">
-          <img src={unitIcon} alt="Blueprint icon" className="new-blueprint-icon" />
+          <img src={unitIconSrc} alt="Blueprint icon" className="new-blueprint-icon" />
           <span className="new-blueprint-tag">Edit Blueprint</span>
         </div>
       </div>

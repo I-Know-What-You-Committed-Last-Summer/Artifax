@@ -1,10 +1,13 @@
 import React, { FC, useEffect, useMemo, useState, ReactNode } from 'react';
 import './stats.css';
 import recipesIcon from '../../../../assets/images/recipesIcon.png';
+import recipesIconWhite from '../../../../assets/images/recipesIconWhite.png';
 import activeJodIcon from '../../../../assets/images/activeJodIcon.png';
 import completedIcon from '../../../../assets/images/completeIcon.png';
+import completedIconWhite from '../../../../assets/images/completeIconWhite.png';
 import blockedIcon from '../../../../assets/images/blockedIcon.png';
-import { useApi } from '../../../../hooks';
+import blockedIconWhite from '../../../../assets/images/blockedIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 
 interface StatItem {
   label: string;
@@ -18,6 +21,10 @@ interface TiltsState {
 
 const StatsGrid: FC = () => {
   const api = useApi();
+  const recipeIconSrc = useThemeAwareIcon(recipesIcon, recipesIconWhite);
+  const activeJobsIconSrc = useThemeAwareIcon(activeJodIcon);
+  const completedIconSrc = useThemeAwareIcon(completedIcon, completedIconWhite);
+  const blockedIconSrc = useThemeAwareIcon(blockedIcon, blockedIconWhite);
   const [recipeCount, setRecipeCount] = useState<number>(0);
   const [activeJobs, setActiveJobs] = useState<number>(0);
   const [completedJobs, setCompletedJobs] = useState<number>(0);
@@ -53,22 +60,22 @@ const StatsGrid: FC = () => {
       {
         label: 'Recipes',
         value: recipeCount,
-        icon: <img src={recipesIcon} alt="Recipes" />,
+        icon: <img src={recipeIconSrc} alt="Recipes" />,
       },
       {
         label: 'Active Jobs',
         value: activeJobs,
-        icon: <img src={activeJodIcon} alt="Active Jobs" />,
+        icon: <img src={activeJobsIconSrc} alt="Active Jobs" />,
       },
       {
         label: 'Completed',
         value: completedJobs,
-        icon: <img src={completedIcon} alt="Completed" />,
+        icon: <img src={completedIconSrc} alt="Completed" />,
       },
       {
         label: 'Cancelled',
         value: cancelledJobs,
-        icon: <img src={blockedIcon} alt="Cancelled" />,
+        icon: <img src={blockedIconSrc} alt="Cancelled" />,
       },
     ],
     [recipeCount, activeJobs, completedJobs, cancelledJobs],

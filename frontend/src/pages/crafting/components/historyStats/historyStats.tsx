@@ -1,10 +1,14 @@
 import React, { FC, useEffect, useState } from 'react';
 import './historyStats.css';
-import totalJobsIcon from '../../../../assets/images/TjodsIcon.png';
+import inventoryIcon from '../../../../assets/images/inventoryIcon.png';
+import inventoryIconWhite from '../../../../assets/images/inventoryIconWhite.png';
 import cancelledIcon from '../../../../assets/images/cancelledIcon.png';
+import cancelledIconWhite from '../../../../assets/images/cancelledIconWhite.png';
 import completedIcon from '../../../../assets/images/completeIcon.png';
+import completedIconWhite from '../../../../assets/images/completeIconWhite.png';
 import avgDurationIcon from '../../../../assets/images/durationIcon.png';
-import { useApi } from '../../../../hooks';
+import avgDurationIconWhite from '../../../../assets/images/durationIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 
 interface OrderDto {
   orderID: number;
@@ -24,6 +28,10 @@ const formatDuration = (minutes: number): string => {
 
 const HistoryStats: FC = () => {
   const api = useApi();
+  const totalJobsIconSrc = useThemeAwareIcon(inventoryIcon, inventoryIconWhite);
+  const cancelledIconSrc = useThemeAwareIcon(cancelledIcon, cancelledIconWhite);
+  const completedIconSrc = useThemeAwareIcon(completedIcon, completedIconWhite);
+  const avgDurationIconSrc = useThemeAwareIcon(avgDurationIcon, avgDurationIconWhite);
   const [totalJobs, setTotalJobs] = useState<number>(0);
   const [cancelledItems, setCancelledItems] = useState<number>(0);
   const [completedItems, setCompletedItems] = useState<number>(0);
@@ -76,10 +84,10 @@ const HistoryStats: FC = () => {
   }, [api]);
 
   const stats = [
-    { label: 'Total Jobs', value: String(totalJobs), icon: <img src={totalJobsIcon} alt="Total Jobs" /> },
-    { label: 'Cancelled', value: String(cancelledItems), icon: <img src={cancelledIcon} alt="Cancelled" /> },
-    { label: 'Completed', value: String(completedItems), icon: <img src={completedIcon} alt="Completed" /> },
-    { label: 'Avg Duration', value: avgDuration, icon: <img src={avgDurationIcon} alt="Avg Duration" /> },
+    { label: 'Total Jobs', value: String(totalJobs), icon: <img src={totalJobsIconSrc} alt="Total Jobs" /> },
+    { label: 'Cancelled', value: String(cancelledItems), icon: <img src={cancelledIconSrc} alt="Cancelled" /> },
+    { label: 'Completed', value: String(completedItems), icon: <img src={completedIconSrc} alt="Completed" /> },
+    { label: 'Avg Duration', value: avgDuration, icon: <img src={avgDurationIconSrc} alt="Avg Duration" /> },
   ];
 
   return (

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './mostCarfted.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 
 type SortOrder = 'high' | 'low';
 
@@ -29,6 +30,7 @@ const MostCrafted: React.FC = () => {
   const api = useApi();
   const [sortOrder, setSortOrder] = useState<SortOrder>('high');
   const [blueprints, setBlueprints] = useState<CraftedBlueprint[]>([]);
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
 
   useEffect(() => {
     const loadMostCrafted = async () => {
@@ -96,7 +98,7 @@ const MostCrafted: React.FC = () => {
           sortedBlueprints.map((blueprint) => (
             <button key={blueprint.name} type="button" className="blueprint-card">
               <div className="blueprint-card-main">
-                <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
+                <img src={unitIconSrc} alt="Blueprint icon" className="blueprint-card-icon" />
                 <div>
                   <h4>{blueprint.name}</h4>
                 </div>

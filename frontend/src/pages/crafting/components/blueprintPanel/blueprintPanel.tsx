@@ -1,9 +1,10 @@
 import React, { FC, useState, useEffect } from 'react';
 import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
 import { useCurrentUser } from '../../../../utils/currentUser';
 
 interface Category {
@@ -54,6 +55,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   onCreateBlueprint,
   refreshKey,
 }) => {
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
   const api = useApi();
   const currentUser = useCurrentUser();
   const currentBranchId = currentUser?.branchId;
@@ -191,7 +193,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
               onClick={() => onSelectBlueprint(blueprint.id)}
             >
               <div className="blueprint-card-main">
-                <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
+                <img src={unitIconSrc} alt="Blueprint icon" className="blueprint-card-icon" />
                 <div>
                   <h4>{blueprint.name}</h4>
                 </div>
