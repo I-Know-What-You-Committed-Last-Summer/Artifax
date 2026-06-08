@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+const rawApiBase = process.env.REACT_APP_API_BASE || 'https://artifax-5lqg.onrender.com';
+const normalizedApiBase = rawApiBase.replace(/\/+$/, '');
+const API_BASE_URL = normalizedApiBase.endsWith('/api') ? normalizedApiBase : `${normalizedApiBase}/api`;
 
 // Create a singleton axios instance to ensure session cookies persist across requests
 const apiInstance = axios.create({

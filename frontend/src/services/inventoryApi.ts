@@ -65,7 +65,7 @@ function normalizeItemDto(row: Record<string, unknown>): ItemDto {
 }
 
 export async function getItems(): Promise<ItemDto[]> {
-  const rows = await fetchJson<Array<Record<string, unknown>>>('/Item/item/');
+  const rows = await fetchJson<Array<Record<string, unknown>>>('Item/item/');
   return rows.map(normalizeItemDto);
 }
 
@@ -80,11 +80,11 @@ export function getItemCategoryOptions(items: ItemDto[]): string[] {
 }
 
 export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
-  return fetchJson<BranchItemCapacityDto[]>('/Item/Branch');
+  return fetchJson<BranchItemCapacityDto[]>('Item/Branch');
 }
 
 export async function getBranches(): Promise<BranchDto[]> {
-  return fetchJson<BranchDto[]>('/Branch');
+  return fetchJson<BranchDto[]>('Branch');
 }
 
 export type InventoryItemUpdate = {
@@ -270,21 +270,21 @@ export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
 
 export async function getItemMaterialDetails(itemId: number): Promise<InventoryMaterialDetails | null> {
   const [itemResponse, ingredientResponse, inventoryRows] = await Promise.all([
-    fetchJson<Record<string, unknown>>(`/Item/item/${itemId}`).catch((error) => {
+    fetchJson<Record<string, unknown>>(`Item/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return null;
       }
 
       throw error;
     }),
-    fetchJson<IngredientBlueprintDto[]>(`/Item/itemIngredient/item/${itemId}`).catch((error) => {
+    fetchJson<IngredientBlueprintDto[]>(`Item/itemIngredient/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return [];
       }
 
       throw error;
     }),
-    fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems'),
+    fetchJson<InventoryRowDto[]>('Item/item/allInventoryItems'),
   ]);
 
   if (!itemResponse) {
@@ -319,7 +319,7 @@ export async function updateInventoryItem(
   payload: InventoryItemUpdate & { branchId: number }
 ): Promise<void> {
   try {
-    await apiClient.put(`/Item/${itemId}`, {
+    await apiClient.put(`Item/${itemId}`, {
       itemName: payload.itemName,
       itemCategory: payload.itemCategory,
       productionTime: payload.productionTime,
@@ -331,7 +331,7 @@ export async function updateInventoryItem(
     if (!payload.branchId) {
       throw new Error(`Cannot update quantity: No branchId provided for item ${itemId}.`);
     }
-    await apiClient.put(`/Item/Branch/${payload.branchId}/Item/${itemId}`, null, {
+    await apiClient.put(`Item/Branch/${payload.branchId}/Item/${itemId}`, null, {
       params: { quantity: payload.quantity },
     });
 
@@ -344,7 +344,7 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
   let body: Record<string, unknown>;
 
   try {
-    const response = await apiClient.post<Record<string, unknown>>('/Item/item/CreateItemDefaultQuantity', {
+    const response = await apiClient.post<Record<string, unknown>>('Item/item/CreateItemDefaultQuantity', {
       itemName: payload.itemName,
       itemCategory: payload.itemCategory,
       productionTime: payload.productionTime,
@@ -365,7 +365,7 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
 
 export async function createInventoryItemIngredient(payload: InventoryItemIngredientCreate): Promise<void> {
   try {
-    await apiClient.post('/Item/itemIngredient/', {
+    await apiClient.post('Item/itemIngredient/', {
       ProductID: payload.productID,
       IngredientID: payload.ingredientID,
       IngredientQuantity: payload.ingredientQuantity,
@@ -391,7 +391,7 @@ export type InventoryItem = {
 };
 
 export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const rows = await fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems');
+  const rows = await fetchJson<InventoryRowDto[]>('Item/item/allInventoryItems');
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
   const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; branchId: number ; productionTime?: number }>();

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { api } from '../hooks/useApi';
+import { api as api } from '../hooks/useApi';
 
 export type LoginRequest = {
   email: string;

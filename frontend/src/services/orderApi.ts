@@ -110,11 +110,11 @@ function deriveJobType(name: string): CraftingJob['type'] {
 }
 
 export async function getOrders(): Promise<OrderDto[]> {
-  return fetchJson<OrderDto[]>('/Order');
+  return fetchJson<OrderDto[]>('Order');
 }
 
 export async function getUsers(): Promise<any[]> {
-  return fetchJson<any[]>('/User');
+  return fetchJson<any[]>('User');
 }
 
 export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; queuedItems: QueueJob[] }> {
@@ -219,7 +219,7 @@ export async function getActiveAndQueuedJobs(): Promise<{ activeItems: CraftingJ
 
 export async function updateOrderStatus(orderId: number, status: string): Promise<void> {
   try {
-    await apiClient.put(`/Order/${orderId}/status`, { status } satisfies OrderStatusUpdateDto);
+    await apiClient.put(`Order/${orderId}/status`, { status } satisfies OrderStatusUpdateDto);
   } catch (error) {
     throw toFetchStyleError(error);
   }
@@ -227,7 +227,7 @@ export async function updateOrderStatus(orderId: number, status: string): Promis
 
 export async function deleteOrder(orderId: number): Promise<void> {
   try {
-    await apiClient.delete(`/Order/${orderId}`);
+    await apiClient.delete(`Order/${orderId}`);
   } catch (error) {
     throw toFetchStyleError(error);
   }
