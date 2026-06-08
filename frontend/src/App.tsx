@@ -23,19 +23,8 @@ function App() {
 
   const api = useApi();
 
-  useEffect(() => {
-    
-    (async () => {
-      try {
-        const result = await api.get('/Item/item');
-        console.log(result);
-        return result;
-      } catch (error) {
-        console.log("Error:"+error);
-      }
-    })();
-    
-  }, []);
+  // Removed development-only backend probe. Login will use the configured API base URL
+  // and should only fire when the backend is available.
   return (
     <BrowserRouter>
       <ForceLogin />

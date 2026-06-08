@@ -11,8 +11,9 @@ const ForceLogin: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Don't show modal on login pages
-  const isLoginPage = location.pathname === '/login' || location.pathname.startsWith('/login/');
+  // Don't show modal or call /User/me on any login-related route
+  const normalizedPath = location.pathname.toLowerCase();
+  const isLoginPage = normalizedPath === '/login' || normalizedPath.startsWith('/login');
 
   useEffect(() => {
     // Skip check on login page
