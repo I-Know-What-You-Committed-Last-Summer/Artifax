@@ -26,6 +26,8 @@ namespace Artifax.Controllers
             context = incoming;
         }
 
+        bool isAdmin => HttpContext.Session.GetString("UserLevel") == EmployeeLevels.Admin.ToString();
+
         #region GetRoutes
             //Get All Employees
             [HttpGet]
@@ -123,7 +125,7 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> CreateEmployee (EmployeeWriteDto incoming)
             {
                 //Authentication Test
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (!isAdmin)
                 {
                     return Unauthorized("Creation attempted by non-admin!");
                 }
@@ -149,7 +151,7 @@ namespace Artifax.Controllers
                 //Convert new employee to Read DTO using static function in EmployeeReadDto class
                 EmployeeReadDto _dto = EmployeeReadDto.ToDto(_employee);
 
-                return CreatedAtAction("GetAllEmployeeById", new { id = _employee.EmployeeId}, _dto);
+                return CreatedAtAction(nameof(GetEmployeeByEmail), new { email = _employee.EmployeeEmail }, _dto);
             }
 
             [HttpPost("employees/login")]
@@ -169,6 +171,16 @@ namespace Artifax.Controllers
                 HttpContext.Session.SetString("Username", _employee.EmployeeName);
 
                 return Ok(EmployeeReadDto.ToDto(_employee));
+            }
+
+            [HttpPost("logout")]
+            public IActionResult LogOutUser ()
+            {
+                HttpContext.Session.Clear();
+
+                Response.Cookies.Delete(".AspNetCore.Session");
+
+                return NoContent();
             }
 
         #endregion
@@ -237,7 +249,7 @@ namespace Artifax.Controllers
             public async Task<ActionResult<EmployeeReadDto>> ChangeEmployeeBranch (string EmployeeEmail, int BranchId)
             {
                 //Authentication Check
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (!isAdmin)
                 {
                     return Unauthorized("Update attempted by non-admin!");
                 }
@@ -270,10 +282,7 @@ namespace Artifax.Controllers
 
                 if (_employee == null) return NotFound($"Employee with email: [{EmployeeEmail}] could not be found");
 
-                //Authentication Check
-                bool _isAdmin = HttpContext.Session.GetString("UserLevel") == EmployeeLevels.Admin.ToString();
-
-                if (!_isAdmin)
+                if (!isAdmin)
                 {
                     return Unauthorized("Update attempted by user with incorrect credentials!");
                 }
@@ -301,7 +310,7 @@ namespace Artifax.Controllers
             public async Task<IActionResult> DeleteEmployee (int id)
             {
                 //Authentication Check
-                if (HttpContext.Session.GetString("UserLevel") != EmployeeLevels.Admin.ToString())
+                if (!isAdmin)
                 {
                     return Unauthorized("Delete attempted by non-admin!");
                 }
