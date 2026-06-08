@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+import apiClient, { toFetchStyleError } from './apiClient';
 
 const DEFAULT_MIN_STOCK = 5;
 
@@ -22,9 +22,12 @@ type IngredientBlueprintDto = {
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error(`Fetch error ${res.status} ${res.statusText}`);
-  return (await res.json()) as T;
+  try {
+    const response = await apiClient.get<T>(url);
+    return response.data;
+  } catch (error) {
+    throw toFetchStyleError(error);
+  }
 }
 
 function normalizeItemDto(row: Record<string, unknown>): ItemDto {
@@ -37,7 +40,7 @@ function normalizeItemDto(row: Record<string, unknown>): ItemDto {
 }
 
 export async function getItems(): Promise<ItemDto[]> {
-  const rows = await fetchJson<Array<Record<string, unknown>>>(`${API_BASE}/Item/item/`);
+  const rows = await fetchJson<Array<Record<string, unknown>>>('/Item/item/');
   return rows.map(normalizeItemDto);
 }
 
@@ -52,11 +55,11 @@ export function getItemCategoryOptions(items: ItemDto[]): string[] {
 }
 
 export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
-  return fetchJson<BranchItemCapacityDto[]>(`${API_BASE}/Item/Branch`);
+  return fetchJson<BranchItemCapacityDto[]>('/Item/Branch');
 }
 
 export async function getBranches(): Promise<BranchDto[]> {
-  return fetchJson<BranchDto[]>(`${API_BASE}/Branch`);
+  return fetchJson<BranchDto[]>('/Branch');
 }
 
 export type InventoryItemUpdate = {
@@ -234,21 +237,21 @@ export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
 
 export async function getItemMaterialDetails(itemId: number): Promise<InventoryMaterialDetails | null> {
   const [itemResponse, ingredientResponse, inventoryRows] = await Promise.all([
-    fetchJson<Record<string, unknown>>(`${API_BASE}/Item/item/${itemId}`).catch((error) => {
+    fetchJson<Record<string, unknown>>(`/Item/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return null;
       }
 
       throw error;
     }),
-    fetchJson<IngredientBlueprintDto[]>(`${API_BASE}/Item/itemIngredient/item/${itemId}`).catch((error) => {
+    fetchJson<IngredientBlueprintDto[]>(`/Item/itemIngredient/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return [];
       }
 
       throw error;
     }),
-    fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
+    fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems'),
   ]);
 
   if (!itemResponse) {
@@ -279,35 +282,22 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
 }
 
 export async function updateInventoryItem(itemId: number, payload: InventoryItemUpdate): Promise<void> {
-  const response = await fetch(`${API_BASE}/Item/${itemId}`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  try {
+    await apiClient.put(`/Item/${itemId}`, payload);
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
 export async function createInventoryItem(payload: InventoryItemCreate): Promise<InventoryCreatedItem> {
-  const response = await fetch(`${API_BASE}/Item/item/CreateItemDefaultQuantity`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let body: Record<string, unknown>;
 
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  try {
+    const response = await apiClient.post<Record<string, unknown>>('/Item/item/CreateItemDefaultQuantity', payload);
+    body = response.data;
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
-
-  const body = (await response.json()) as Record<string, unknown>;
 
   return {
     itemID: Number(body.itemID ?? body.ItemID ?? 0),
@@ -318,21 +308,14 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
 }
 
 export async function createInventoryItemIngredient(payload: InventoryItemIngredientCreate): Promise<void> {
-  const response = await fetch(`${API_BASE}/Item/itemIngredient/`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    await apiClient.post('/Item/itemIngredient/', {
       ProductID: payload.productID,
       IngredientID: payload.ingredientID,
       IngredientQuantity: payload.ingredientQuantity,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+    });
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
@@ -350,7 +333,7 @@ export type InventoryItem = {
 };
 
 export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const rows = await fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`);
+  const rows = await fetchJson<InventoryRowDto[]>('/Item/item/allInventoryItems');
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
   const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; locations: Record<string, number>; productionTime?: number }>();

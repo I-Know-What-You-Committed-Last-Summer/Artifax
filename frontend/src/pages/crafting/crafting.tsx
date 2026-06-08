@@ -210,24 +210,24 @@ const Crafting: FC = () => {
 
     try {
       const [itemResponse, ingredientsResponse] = await Promise.all([
-        fetch(`http://localhost:5253/api/Item/item/${itemId}`),
-        fetch(`http://localhost:5253/api/Item/itemIngredient/item/${itemId}`),
+        api.get(`/Item/item/${itemId}`),
+        api.get(`/Item/itemIngredient/item/${itemId}`),
       ]);
 
-      if (itemResponse.ok && ingredientsResponse.ok) {
-        const item = await itemResponse.json();
-        const ingredients = await ingredientsResponse.json();
+      if (itemResponse.data && ingredientsResponse.data) {
+        const item = itemResponse.data;
+        const ingredients = ingredientsResponse.data;
 
         let inventoryMap: Record<string, number> = {};
         try {
           const [itemsResp, branchResp] = await Promise.all([
-            fetch('http://localhost:5253/api/Item/item'),
-            fetch('http://localhost:5253/api/Item/Branch'),
+            api.get('/Item/item'),
+            api.get('/Item/Branch'),
           ]);
 
-          if (itemsResp.ok && branchResp.ok) {
-            const items = await itemsResp.json();
-            const branchItems = await branchResp.json();
+          if (itemsResp.data && branchResp.data) {
+            const items = itemsResp.data;
+            const branchItems = branchResp.data;
             const idToName: Record<number, string> = {};
             items.forEach((it: any) => {
               idToName[it.itemID] = it.itemName;

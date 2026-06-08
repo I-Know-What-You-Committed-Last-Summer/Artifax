@@ -1,6 +1,5 @@
-import { useApi } from "../hooks";
-
-const API_BASE = 'https://artifax-5lqg.onrender.com/api';
+import axios, { AxiosResponse } from 'axios';
+import apiClient from './apiClient';
 
 export type LoginRequest = {
   email: string;
@@ -22,37 +21,37 @@ export type CurrentUserResponse = {
   Username?: string;
 };
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-    ...init,
-  });
+async function withAxios<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
+  try {
+    const response = await request;
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const responseData = error.response?.data;
+      const message =
+        typeof responseData === 'string'
+          ? responseData
+          : (responseData as { message?: string } | undefined)?.message || `Request failed: ${status ?? 'unknown'}`;
 
-  if (!response.ok) {
-    const message = await response.text();
-    const err = new Error(message || `Request failed: ${response.status}`);
-    // attach status for callers to discriminate errors
-    (err as any).status = response.status;
-    throw err;
+      const err = new Error(message);
+      (err as { status?: number }).status = status;
+      throw err;
+    }
+
+    throw error;
   }
-
-  return (await response.json()) as T;
 }
 
 export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeResponse> {
-  return fetchJson<LoginEmployeeResponse>(`${API_BASE}/User/employees/login`, {
-    method: 'POST',
-    body: JSON.stringify({
+  return withAxios<LoginEmployeeResponse>(
+    apiClient.post('/User/employees/login', {
       email: payload.email,
       password: payload.password,
     }),
-  });
+  );
 }
 
 export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
-  return fetchJson<CurrentUserResponse>(`${API_BASE}/User/me`);
+  return withAxios<CurrentUserResponse>(apiClient.get('/User/me'));
 }
