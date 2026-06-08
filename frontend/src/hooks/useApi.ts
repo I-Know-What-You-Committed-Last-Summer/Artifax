@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5253/api';
+const API_BASE_URL = 'https://artifax-5lqg.onrender.com/api/';
 
 // Create a singleton axios instance to ensure session cookies persist across requests
 const apiInstance = axios.create({

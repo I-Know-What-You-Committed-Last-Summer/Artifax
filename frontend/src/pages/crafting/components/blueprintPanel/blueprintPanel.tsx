@@ -31,6 +31,8 @@ const categories: Category[] = [
   { id: 'mechanical', label: 'Mechanical' },
   { id: 'electronics', label: 'Electronics' },
   { id: 'furniture', label: 'Furniture' },
+  { id: 'paper', label: 'Paper' },
+  { id: 'plastic', label: 'Plastic' },
   { id: 'other', label: 'Other' },
 ];
 
