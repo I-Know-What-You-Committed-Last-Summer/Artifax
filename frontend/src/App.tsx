@@ -12,19 +12,20 @@ import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
 import { useEffect } from 'react';
 import axios from 'axios';
+import { useApi } from './hooks/useApi';
 
 function App() {
   // Backend integration commented out - requires .NET SDK installation
   // TODO: Uncomment when backend is running on localhost:5253
 
 
+  const api = useApi();
+
   useEffect(() => {
-    
-    const url = 'http://localhost:5253/api/Item/item';
     
     (async () => {
       try {
-        const result = await axios.get(url);
+        const result = await api.get('/Item/item');
         console.log(result);
         return result;
       } catch (error) {
