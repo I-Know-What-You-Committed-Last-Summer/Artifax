@@ -24,6 +24,7 @@ export interface Blueprint {
   category: 'furniture' | 'mechanical' | 'electronics';
   have: number;
   craft: number;
+  productionTime?: number;
   materials: BlueprintMaterial[];
 }
 

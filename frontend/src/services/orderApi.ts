@@ -108,40 +108,22 @@ export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; que
     return map;
   }, {});
 
-  const sortedOrders = (orders ?? []).slice().sort((left, right) => new Date(left.orderDateTime).getTime() - new Date(right.orderDateTime).getTime());
+  const sortedOrders = (orders ?? []).slice()
+    .sort((left, right) => new Date(left.orderDateTime).getTime() - new Date(right.orderDateTime).getTime())
+    .filter((order) => {
+      const status = normalizeQueueStatus(order.status);
+      return status === 'Queued' || status === 'Active' || status === 'Paused';
+    });
 
   const normalizedOrders = sortedOrders.map((order) => {
-    const rawStatus = normalizeQueueStatus(order.status);
-    const isComplete = rawStatus !== 'Pending' && rawStatus !== 'Completed'
-      && (order as any).totalTime != null
-      && (order as any).timeElapsed != null
-      && (order as any).totalTime === (order as any).timeElapsed;
-
+    const rawStatus = normalizeQueueStatus(order.status) ?? 'Queued';
     return {
       ...order,
-      status: isComplete ? 'Completed' : rawStatus,
+      status: rawStatus,
     } as OrderDto & { status: QueueJobStatus };
   });
 
-  const activeOrPaused = normalizedOrders
-    .filter((order) => order.status === 'Active' || order.status === 'Paused')
-    .sort((left, right) => new Date(left.orderDateTime).getTime() - new Date(right.orderDateTime).getTime());
-
-  const pending = normalizedOrders.filter((order) => order.status === 'Pending');
-  const activeLimit = 3;
-  const slots = Math.max(0, activeLimit - activeOrPaused.length);
-  const toActivate = pending.slice(0, slots).map((item) => item.orderID);
-  const toDemote = activeOrPaused.length > activeLimit ? activeOrPaused.slice(activeLimit).map((item) => item.orderID) : [];
-
   const jobs = normalizedOrders.map((order) => {
-    let status = order.status;
-
-    if (toDemote.includes(order.orderID)) {
-      status = 'Pending';
-    } else if (order.status === 'Pending' && toActivate.includes(order.orderID)) {
-      status = 'Active';
-    }
-
     const totalTime = (order as any).totalTime;
     const timeElapsed = (order as any).timeElapsed;
     const items = order.orderItems ?? [];
@@ -152,7 +134,7 @@ export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; que
       id: `order-${order.orderID}`,
       name: items[0]?.itemName ?? `Order ${order.orderID}`,
       qty: items.reduce((sum, item) => sum + (item.quantity ?? 0), 0) || items.length || 1,
-      status,
+      status: order.status,
       progress: calculateProgress(totalTime, timeElapsed),
       timeLeft: formatTimeLeft(totalTime, timeElapsed),
       materials,
@@ -164,7 +146,7 @@ export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; que
 
   return {
     activeItems: jobs.filter((job) => job.status === 'Active' || job.status === 'Paused'),
-    queuedItems: jobs.filter((job) => job.status === 'Pending'),
+    queuedItems: jobs.filter((job) => job.status === 'Queued'),
   };
 }
 

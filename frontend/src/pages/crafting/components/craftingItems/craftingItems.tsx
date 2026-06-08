@@ -1,8 +1,8 @@
 import React, { FC, useEffect, useState } from 'react';
-import axios from 'axios';
 import './craftingItems.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
-import { calculateProgress, formatTimeLeft, normalizeQueueStatus } from '../../../../services/craftingUtils';
+import { useApi } from '../../../../hooks';
+import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
 interface TiltsState {
   [key: string]: string;
@@ -18,6 +18,7 @@ type OrderDto = {
   timeElapsed?: number;
   status: string;
   employeeID?: number;
+  orderExpedite?: boolean;
 };
 
 type EmployeeDto = {
@@ -37,36 +38,25 @@ type CraftingJob = {
   itemID: number;
   name: string;
   qty: number;
-  status: 'Pending' | 'Active' | 'Paused' | 'Completed';
+  status: QueueJobStatus;
   progress: number;
   timeLeft: string;
   materials: string[];
   employeeName: string;
 };
 
-const API_BASE = 'http://localhost:5253/api';
-
-async function updateOrderStatus(orderID: number, status: string): Promise<void> {
-  try {
-    await axios.put(`${API_BASE}/Order/${orderID}/status`, {
-      status,
-    }, {
-      withCredentials: true,
-    });
-  } catch (error) {
-    console.warn(`Unable to update order ${orderID} status to ${status}`, error);
-  }
-}
-
 const CraftingItems: FC = () => {
+  const api = useApi();
   const [tilts, setTilts] = useState<TiltsState>({});
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
+
+  const ORDER_REFRESH_INTERVAL_MS = 60_000;
 
   const loadActiveJobs = async (): Promise<void> => {
     try {
       const [ordersResponse, usersResponse] = await Promise.all([
-        axios.get<OrderDto[]>(`${API_BASE}/Order`, { withCredentials: true }),
-        axios.get<EmployeeDto[]>(`${API_BASE}/User`, { withCredentials: true }),
+        api.get<OrderDto[]>('/Order'),
+        api.get<EmployeeDto[]>('/User'),
       ]);
 
       const employees = usersResponse.data.reduce<Record<number, string>>((map, user) => {
@@ -76,64 +66,42 @@ const CraftingItems: FC = () => {
         return map;
       }, {});
 
-      const sortedOrders = ordersResponse.data.slice().sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime());
+      const sortedOrders = ordersResponse.data
+        .slice()
+        .sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime())
+        .filter((order) => {
+          const status = normalizeQueueStatus(order.status);
+          // Only show Active or Paused orders
+          return status === 'Active' || status === 'Paused';
+        });
 
-      const normalizedOrders = sortedOrders.map((order) => {
-        const rawStatus = normalizeQueueStatus(order.status);
-        const isComplete = rawStatus !== 'Pending' && rawStatus !== 'Completed'
-          && order.totalTime != null
-          && order.timeElapsed != null
-          && order.totalTime === order.timeElapsed;
-
-        return {
-          ...order,
-          status: isComplete ? 'Completed' : rawStatus,
-        } as OrderDto & { status: CraftingJob['status'] };
-      });
-
-      const activeOrPaused = normalizedOrders
-        .filter((order) => order.status === 'Active' || order.status === 'Paused')
-        .sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime());
-      const pending = normalizedOrders.filter((order) => order.status === 'Pending');
-      const activeLimit = 3;
-      const slots = Math.max(0, activeLimit - activeOrPaused.length);
-      const toActivate = pending.slice(0, slots).map((order) => order.orderID);
-      const toDemote = activeOrPaused.length > activeLimit ? activeOrPaused.slice(activeLimit).map((order) => order.orderID) : [];
-
-      await Promise.all([
-        ...toActivate.map((orderID) => updateOrderStatus(orderID, 'Active')),
-        ...toDemote.map((orderID) => updateOrderStatus(orderID, 'Pending')),
-      ]);
-
-      const jobs = normalizedOrders.map((order) => {
-        let jobStatus = order.status;
-        if (toDemote.includes(order.orderID)) {
-          jobStatus = 'Pending';
-        } else if (order.status === 'Pending' && toActivate.includes(order.orderID)) {
-          jobStatus = 'Active';
-        }
+      const jobs = sortedOrders.map((order) => {
+        const expedited = order.orderExpedite === true;
+        const status = normalizeQueueStatus(order.status) ?? 'Paused';
 
         return {
           orderID: order.orderID,
           itemID: order.itemID,
           name: order.itemName || `Order ${order.orderID}`,
           qty: order.quantity ?? 1,
-          status: jobStatus,
-          progress: calculateProgress(order.totalTime, order.timeElapsed),
-          timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed),
+          status,
+          progress: calculateProgress(order.totalTime, order.timeElapsed, expedited),
+          timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed, expedited),
           materials: [order.itemName || `Item ${order.itemID}`],
           employeeName: employees[order.employeeID ?? 0] ?? 'Unknown Employee',
         };
-      }).filter((job) => job.status === 'Active' || job.status === 'Paused');
+      });
 
       const uniqueItemIds = Array.from(new Set(jobs.map((job) => job.itemID)));
-      const ingredientResponses = await Promise.all(uniqueItemIds.map(async (itemID) => {
-        try {
-          return await axios.get<IngredientDto[]>(`${API_BASE}/Item/itemIngredient/item/${itemID}`, { withCredentials: true });
-        } catch (error) {
-          return null;
-        }
-      }));
+      const ingredientResponses = await Promise.all(
+        uniqueItemIds.map(async (itemID) => {
+          try {
+            return await api.get<IngredientDto[]>(`/Item/itemIngredient/item/${itemID}`);
+          } catch (error) {
+            return null;
+          }
+        })
+      );
 
       const ingredientsByItemId = uniqueItemIds.reduce<Record<number, string[]>>((map, itemID, index) => {
         const response = ingredientResponses[index];
@@ -147,18 +115,45 @@ const CraftingItems: FC = () => {
         return map;
       }, {});
 
-      setActiveJobs(jobs.map((job) => ({
-        ...job,
-        materials: ingredientsByItemId[job.itemID] ?? job.materials,
-      })));
+      setActiveJobs(
+        jobs.map((job) => ({
+          ...job,
+          materials: ingredientsByItemId[job.itemID] ?? job.materials,
+        }))
+      );
     } catch (error) {
       console.error('Unable to load crafting items orders', error);
     }
   };
 
   useEffect(() => {
-    loadActiveJobs();
-  }, []);
+    let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const refresh = async (): Promise<void> => {
+      if (!isMounted) return;
+      await loadActiveJobs();
+    };
+
+    const handleOrderUpdated = (): void => {
+      void refresh();
+    };
+
+    void refresh();
+    intervalId = setInterval(() => {
+      void refresh();
+    }, ORDER_REFRESH_INTERVAL_MS);
+
+    window.addEventListener('crafting-order-updated', handleOrderUpdated);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      window.removeEventListener('crafting-order-updated', handleOrderUpdated);
+    };
+  }, [api]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -182,11 +177,25 @@ const CraftingItems: FC = () => {
     }));
   };
 
+  const handleCancel = async (job: CraftingJob): Promise<void> => {
+    try {
+      await api.put(`/Order/${job.orderID}/status`, { status: 'Cancelled' });
+      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
+      await loadActiveJobs();
+    } catch (error) {
+      console.error(`Unable to cancel order ${job.orderID}`, error);
+    }
+  };
+
   const handlePauseResume = async (job: CraftingJob): Promise<void> => {
-    const nextStatus: CraftingJob['status'] = job.status === 'Paused' ? 'Active' : 'Paused';
-    await updateOrderStatus(job.orderID, nextStatus);
-    window.dispatchEvent(new CustomEvent('crafting-order-updated'));
-    await loadActiveJobs();
+    const nextStatus = job.status === 'Paused' ? 'Active' : 'Paused';
+    try {
+      await api.put(`/Order/${job.orderID}/status`, { status: nextStatus });
+      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
+      await loadActiveJobs();
+    } catch (error) {
+      console.error(`Unable to update order ${job.orderID} status to ${nextStatus}`, error);
+    }
   };
 
   return (
@@ -235,7 +244,9 @@ const CraftingItems: FC = () => {
           </div>
 
           <div className="card-actions">
-            <button className="btn-cancel" type="button">Cancel</button>
+            <button className="btn-cancel" type="button" onClick={() => void handleCancel(job)}>
+              Cancel
+            </button>
             <button
               className={`btn-action ${job.status === 'Paused' ? 'resume' : 'pause'}`}
               type="button"

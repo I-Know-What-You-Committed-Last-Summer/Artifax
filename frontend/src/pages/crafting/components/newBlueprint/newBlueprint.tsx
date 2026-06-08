@@ -33,6 +33,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
   const [blueprintName, setBlueprintName] = useState('');
   const [category, setCategory] = useState('metal');
   const [craftTimeMinutes, setCraftTimeMinutes] = useState(1);
+  const [price, setPrice] = useState<number>(0);
   const [materials, setMaterials] = useState<MaterialRow[]>([
     { id: 'mat-1', item: 'Metal', amount: 1 },
     { id: 'mat-2', item: '', amount: 1 },
@@ -111,6 +112,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
           itemName: blueprintName.trim(),
           itemCategory: category,
           productionTime: craftTimeMinutes,
+          price: Number(price) || 0,
         };
 
         const createdItemResponse = await api.post('/Item/item/', itemPayload);
@@ -118,6 +120,13 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
         if (!itemId) {
           throw new Error('Unable to create the item for this blueprint.');
         }
+      } else {
+        await api.put(`/Item/${itemId}`, {
+          itemName: blueprintName.trim(),
+          itemCategory: category,
+          productionTime: craftTimeMinutes,
+          price: Number(price) || 0,
+        });
       }
 
       const ingredientPayloads = [];
@@ -152,6 +161,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
       const blueprintPayload = {
         itemID: itemId,
         productionTime: craftTimeMinutes,
+        price: Number(price) || 0,
         ingredients: ingredientPayloads,
       };
       await api.put(`/Item/item/${itemId}/blueprint`, blueprintPayload);
@@ -229,6 +239,21 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
               className="field-select"
               ariaLabel="Select blueprint category"
             />
+          </div>
+          <div className="field-group field-group--price">
+            <label htmlFor="blueprintPrice">Price (ZAR)</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                id="blueprintPrice"
+                type="number"
+                min={0}
+                step={0.01}
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value || 0))}
+                className="field-input"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
  <label htmlFor="blueprintCategory">Required materials</label>

@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import './crafting.css';
 import AlertStrip from '../../components/layout/AlertStrip';
 import PageHeader from '../../components/layout/PageHeader';
@@ -13,8 +13,8 @@ import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import BlueprintEdit from './components/blueprintEdit/BlueprintEdit';
 import { useApi } from '../../hooks';
+import { getInventoryOverview } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
-import { craftingAlerts } from '../../data/fallback';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 
 interface PageProps {
@@ -45,11 +45,13 @@ interface CraftPageProps {
   selectedBlueprintId: string;
   selectedBlueprint: Blueprint | null;
   amount: number;
+  orderExpedite: boolean;
   filter: string;
   onFilterChange: (filter: string) => void;
   onSelectBlueprint: (blueprintId: string) => void;
   onAmountChange: (amount: number) => void;
-  onCraft: () => void;
+  onToggleExpedite: () => void;
+  onCraft: () => Promise<void>;
   onEditBlueprint: () => void;
   onDeleteBlueprint: () => void;
 }
@@ -60,10 +62,12 @@ const CraftPage: FC<PageProps & CraftPageProps> = ({
   selectedBlueprintId,
   selectedBlueprint,
   amount,
+  orderExpedite,
   filter,
   onFilterChange,
   onSelectBlueprint,
   onAmountChange,
+  onToggleExpedite,
   onCraft,
   onEditBlueprint,
   onDeleteBlueprint,
@@ -120,7 +124,9 @@ const CraftPage: FC<PageProps & CraftPageProps> = ({
           <CraftPanel
             blueprint={selectedBlueprint}
             amount={amount}
+            orderExpedite={orderExpedite}
             onAmountChange={onAmountChange}
+            onToggleExpedite={onToggleExpedite}
             onCraft={onCraft}
             onEdit={onEditBlueprint}
             onDelete={onDeleteBlueprint}
@@ -190,8 +196,10 @@ const Crafting: FC = () => {
   const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>('');
   const [selectedBlueprint, setSelectedBlueprint] = useState<Blueprint | null>(null);
   const [amount, setAmount] = useState<number>(1);
+  const [orderExpedite, setOrderExpedite] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [editItemId, setEditItemId] = useState<number | null>(null);
+  const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
   const api = useApi();
   const currentDate = getCurrentDateSAST();
 
@@ -241,6 +249,7 @@ const Crafting: FC = () => {
           category: item.itemCategory?.toLowerCase() as any || 'mechanical',
           have: inventoryMap[item.itemName] || 0,
           craft: 0,
+          productionTime: item.productionTime,
           materials: ingredients.map((ing: any) => ({
             name: ing.itemName,
             need: ing.quantity,
@@ -255,9 +264,40 @@ const Crafting: FC = () => {
     }
   };
 
-  const handleCraft = (): void => {
-    if (!selectedBlueprint) return;
-    console.log(`Crafting ${amount} ${selectedBlueprint.name}(s)`);
+  const handleCraft = async (): Promise<void> => {
+    if (!selectedBlueprint || !selectedBlueprintId) return;
+
+    const itemId = parseInt(selectedBlueprintId.replace('bp-', ''), 10);
+    if (Number.isNaN(itemId)) {
+      console.error('Invalid blueprint item id');
+      return;
+    }
+
+    try {
+      const [branchesResponse, usersResponse] = await Promise.all([
+        api.get('/Branch'),
+        api.get('/User'),
+      ]);
+
+      const branch = branchesResponse.data?.[0];
+      const user = usersResponse.data?.[0];
+      const branchID = branch?.branchID ?? branch?.BranchID ?? 1;
+      const employeeID = user?.employeeId ?? user?.EmployeeID ?? 1;
+
+      await api.post('/Order/create', {
+        itemID: itemId,
+        quantity: amount,
+        branchID,
+        employeeID,
+        orderExpedite,
+      });
+
+      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
+      alert('Craft order submitted successfully.');
+    } catch (error) {
+      console.error('Failed to create craft order', error);
+      alert('Unable to place craft order. Please try again.');
+    }
   };
 
   const handleEditBlueprint = (): void => {
@@ -294,6 +334,19 @@ const Crafting: FC = () => {
     }
   };
 
+  useEffect(() => {
+    const loadLowStock = async (): Promise<void> => {
+      try {
+        const overview = await getInventoryOverview();
+        setLowStockAlerts(overview.alerts);
+      } catch (error) {
+        console.error('Failed to load low stock alerts', error);
+      }
+    };
+
+    void loadLowStock();
+  }, []);
+
   return (
     <div className="page-content">
       <div className="space-y-4 sm:space-y-5">
@@ -301,7 +354,7 @@ const Crafting: FC = () => {
           title="Crafting Management"
           subtitle={`Crafting Dashboard · ${currentDate}`}
         />
-        <AlertStrip label="Active Jobs:" items={craftingAlerts} />
+        <AlertStrip label={`Low Stock: ${lowStockAlerts.length}`} items={lowStockAlerts} />
 
         <div className="crafting-page">
           {activeTab === 'active' && <ActiveJobsPage />}
@@ -313,10 +366,12 @@ const Crafting: FC = () => {
               selectedBlueprintId={selectedBlueprintId}
               selectedBlueprint={selectedBlueprint}
               amount={amount}
+              orderExpedite={orderExpedite}
               filter={filter}
               onFilterChange={setFilter}
               onSelectBlueprint={handleSelectBlueprint}
               onAmountChange={setAmount}
+              onToggleExpedite={() => setOrderExpedite((prev) => !prev)}
               onCraft={handleCraft}
               onEditBlueprint={handleEditBlueprint}
               onDeleteBlueprint={handleDeleteBlueprint}

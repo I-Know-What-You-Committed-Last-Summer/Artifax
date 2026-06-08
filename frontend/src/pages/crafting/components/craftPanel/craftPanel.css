@@ -71,6 +71,7 @@
   border-radius: 12px;
   padding: 8px 12px;
   min-width: 160px;
+  max-width: 180px;
 }
 
 .amount-input {
@@ -84,6 +85,65 @@
   text-align: center;
   appearance: textfield;
   -moz-appearance: textfield;
+}
+
+.expedite-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.slider:before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  background: var(--surface);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch input:checked + .slider {
+  background: var(--primary);
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.expedite-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.craft-time-estimate {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
 }
 
 .amount-input::-webkit-outer-spin-button,
