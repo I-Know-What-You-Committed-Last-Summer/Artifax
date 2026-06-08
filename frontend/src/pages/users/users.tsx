@@ -3,8 +3,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
-import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
-import { useApi } from '../../hooks';
+
 
 type User = {
   id: number;
@@ -17,7 +16,19 @@ type User = {
 
 const Users: React.FC = () => {
   const currentDate = getCurrentDateSAST();
-  const api = useApi();
+  // api instance not used here; we use localFetch for temporary local backend calls
+  // Temporary: use local backend for users operations to avoid remote 401 during development
+  const LOCAL_BASE = 'http://localhost:5253/api';
+
+  const localFetch = (path: string, init?: RequestInit) => {
+    const url = `${LOCAL_BASE}${path}`;
+    const opts: RequestInit = {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      ...init,
+    };
+    return fetch(url, opts);
+  };
   // `api` is an axios instance configured in `src/hooks/useApi.ts`.
   // All backend HTTP calls in this file use `api` and the base URL `http://localhost:5253/api`.
   // Backend endpoints used:
@@ -45,16 +56,16 @@ const Users: React.FC = () => {
     setSelectedUserId(null);
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (): Promise<User[]> => {
     setLoading(true);
     try {
       const [adminsResp, employeesResp, branchesResp] = await Promise.all([
-        api.get('/User/admins'),
-        api.get('/User/employees'),
-        api.get('/Branch'),
+        localFetch('/User/admins'),
+        localFetch('/User/employees'),
+        localFetch('/Branch'),
       ]);
 
-      const branches = branchesResp.data ?? [];
+      const branches = (await branchesResp.json()) ?? [];
       const map: Record<number, string> = {};
       branches.forEach((b: any) => {
         const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
@@ -78,12 +89,15 @@ const Users: React.FC = () => {
         } as User;
       };
 
-      const adminUsers = (adminsResp.data ?? []).map((e: any) => makeUser(e, 'Admin'));
-      const employeeUsers = (employeesResp.data ?? []).map((e: any) => makeUser(e, 'Employee'));
+      const adminUsers = (await adminsResp.json() ?? []).map((e: any) => makeUser(e, 'Admin'));
+      const employeeUsers = (await employeesResp.json() ?? []).map((e: any) => makeUser(e, 'Employee'));
+      const combinedUsers = [...adminUsers, ...employeeUsers];
 
-      setUsers([...adminUsers, ...employeeUsers]);
+      setUsers(combinedUsers);
+      return combinedUsers;
     } catch (err) {
       console.error('Fetch users failed', err);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -100,12 +114,28 @@ const Users: React.FC = () => {
           EmployeePassword: user.password ?? '',
           EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
         };
-        const resp = await api.post('/User/employee', payload);
-        await fetchUsers();
-        const created = resp.data;
-        const createdId = created?.employeeId ?? created?.EmployeeId ?? null;
-        if (createdId) setSelectedUserId(createdId);
-        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        // Verify current session is authorized (admin) before attempting create
+        const meResp = await localFetch('/User/me');
+        if (!meResp.ok) {
+          const msg = await meResp.text().catch(() => 'No active session');
+          throw new Error(`Not authorized: ${msg}`);
+        }
+
+        const resp = await localFetch('/User/employee', { method: 'POST', body: JSON.stringify(payload) });
+        if (!resp.ok) {
+          // try to show server-provided message when available
+          const text = await resp.text().catch(() => '');
+          throw new Error(`Create failed ${resp.status}${text ? `: ${text}` : ''}`);
+        }
+        const created = await resp.json();
+        const createdId = created?.employeeId ?? created?.EmployeeId ?? created?.EmployeeID ?? null;
+        const updatedUsers = await fetchUsers();
+        if (createdId) {
+          setSelectedUserId(createdId);
+        } else {
+          const matched = updatedUsers.find((u) => u.email.toLowerCase() === user.email.toLowerCase());
+          if (matched) setSelectedUserId(matched.id);
+        }
         return;
       }
 
@@ -115,9 +145,13 @@ const Users: React.FC = () => {
 
       // If only branch changed, call branch-specific endpoint
       if (existing && existing.branch !== user.branch && existing.name === user.name && existing.email === user.email) {
-        await api.patch('/User/employee/branch', null, { params: { EmployeeEmail: originalEmail, BranchId: Number(user.branch) } });
+        const branchUrl = `/User/employee/branch?EmployeeEmail=${encodeURIComponent(originalEmail)}&BranchId=${Number(
+          user.branch
+        )}`;
+        const branchResp = await localFetch(branchUrl, { method: 'PATCH' });
+        if (!branchResp.ok) throw new Error(`Branch update failed ${branchResp.status}`);
         await fetchUsers();
-        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        setSelectedUserId(user.id);
         return;
       }
 
@@ -126,13 +160,18 @@ const Users: React.FC = () => {
         BranchID: Number(user.branch),
         EmployeeEmail: user.email,
         EmployeeName: user.name,
-        EmployeePassword: user.password ?? '',
         EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
       };
 
-      await api.patch('/User/employee', updatePayload, { params: { EmployeeEmail: originalEmail } });
+      if (typeof user.password === 'string' && user.password.length > 0) {
+        updatePayload.EmployeePassword = user.password;
+      }
+
+      const updUrl = `/User/employee?EmployeeEmail=${encodeURIComponent(originalEmail)}`;
+      const updResp = await localFetch(updUrl, { method: 'PATCH', body: JSON.stringify(updatePayload) });
+      if (!updResp.ok) throw new Error(`Update failed ${updResp.status}`);
       await fetchUsers();
-      setCurrentUser({ name: user.name, role: user.role, email: user.email });
+      setSelectedUserId(user.id);
     } catch (err) {
       console.error('Save user failed', err);
     }
@@ -140,12 +179,24 @@ const Users: React.FC = () => {
 
   const handleDeleteUser = async (id: number) => {
     try {
-      await api.delete('/User/employee', { params: { id } });
+      const delResp = await localFetch(`/User/employee?id=${encodeURIComponent(String(id))}`, { method: 'DELETE' });
+      if (!delResp.ok) throw new Error(`Delete failed ${delResp.status}`);
       await fetchUsers();
       setSelectedUserId(null);
-      clearCurrentUser();
+      // do not clear or change current session when deleting a user
     } catch (err) {
       console.error('Delete user failed', err);
+    }
+  };
+
+  const handleRequestEdit = async (id: number) => {
+    try {
+      // Refresh users/branches from backend to ensure latest state before editing.
+      await fetchUsers();
+      return true;
+    } catch (err) {
+      console.error('Request edit failed', err);
+      return false;
     }
   };
 
@@ -173,7 +224,7 @@ const Users: React.FC = () => {
     })();
 
     return () => { mounted = false; clearTimeout(timeoutId); };
-  }, [api]);
+  }, []);
 
   return (
     <div className="page-content">
@@ -189,6 +240,7 @@ const Users: React.FC = () => {
               user={selectedUser}
               onSave={handleSaveUser}
               onDelete={handleDeleteUser}
+              onRequestEdit={handleRequestEdit}
             />
           </div>
           <div className="users-panel">

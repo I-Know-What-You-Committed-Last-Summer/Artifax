@@ -16,6 +16,7 @@ import { useApi } from '../../hooks';
 import { getInventoryOverview } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
+import { useCurrentUser } from '../../utils/currentUser';
 
 interface PageProps {
   activeTab: string;
@@ -201,6 +202,7 @@ const Crafting: FC = () => {
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
   const api = useApi();
+  const currentUser = useCurrentUser();
   const currentDate = getCurrentDateSAST();
 
   const handleSelectBlueprint = async (blueprintId: string) => {
@@ -274,15 +276,8 @@ const Crafting: FC = () => {
     }
 
     try {
-      const [branchesResponse, usersResponse] = await Promise.all([
-        api.get('/Branch'),
-        api.get('/User'),
-      ]);
-
-      const branch = branchesResponse.data?.[0];
-      const user = usersResponse.data?.[0];
-      const branchID = branch?.branchID ?? branch?.BranchID ?? 1;
-      const employeeID = user?.employeeId ?? user?.EmployeeID ?? 1;
+      const branchID = currentUser?.branchId ?? 1;
+      const employeeID = currentUser?.employeeId ?? 1;
 
       await api.post('/Order/create', {
         itemID: itemId,

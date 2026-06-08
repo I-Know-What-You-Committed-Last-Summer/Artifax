@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import userIcon from '../../../../assets/images/userIcon.png';
 import './UserList.css';
 
@@ -24,12 +24,19 @@ interface UserListProps {
 
 function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUser, branchMap }: UserListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const selectedRef = useRef<HTMLElement | null>(null);
 
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
     const query = searchQuery.toLowerCase().trim();
     return users.filter((user) => user.name.toLowerCase().includes(query));
   }, [users, searchQuery]);
+  useEffect(() => {
+    if (selectedRef.current) {
+      selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedUserId, filteredUsers]);
+
   return (
     <section className="userlist-card">
       <header className="userlist-card-header">
@@ -66,6 +73,7 @@ function UserList({ users, selectedUserId, loading, onSelectUser, onCreateNewUse
             <article
               key={user.id}
               className={`userlist-item ${selectedUserId === user.id ? 'selected' : ''}`}
+              ref={selectedUserId === user.id ? selectedRef : null}
               onClick={() => onSelectUser(user.id)}
               role="button"
               tabIndex={0}

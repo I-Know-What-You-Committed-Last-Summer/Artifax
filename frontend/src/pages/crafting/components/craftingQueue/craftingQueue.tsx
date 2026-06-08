@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import './craftingQueue.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { useApi } from '../../../../hooks';
+import { useCurrentUser } from '../../../../utils/currentUser';
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
 const itemsPerPage = 3;
@@ -15,6 +16,8 @@ type OrderDto = {
   totalTime?: number;
   timeElapsed?: number;
   status: string;
+  branchID?: number;
+  BranchID?: number;
   employeeID?: number;
   orderExpedite?: boolean;
 };
@@ -35,10 +38,12 @@ type CraftingJob = {
   materials: string[];
   employeeName: string;
   createdDateTime: string;
+  branchID: number;
 };
 
 const CraftingQueue: FC = () => {
   const api = useApi();
+  const currentUser = useCurrentUser();
   const [page, setPage] = useState<number>(1);
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
   const [queuedJobs, setQueuedJobs] = useState<CraftingJob[]>([]);
@@ -62,12 +67,27 @@ const CraftingQueue: FC = () => {
           return map;
         }, {});
 
+        const allowedBranchIds = currentUser?.branchId === 3
+          ? []
+          : currentUser?.branchId != null
+            ? [currentUser.branchId]
+            : [];
+
         const orders = ordersResponse.data
           .slice()
           .sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime())
           .filter((order) => {
             const status = normalizeQueueStatus(order.status);
-            return status === 'Queued' || status === 'Active' || status === 'Paused';
+            if (status !== 'Queued' && status !== 'Active' && status !== 'Paused') {
+              return false;
+            }
+
+            const orderBranchId = order.branchID ?? order.BranchID ?? 0;
+            if (allowedBranchIds.length > 0) {
+              return allowedBranchIds.includes(orderBranchId);
+            }
+
+            return true;
           });
 
         const jobs = orders.map((order) => {
@@ -85,6 +105,7 @@ const CraftingQueue: FC = () => {
             materials: [order.itemName || `Item ${order.itemID}`],
             employeeName: employees[order.employeeID ?? 0] ?? 'Unknown Employee',
             createdDateTime: order.createdDateTime,
+            branchID: order.branchID ?? order.BranchID ?? 0,
           };
         });
 
@@ -122,7 +143,7 @@ const CraftingQueue: FC = () => {
       }
       window.removeEventListener('crafting-order-updated', listener);
     };
-  }, [api]);
+  }, [api, currentUser]);
 
   const queuedPageCount = Math.ceil(queuedJobs.length / itemsPerPage);
   const totalPages = queuedPageCount > 0 ? queuedPageCount + 1 : 1;
@@ -158,7 +179,7 @@ const CraftingQueue: FC = () => {
                 <div className="item-info">
                   <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
                   <div>
-                    <h4>{item.name} x{item.qty}</h4>
+                    <h4>{item.name} x{item.qty} · B{item.branchID}</h4>
                     <p>{item.status} · {item.employeeName}</p>
                   </div>
                 </div>
@@ -183,7 +204,7 @@ const CraftingQueue: FC = () => {
                 <div className="item-info">
                   <img src={unitIcon} alt={`${item.name} icon`} className="queue-item-icon" />
                   <div>
-                    <h4>{item.name} x{item.qty}</h4>
+                    <h4>{item.name} x{item.qty} · B{item.branchID}</h4>
                     <p>Queued · Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdDateTime))}</p>
                   </div>
                 </div>
