@@ -21,6 +21,19 @@ export type CurrentUserResponse = {
   Username?: string;
 };
 
+export type EmployeeDetailsResponse = {
+  employeeId?: number;
+  employeeEmail?: string;
+  employeeName?: string;
+  branchId?: number;
+  employeeLevel?: string;
+};
+
+export type BranchDto = {
+  BranchID: number;
+  BranchName: string;
+};
+
 async function withAxios<T>(request: Promise<AxiosResponse<T>>): Promise<T> {
   try {
     const response = await request;
@@ -54,4 +67,14 @@ export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeRespo
 
 export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
   return withAxios<CurrentUserResponse>(apiClient.get('/User/me'));
+}
+
+export function getEmployeeByEmail(email: string): Promise<EmployeeDetailsResponse> {
+  return withAxios<EmployeeDetailsResponse>(
+    apiClient.get(`/User/employee/${encodeURIComponent(email)}`),
+  );
+}
+
+export function getBranches(): Promise<BranchDto[]> {
+  return withAxios<BranchDto[]>(apiClient.get('/Branch'));
 }

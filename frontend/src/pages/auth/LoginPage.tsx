@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 import { setCurrentUser } from '../../utils/currentUser';
 import { clearAuthToken, setAuthToken } from '../../utils/authToken';
-import { getCurrentUserFromSession, loginEmployee } from '../../services/authApi';
+import { getCurrentUserFromSession, getEmployeeByEmail, getBranches, loginEmployee } from '../../services/authApi';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -58,15 +58,33 @@ function LoginPage() {
         password,
       });
 
-      console.log(loginResponse);
-
-      // Fetch user profile info saved in the backend session variables
       const sessionUser = await getCurrentUserFromSession();
+      const currentEmail = sessionUser.UserEmail || loginResponse.employeeEmail || email.trim();
+      const currentName = sessionUser.Username || loginResponse.employeeName || currentEmail;
+      const currentRole = sessionUser.UserLevel || 'Employee';
+
+      let branchName: string | undefined;
+      let employeeId: number | undefined;
+      let branchId: number | undefined;
+
+      try {
+        const employeeDetails = await getEmployeeByEmail(currentEmail);
+        employeeId = employeeDetails.employeeId;
+        branchId = employeeDetails.branchId;
+        const branches = await getBranches();
+        branchName = branches.find((branch) => branch.BranchID === branchId)?.BranchName;
+      } catch (branchError) {
+        // If branch lookup fails, fall back to default display.
+        branchName = undefined;
+      }
 
       setCurrentUser({
-        name: sessionUser.Username || loginResponse.employeeName || email.trim(),
-        role: sessionUser.UserLevel || 'Employee',
-        email: sessionUser.UserEmail || loginResponse.employeeEmail || email.trim(),
+        name: currentName,
+        role: currentRole,
+        email: currentEmail,
+        employeeId,
+        branchId,
+        branchName,
       });
 
       navigate('/dashboard');

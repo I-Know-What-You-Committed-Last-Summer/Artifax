@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import './craftingItems.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import { useApi } from '../../../../hooks';
+import { useCurrentUser } from '../../../../utils/currentUser';
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from '../../../../services/craftingUtils';
 
 interface TiltsState {
@@ -17,6 +18,8 @@ type OrderDto = {
   totalTime?: number;
   timeElapsed?: number;
   status: string;
+  branchID?: number;
+  BranchID?: number;
   employeeID?: number;
   orderExpedite?: boolean;
 };
@@ -43,10 +46,12 @@ type CraftingJob = {
   timeLeft: string;
   materials: string[];
   employeeName: string;
+  branchID: number;
 };
 
 const CraftingItems: FC = () => {
   const api = useApi();
+  const currentUser = useCurrentUser();
   const [tilts, setTilts] = useState<TiltsState>({});
   const [activeJobs, setActiveJobs] = useState<CraftingJob[]>([]);
 
@@ -66,13 +71,27 @@ const CraftingItems: FC = () => {
         return map;
       }, {});
 
+      const allowedBranchIds = currentUser?.branchId === 3
+        ? []
+        : currentUser?.branchId != null
+          ? [currentUser.branchId]
+          : [];
+
       const sortedOrders = ordersResponse.data
         .slice()
         .sort((a, b) => new Date(a.createdDateTime).getTime() - new Date(b.createdDateTime).getTime())
         .filter((order) => {
           const status = normalizeQueueStatus(order.status);
-          // Only show Active or Paused orders
-          return status === 'Active' || status === 'Paused';
+          if (status !== 'Active' && status !== 'Paused') {
+            return false;
+          }
+
+          const orderBranchId = order.branchID ?? order.BranchID ?? 0;
+          if (allowedBranchIds.length > 0) {
+            return allowedBranchIds.includes(orderBranchId);
+          }
+
+          return true;
         });
 
       const jobs = sortedOrders.map((order) => {
@@ -89,6 +108,7 @@ const CraftingItems: FC = () => {
           timeLeft: formatTimeLeft(order.totalTime, order.timeElapsed, expedited),
           materials: [order.itemName || `Item ${order.itemID}`],
           employeeName: employees[order.employeeID ?? 0] ?? 'Unknown Employee',
+          branchID: order.branchID ?? order.BranchID ?? 0,
         };
       });
 
@@ -154,7 +174,7 @@ const CraftingItems: FC = () => {
       }
       window.removeEventListener('crafting-order-updated', handleOrderUpdated);
     };
-  }, [api]);
+}, [api, currentUser]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string): void => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -217,7 +237,7 @@ const CraftingItems: FC = () => {
               </div>
               <div className="job-titles">
                 <h3>{job.name}</h3>
-                <p>Employee: {job.employeeName} · Qty: {job.qty}</p>
+                <p>Employee: {job.employeeName} · Qty: {job.qty} · B{job.branchID}</p>
               </div>
             </div>
             <span className={`status-badge ${job.status.toLowerCase().replace(' ', '-')}`}>
