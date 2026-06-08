@@ -164,7 +164,7 @@ function LoginPage() {
             {/* Password Field */}
             <label className="login-field">
               <span className="login-label">Password</span>
-              <div className={`login-input-shell ${((submitAttempted || passwordTouched) && passwordError) ? 'error' : ''}`}>
+              <div className={`login-input-shell has-password-toggle ${((submitAttempted || passwordTouched) && passwordError) ? 'error' : ''}`}>
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}

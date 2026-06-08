@@ -5,15 +5,16 @@ import InventoryItemEditModal from '../InventoryItemEditModal';
 import { InventoryItem } from '../../../../services/inventoryApi';
 
 describe('InventoryItemEditModal', () => {
-  it('renders category select options and preserves unknown current values', async () => {
+  it('renders category select options and submits price and quantity changes', async () => {
     const onClose = jest.fn();
     const onSave = jest.fn().mockResolvedValue(undefined);
     const item: InventoryItem = {
-      id: 7,
+      id: '7',
       name: 'Blue plastic table',
       sku: 'TAB-7',
       category: 'Plastic Tables',
       quantity: 5,
+      price: 199.99,
       minStock: 5,
       location: 'Johannesburg',
       status: 'LOW',
@@ -34,10 +35,14 @@ describe('InventoryItemEditModal', () => {
     const categoryButton = screen.getByRole('button', { name: /select item category/i });
     expect(categoryButton).toHaveTextContent('Plastic Tables');
 
+    await userEvent.clear(screen.getByLabelText(/price \(zar\)/i));
+    await userEvent.type(screen.getByLabelText(/price \(zar\)/i), '249.5');
+    await userEvent.clear(screen.getByLabelText(/total quantity/i));
+    await userEvent.type(screen.getByLabelText(/total quantity/i), '12');
     await userEvent.click(categoryButton);
     await userEvent.click(screen.getByRole('option', { name: 'Metals' }));
     await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
-    expect(onSave).toHaveBeenCalledWith(7, expect.objectContaining({ itemCategory: 'Metals' }));
+    expect(onSave).toHaveBeenCalledWith(7, expect.objectContaining({ itemCategory: 'Metals', price: 249.5, quantity: 12 }));
   });
 });

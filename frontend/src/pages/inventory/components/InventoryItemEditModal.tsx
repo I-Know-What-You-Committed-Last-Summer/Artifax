@@ -16,6 +16,9 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
     itemName: '',
     itemCategory: '',
     productionTime: 0,
+    price: null,
+    quantity: 0,
+    branchId: -1
   });
 
   useEffect(() => {
@@ -24,6 +27,9 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
         itemName: item.name,
         itemCategory: item.category.trim(),
         productionTime: item.productionTime,
+        price: item.price,
+        quantity: item.quantity,
+        branchId: item.branchId
       });
     }
   }, [item]);
@@ -105,7 +111,7 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
             </label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr,1fr]">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-2 text-sm text-text">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Production time</span>
               <input
@@ -118,10 +124,42 @@ function InventoryItemEditModal({ item, open, saving, categoryOptions, onClose, 
               />
             </label>
 
+            <label className="space-y-2 text-sm text-text">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Price (ZAR)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={formValues.price ?? ''}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setFormValues((current) => ({
+                    ...current,
+                    price: nextValue === '' ? null : Number(nextValue),
+                  }));
+                }}
+                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-2 text-sm text-text">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Total quantity</span>
+              <input
+                type="number"
+                min={0}
+                value={formValues.quantity}
+                onChange={(event) => setFormValues((current) => ({ ...current, quantity: Number(event.target.value) }))}
+                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
+                required
+              />
+            </label>
+
             <div className="rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-muted">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Readonly inventory data</p>
-              <p className="mt-1">Qty: {item.quantity}</p>
-              <p>Location: {item.location}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Inventory summary</p>
+              <p className="mt-1">Current location: {item.location}</p>
+              <p>Edits update the item and its total stock.</p>
             </div>
           </div>
 
