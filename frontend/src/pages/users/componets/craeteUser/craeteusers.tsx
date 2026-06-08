@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
-// using direct fetch to localhost for temporary branch lookup
+import { useApi } from '../../../../hooks';
 
 type User = {
   id: number;
@@ -20,9 +20,7 @@ interface CreateUsersPageProps {
 }
 
 function CraeteUsersPage({ user, onSave, onDelete, onRequestEdit }: CreateUsersPageProps) {
-  // `api` is the shared axios instance from `src/hooks/useApi.ts`.
-  // This file does not call backend endpoints directly for create/update; it passes data
-  // up to the parent (`users.tsx`) via `onSave`/`onDelete`. Parent handles POST/PATCH/DELETE.
+  const api = useApi();
   const [fullName, setFullName] = useState('');
   const [branch, setBranch] = useState('');
   const [email, setEmail] = useState('');
@@ -47,9 +45,8 @@ function CraeteUsersPage({ user, onSave, onDelete, onRequestEdit }: CreateUsersP
     let mounted = true;
     (async () => {
       try {
-        // Temporary: use localhost API to fetch branch list. Revert later if needed.
-        const res = await fetch('http://localhost:5253/api/Branch', { credentials: 'include' });
-        const data = await res.json();
+        const res = await api.get('/Branch');
+        const data = res.data;
         if (!mounted) return;
         const opts = (data ?? []).map((b: any) => {
           const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
@@ -59,12 +56,12 @@ function CraeteUsersPage({ user, onSave, onDelete, onRequestEdit }: CreateUsersP
         setBranchOptions(opts);
         setBranch((current) => (current ? current : (opts.length > 0 ? opts[0].value : '')));
       } catch (err) {
-        console.error('Failed to load branches (local)', err);
+        console.error('Failed to load branches', err);
       }
     })();
 
     return () => { mounted = false; };
-  }, []);
+  }, [api]);
 
   // Sync incoming `user` prop to local form state when it changes.
   // Important: only reset `isEditing` to false when a different user is selected.

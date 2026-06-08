@@ -13,6 +13,7 @@ import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import BlueprintEdit from './components/blueprintEdit/BlueprintEdit';
 import { useApi } from '../../hooks';
+import { showError, showSuccess } from '../../utils/toast';
 import { getInventoryOverview } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
@@ -275,6 +276,13 @@ const Crafting: FC = () => {
       return;
     }
 
+    if (currentUser?.branchId === 3) {
+      showError(
+        'Branch 3 is a virtual branch and cannot craft directly. Please switch to branch 1 or 2 to craft.'
+      );
+      return;
+    }
+
     try {
       const branchID = currentUser?.branchId ?? 1;
       const employeeID = currentUser?.employeeId ?? 1;
@@ -288,10 +296,10 @@ const Crafting: FC = () => {
       });
 
       window.dispatchEvent(new CustomEvent('crafting-order-updated'));
-      alert('Craft order submitted successfully.');
+      showSuccess('Craft order submitted successfully.');
     } catch (error) {
       console.error('Failed to create craft order', error);
-      alert('Unable to place craft order. Please try again.');
+      showError('Unable to place craft order. Please try again.');
     }
   };
 
@@ -318,14 +326,14 @@ const Crafting: FC = () => {
 
     try {
       await api.delete(`/Item/${itemId}`);
-      alert('Blueprint deleted successfully.');
+      showSuccess('Blueprint deleted successfully.');
       setSelectedBlueprint(null);
       setSelectedBlueprintId('');
       setAmount(1);
       setActiveTab('active');
     } catch (error) {
       console.error('Error deleting blueprint:', error);
-      alert('Unable to delete blueprint. Please try again.');
+      showError('Unable to delete blueprint. Please try again.');
     }
   };
 
