@@ -1,8 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 
 function OtpVerifySuccessPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const recoveryCodes = useMemo(() => {
+    const state = location.state as { recoveryCodes?: string[] } | null;
+    return state?.recoveryCodes ?? [];
+  }, [location.state]);
 
   return (
     <main className="login-page-shell">
@@ -16,12 +22,28 @@ function OtpVerifySuccessPage() {
               </svg>
             </div>
             <h1>Verification Successful</h1>
-            <p>Your OTP was accepted. You can continue to the login page.</p>
+            <p>
+              {recoveryCodes.length > 0
+                ? 'Your authenticator setup is complete. Save these recovery codes before you continue.'
+                : 'Your OTP was accepted. You can continue into the app.'}
+            </p>
           </div>
 
+          {recoveryCodes.length > 0 ? (
+            <div className="login-recovery-panel">
+              <strong>Recovery codes</strong>
+              <p>Each code can be used once if you lose access to your authenticator app.</p>
+              <div className="login-recovery-grid">
+                {recoveryCodes.map((code) => (
+                  <span key={code} className="login-recovery-code">{code}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="login-actions-column">
-            <button type="button" className="login-submit" onClick={() => navigate('/login')}>
-              Continue To Login
+            <button type="button" className="login-submit" onClick={() => navigate('/dashboard', { replace: true })}>
+              Continue To App
             </button>
           </div>
         </div>

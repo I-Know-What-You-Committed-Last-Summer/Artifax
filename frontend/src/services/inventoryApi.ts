@@ -2,7 +2,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
 
 const DEFAULT_MIN_STOCK = 5;
 
-type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number };
+type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number; Price: number };
 type BranchDto = { BranchID: number; BranchName: string };
 type BranchItemCapacityDto = { BranchItemCapacityID: number; BranchID: number; ItemID: number; ItemQuantity: number };
 type InventoryRowDto = {
@@ -11,6 +11,7 @@ type InventoryRowDto = {
   inventoryItemCategory: string;
   inventoryItemProductionTime: number;
   inventoryItemQuantity: number;
+  inventoryItemPrice?: number;
   inventoryItemBranchName: string;
 };
 
@@ -33,6 +34,7 @@ function normalizeItemDto(row: Record<string, unknown>): ItemDto {
     ItemName: String(row.ItemName ?? row.itemName ?? ''),
     ItemCategory: String(row.ItemCategory ?? row.itemCategory ?? ''),
     ProductionTime: Number(row.ProductionTime ?? row.productionTime ?? 0),
+    Price: Number(row.Price ?? row.price ?? 0),
   };
 }
 
@@ -63,15 +65,18 @@ export type InventoryItemUpdate = {
   itemName: string;
   itemCategory: string;
   productionTime: number;
+  price: number;
+  quantity: number;
 };
 
-export type InventoryItemCreate = InventoryItemUpdate;
+export type InventoryItemCreate = Omit<InventoryItemUpdate, 'quantity'>;
 
 export type InventoryCreatedItem = {
   itemID: number;
   itemName: string;
   itemCategory: string;
   productionTime: number;
+  price: number;
 };
 
 export type InventoryItemIngredientCreate = {
@@ -285,7 +290,24 @@ export async function updateInventoryItem(itemId: number, payload: InventoryItem
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      itemName: payload.itemName,
+      itemCategory: payload.itemCategory,
+      productionTime: normalizeQuantity(payload.productionTime),
+      price: normalizePrice(payload.price),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  }
+}
+
+export async function updateInventoryItemQuantity(itemId: number, branchId: number, quantity: number): Promise<void> {
+  const normalizedQuantity = normalizeQuantity(quantity);
+  const response = await fetch(`${API_BASE}/Item/Branch/${branchId}/Item/${itemId}?quantity=${normalizedQuantity}`, {
+    method: 'PUT',
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -300,7 +322,12 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      itemName: payload.itemName,
+      itemCategory: payload.itemCategory,
+      productionTime: normalizeQuantity(payload.productionTime),
+      price: normalizePrice(payload.price),
+    }),
   });
 
   if (!response.ok) {
@@ -314,6 +341,7 @@ export async function createInventoryItem(payload: InventoryItemCreate): Promise
     itemName: String(body.itemName ?? body.ItemName ?? payload.itemName),
     itemCategory: String(body.itemCategory ?? body.ItemCategory ?? payload.itemCategory),
     productionTime: Number(body.productionTime ?? body.ProductionTime ?? payload.productionTime),
+    price: normalizePrice(Number(body.price ?? body.Price ?? payload.price ?? 0)),
   };
 }
 
@@ -342,18 +370,43 @@ export type InventoryItem = {
   sku: string;
   category: string;
   quantity: number;
+  price: number;
   minStock: number;
   location: string;
+  primaryBranchId?: number;
   status: string;
   productionTime: number;
   tab?: string;
 };
 
+function normalizePrice(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  const rounded = Math.round(Math.max(0, value) * 100) / 100;
+  return Number(rounded.toFixed(2));
+}
+
+function normalizeQuantity(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(value));
+}
+
 export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const rows = await fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`);
+  const [rows, branchCapacities, branches] = await Promise.all([
+    fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
+    getBranchItems(),
+    getBranches(),
+  ]);
+
+  const branchNameById = new Map<number, string>(branches.map((branch) => [branch.BranchID, normalizeLocation(branch.BranchName)]));
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
-  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; locations: Record<string, number>; productionTime?: number }>();
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number; locations: Record<string, number>; productionTime?: number }>();
 
   for (const r of rows) {
     const id = r.inventoryItemId;
@@ -362,19 +415,26 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const sku = `${category.slice(0, 3).toUpperCase()}-${id}`;
     const qty = r.inventoryItemQuantity ?? 0;
     const loc = normalizeLocation(r.inventoryItemBranchName);
+    const price = normalizePrice(Number(r.inventoryItemPrice ?? 0));
 
     if (!map.has(id)) {
-      map.set(id, { id, name, category, sku, quantity: qty, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
+      map.set(id, { id, name, category, sku, quantity: qty, price, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
     } else {
       const entry = map.get(id)!;
       entry.quantity += qty;
       entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
+      if (entry.price === 0 && price > 0) {
+        entry.price = price;
+      }
     }
   }
 
   const items: InventoryItem[] = Array.from(map.values()).map((e) => {
     // pick primary location as the one with highest quantity
     const primaryLocation = Object.entries(e.locations).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unassigned';
+    const primaryBranchId = branchCapacities
+      .filter((capacity) => capacity.ItemID === e.id && branchNameById.get(capacity.BranchID) === primaryLocation)
+      .sort((left, right) => right.ItemQuantity - left.ItemQuantity)[0]?.BranchID;
     const minStock = DEFAULT_MIN_STOCK;
     const status = e.quantity <= minStock ? 'LOW' : 'OK';
 
@@ -384,8 +444,10 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
       sku: e.sku,
       category: e.category,
       quantity: e.quantity,
+      price: e.price,
       minStock,
       location: primaryLocation,
+      primaryBranchId,
       status,
       productionTime: e.productionTime ?? 0,
       tab: slugifyCategory(e.category),
@@ -412,6 +474,7 @@ const inventoryApi = {
   createInventoryItem,
   createInventoryItemIngredient,
   updateInventoryItem,
+  updateInventoryItemQuantity,
   buildInventoryOverview,
 };
 

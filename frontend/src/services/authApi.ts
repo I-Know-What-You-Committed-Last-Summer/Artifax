@@ -6,12 +6,26 @@ export type LoginRequest = {
 };
 
 export type LoginEmployeeResponse = {
+  requiresTwoFactor: boolean;
+  requiresSetup: boolean;
+  userEmail?: string;
+  username?: string;
+  userLevel?: string;
+  manualEntryKey?: string | null;
+  otpAuthUri?: string | null;
+};
+
+export type VerifyOtpRequest = {
+  code: string;
+};
+
+export type VerifyOtpResponse = {
   employeeId?: number;
   employeeEmail?: string;
   employeeName?: string;
   branchId?: number;
-  accessToken?: string;
-  token?: string;
+  employeeLevel?: string;
+  recoveryCodes?: string[];
 };
 
 export type CurrentUserResponse = {
@@ -53,4 +67,17 @@ export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeRespo
 
 export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
   return fetchJson<CurrentUserResponse>(`${API_BASE}/User/me`);
+}
+
+export function verifyLoginOtp(payload: VerifyOtpRequest): Promise<VerifyOtpResponse> {
+  return fetchJson<VerifyOtpResponse>(`${API_BASE}/User/employees/login/verify`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function logoutEmployee(): Promise<{ message?: string }> {
+  return fetchJson<{ message?: string }>(`${API_BASE}/User/logout`, {
+    method: 'POST',
+  });
 }

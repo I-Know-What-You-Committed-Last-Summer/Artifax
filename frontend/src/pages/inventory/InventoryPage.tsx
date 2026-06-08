@@ -12,7 +12,7 @@ import InventoryMaterialsPopover from './components/InventoryMaterialsPopover';
 import InventoryItemEditModal from './components/InventoryItemEditModal';
 import InventoryItemCreateModal from './components/InventoryItemCreateModal';
 import InventoryItemIngredientModal from './components/InventoryItemIngredientModal';
-import { createInventoryItem, getItemCategoryOptions, getItems, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
+import { createInventoryItem, getItemCategoryOptions, getItems, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, updateInventoryItemQuantity, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
@@ -130,7 +130,15 @@ function InventoryPage() {
     setSavingEditItemId(itemId);
 
     try {
+      const currentItem = (inventoryOverview.items && inventoryOverview.items.length ? inventoryOverview.items : inventoryItems)
+        .find((candidate) => Number(candidate.id) === itemId);
+
+      if (!currentItem?.primaryBranchId) {
+        throw new Error('Unable to map item quantity update to a branch.');
+      }
+
       await updateInventoryItem(itemId, payload);
+      await updateInventoryItemQuantity(itemId, currentItem.primaryBranchId, payload.quantity);
       const overview = await getInventoryOverview();
       setInventoryItems(overview.items);
       setInventoryOverview(overview);

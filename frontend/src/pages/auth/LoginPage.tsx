@@ -2,9 +2,11 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
-import { setCurrentUser } from '../../utils/currentUser';
-import { clearAuthToken, setAuthToken } from '../../utils/authToken';
-import { getCurrentUserFromSession, loginEmployee } from '../../services/authApi';
+import { clearCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken } from '../../utils/authToken';
+import { loginEmployee } from '../../services/authApi';
+
+const PENDING_LOGIN_CHALLENGE_KEY = 'artifax.pendingLoginChallenge';
 
 function LoginPage() {
   // Router helper to navigate on successful login
@@ -34,10 +36,7 @@ function LoginPage() {
     return '';
   }, [email]);
 
-  const fullNameError = useMemo(() => {
-    if (!fullName.trim()) return 'Full Name is required';
-    return '';
-  }, [fullName]);
+  const fullNameError = useMemo(() => '', []);
 
   const passwordError = useMemo(() => {
     if (!password.trim()) return 'Password is required';
@@ -63,26 +62,16 @@ function LoginPage() {
         password,
       });
 
-      const serverToken = loginResponse.accessToken || loginResponse.token || '';
+      clearAuthToken();
+      clearCurrentUser();
 
-      if (serverToken) {
-        setAuthToken(serverToken);
-      } else {
-        // Current backend authenticates with secure session cookies.
-        clearAuthToken();
+      if (!loginResponse.requiresTwoFactor) {
+        setSubmitError('Two-factor authentication challenge was not created.');
+        return;
       }
 
-      const sessionUser = await getCurrentUserFromSession();
-
-      const fallbackName = fullName.trim();
-
-      setCurrentUser({
-        name: sessionUser.Username || loginResponse.employeeName || fallbackName || email.trim(),
-        role: sessionUser.UserLevel || 'Employee',
-        email: sessionUser.UserEmail || loginResponse.employeeEmail || email.trim(),
-      });
-
-      navigate('/dashboard');
+      window.sessionStorage.setItem(PENDING_LOGIN_CHALLENGE_KEY, JSON.stringify(loginResponse));
+      navigate('/login/verify');
     } catch (error) {
       let message = 'Login failed. Please check your credentials.';
       // If the fetch helper attached a status, prefer mapping 401 to a friendly message
@@ -235,7 +224,7 @@ function LoginPage() {
               </div>
               <div>
                 <strong>{submitError ? 'Login error' : 'Input required'}</strong>
-                <p>{submitError || 'Enter Full Name, Email, and Password to continue.'}</p>
+                <p>{submitError || 'Enter Email and Password to continue.'}</p>
               </div>
             </div>
 

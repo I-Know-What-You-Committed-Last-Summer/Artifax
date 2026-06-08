@@ -15,6 +15,7 @@ function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCr
     itemName: '',
     itemCategory: '',
     productionTime: 0,
+    price: 0,
   });
 
   useEffect(() => {
@@ -26,6 +27,7 @@ function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCr
       itemName: '',
       itemCategory: categoryOptions[0] ?? '',
       productionTime: 0,
+      price: 0,
     });
   }, [categoryOptions, open]);
 
@@ -101,7 +103,7 @@ function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCr
             </label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr,1fr]">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-2 text-sm text-text">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Production time</span>
               <input
@@ -114,11 +116,24 @@ function InventoryItemCreateModal({ open, saving, categoryOptions, onClose, onCr
               />
             </label>
 
-            <div className="rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-muted">
+            <label className="space-y-2 text-sm text-text">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Price (R)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={formValues.price}
+                onChange={(event) => setFormValues((current) => ({ ...current, price: Number(event.target.value) }))}
+                className="w-full rounded-xl border border-border bg-app px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-muted">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Create-only flow</p>
               <p className="mt-1">This first pass creates the item record only.</p>
               <p>Ingredient setup can follow later.</p>
-            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-border pt-3">

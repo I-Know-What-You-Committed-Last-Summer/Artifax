@@ -101,6 +101,12 @@ namespace Backend.Tests
         {
             //ARRANGE
             var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
 
             //ACT
             var _result = await _controller.GetEmployeeByEmail("employee1@artifax.com");
@@ -116,13 +122,19 @@ namespace Backend.Tests
         {
             //ARRANGE
             var _controller = await GetPopulatedDummyController();
+            var _httpContextMock = GetMockSession();
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = _httpContextMock.Object
+            };
 
             //ACT
             var _result = await _controller.GetEmployeeByEmail("admin5@artifax.com");
 
             //ASSERT
             var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>>(_result);
-            Assert.IsNotType<EmployeeReadDto>(_actionResult.Value);
+            Assert.IsType<NotFoundResult>(_actionResult.Result);
         }
 
         [Fact]
@@ -140,10 +152,11 @@ namespace Backend.Tests
             var _dto = await _controller.LoginEmployee(new (){Email="employee1@artifax.com", Password="123"});
         
             // Then
-            var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_dto);
+            var _actionResult = Assert.IsType<ActionResult<LoginChallengeDto>> (_dto);
             var _returnedOk = Assert.IsType<OkObjectResult>(_actionResult.Result);
-            var _returnedDto = Assert.IsType<EmployeeReadDto>(_returnedOk.Value);
-            Assert.Equal("Emp1", _returnedDto.EmployeeName);
+            var _returnedDto = Assert.IsType<LoginChallengeDto>(_returnedOk.Value);
+            Assert.Equal("Emp1", _returnedDto.Username);
+            Assert.True(_returnedDto.RequiresTwoFactor);
         }
 
         [Fact]
@@ -161,7 +174,7 @@ namespace Backend.Tests
             var _dto = await _controller.LoginEmployee(new (){Email="test@artifax.com", Password="testPass"});
         
             // Then
-            var _actionResult = Assert.IsType<ActionResult<EmployeeReadDto>> (_dto);
+            var _actionResult = Assert.IsType<ActionResult<LoginChallengeDto>> (_dto);
             Assert.IsType<UnauthorizedObjectResult>(_actionResult.Result);
         }
 
@@ -175,7 +188,7 @@ namespace Backend.Tests
             {
                 HttpContext = _httpContextMock.Object
             };
-            await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
         
             // When
             var _response = await _controller.ChangeEmployeeBranch("employee1@artifax.com", 2);
@@ -200,7 +213,7 @@ namespace Backend.Tests
             {
                 HttpContext = _httpContextMock.Object
             };
-            await _controller.LoginEmployee(new (){Email="admin1@artifax.com", Password="123"});
+            _httpContextMock.Object.Session.SetString("UserLevel", "Admin");
         
             // When
             var _response = await _controller.DeleteEmployee(100);

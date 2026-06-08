@@ -10,30 +10,70 @@ import OtpVerifyPage from './pages/auth/OtpVerifyPage';
 import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
 import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
-import { useEffect } from 'react';
-import axios from 'axios';
-import { useApi } from './hooks/useApi';
+import { useEffect, useState } from 'react';
+import { clearCurrentUser, setCurrentUser } from './utils/currentUser';
+import { clearAuthToken } from './utils/authToken';
+import { getCurrentUserFromSession } from './services/authApi';
 
-function App() {
-  // Backend integration commented out - requires .NET SDK installation
-  // TODO: Uncomment when backend is running on localhost:5253
+type RequireSessionProps = {
+  children: JSX.Element;
+};
 
-
-  const api = useApi();
+function RequireSession({ children }: RequireSessionProps) {
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    
-    (async () => {
+    let mounted = true;
+
+    const checkSession = async () => {
       try {
-        const result = await api.get('/Item/item');
-        console.log(result);
-        return result;
-      } catch (error) {
-        console.log("Error:"+error);
+        const sessionUser = await getCurrentUserFromSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        setCurrentUser({
+          name: sessionUser.Username || sessionUser.UserEmail || 'User',
+          role: sessionUser.UserLevel || 'Employee',
+          email: sessionUser.UserEmail,
+        });
+        setIsAuthenticated(true);
+      } catch {
+        if (!mounted) {
+          return;
+        }
+
+        clearAuthToken();
+        clearCurrentUser();
+        setIsAuthenticated(false);
+      } finally {
+        if (mounted) {
+          setIsChecking(false);
+        }
       }
-    })();
-    
+    };
+
+    void checkSession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (isChecking) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function App() {
   return (
     <BrowserRouter>
       <Routes>
@@ -41,7 +81,14 @@ function App() {
         <Route path="/login/verify" element={<OtpVerifyPage />} />
         <Route path="/login/verify-success" element={<OtpVerifySuccessPage />} />
         <Route path="/login/verify-failed" element={<OtpVerifyFailedPage />} />
-        <Route path="/" element={<AppLayout />}>
+        <Route
+          path="/"
+          element={(
+            <RequireSession>
+              <AppLayout />
+            </RequireSession>
+          )}
+        >
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />

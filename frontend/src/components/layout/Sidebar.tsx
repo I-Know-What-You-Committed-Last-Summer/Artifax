@@ -8,6 +8,7 @@ import usersIcon from '../../assets/images/usersIcon.png';
 import { useCurrentUser } from '../../utils/currentUser';
 import { clearCurrentUser } from '../../utils/currentUser';
 import { clearAuthToken } from '../../utils/authToken';
+import { logoutEmployee } from '../../services/authApi';
 
 const MENU_DATA = {
   logo: {
@@ -60,10 +61,21 @@ function SidebarNavGroup({ title, items }) {
 function Sidebar() {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
-  const userName = currentUser?.name ?? MENU_DATA.user.name;
-  const userRole = currentUser?.role ?? MENU_DATA.user.role;
+  const userName = currentUser?.name ?? 'User';
+  const userRole = currentUser?.role ?? 'Employee';
+  const accessTitle = userRole === 'Admin' ? 'ADMIN' : 'EMPLOYEE';
+  const accessItems = MENU_DATA.adminMenu.map((item) => ({
+    ...item,
+    badge: userRole,
+  }));
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutEmployee();
+    } catch {
+      // Clear local session state regardless of server response.
+    }
+
     sessionStorage.clear();
     clearAuthToken();
     clearCurrentUser();
@@ -84,7 +96,7 @@ function Sidebar() {
 
       <div className="sidebar-content">
         <SidebarNavGroup title="MAIN MENU" items={MENU_DATA.mainMenu} />
-        <SidebarNavGroup title="ADMIN" items={MENU_DATA.adminMenu} />
+        <SidebarNavGroup title={accessTitle} items={accessItems} />
       </div>
 
       <div className="sidebar-footer">

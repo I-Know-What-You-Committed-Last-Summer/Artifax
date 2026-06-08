@@ -1,18 +1,41 @@
-import { ClipboardEvent, FormEvent, KeyboardEvent, useMemo, useRef, useState } from 'react';
+import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import { getCurrentUserFromSession, verifyLoginOtp, LoginEmployeeResponse } from '../../services/authApi';
+import { setCurrentUser } from '../../utils/currentUser';
+import { QRCodeSVG } from 'qrcode.react';
 
 const OTP_LENGTH = 6;
-const DEMO_VALID_OTP = '123456';
+const PENDING_LOGIN_CHALLENGE_KEY = 'artifax.pendingLoginChallenge';
 
 function OtpVerifyPage() {
   const navigate = useNavigate();
   const [digits, setDigits] = useState<string[]>(Array.from({ length: OTP_LENGTH }, () => ''));
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [challenge, setChallenge] = useState<LoginEmployeeResponse | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const code = useMemo(() => digits.join(''), [digits]);
   const isCodeComplete = code.length === OTP_LENGTH;
+  const isSetupMode = challenge?.requiresSetup === true;
+  const roleLabel = challenge?.userLevel || 'Employee';
+
+  useEffect(() => {
+    const rawChallenge = window.sessionStorage.getItem(PENDING_LOGIN_CHALLENGE_KEY);
+    if (!rawChallenge) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    try {
+      setChallenge(JSON.parse(rawChallenge) as LoginEmployeeResponse);
+    } catch {
+      window.sessionStorage.removeItem(PENDING_LOGIN_CHALLENGE_KEY);
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
 
   const focusInput = (index: number) => {
     const target = inputRefs.current[index];
@@ -65,20 +88,43 @@ function OtpVerifyPage() {
     focusInput(Math.min(pasted.length, OTP_LENGTH - 1));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitAttempted(true);
+    setSubmitError('');
 
     if (!isCodeComplete) {
       return;
     }
 
-    if (code === DEMO_VALID_OTP) {
-      navigate('/login/verify-success');
-      return;
-    }
+    setIsSubmitting(true);
 
-    navigate('/login/verify-failed');
+    try {
+      const verifyResponse = await verifyLoginOtp({ code });
+      const sessionUser = await getCurrentUserFromSession();
+      setCurrentUser({
+        name: sessionUser.Username || challenge?.username || challenge?.userEmail || 'User',
+        role: sessionUser.UserLevel || challenge?.userLevel || 'Employee',
+        email: sessionUser.UserEmail || challenge?.userEmail,
+      });
+      window.sessionStorage.removeItem(PENDING_LOGIN_CHALLENGE_KEY);
+      if (verifyResponse.recoveryCodes && verifyResponse.recoveryCodes.length > 0) {
+        navigate('/login/verify-success', {
+          replace: true,
+          state: { recoveryCodes: verifyResponse.recoveryCodes },
+        });
+        return;
+      }
+
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      const message = error instanceof Error && error.message
+        ? error.message
+        : 'The verification code was invalid.';
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -95,10 +141,49 @@ function OtpVerifyPage() {
             </div>
             <h1>Verification Code</h1>
           </div>
+          <div className="login-context-row" role="status" aria-live="polite">
+            <span className="login-role-badge">Role: {roleLabel}</span>
+            <span className={`login-mode-badge ${isSetupMode ? 'setup' : 'verify'}`}>
+              {isSetupMode ? 'First-time setup' : 'Standard verification'}
+            </span>
+          </div>
         </header>
 
         <div className="login-card-body login-card-body-compact">
-          <p className="login-subtitle">We sent a 6-digit code to your device.</p>
+          <p className="login-subtitle">
+            {isSetupMode
+              ? 'Set up your authenticator app with the key below, then enter the 6-digit code.'
+              : 'Open your authenticator app and enter the current 6-digit code.'}
+          </p>
+
+          {isSetupMode ? (
+            <div className="login-setup-panel" role="status" aria-live="polite">
+              <strong>Complete these setup steps:</strong>
+              <ol>
+                <li>Open your authenticator app.</li>
+                <li>Add a new account using the QR code or manual key.</li>
+                <li>Enter the generated 6-digit code below.</li>
+              </ol>
+            </div>
+          ) : null}
+
+          {isSetupMode && challenge?.manualEntryKey ? (
+            <div className="login-alert" role="status" aria-live="polite">
+              <div>
+                <strong>Manual setup key</strong>
+                <p>{challenge.manualEntryKey}</p>
+              </div>
+            </div>
+          ) : null}
+
+          {isSetupMode && challenge?.otpAuthUri ? (
+            <div className="login-qr-panel">
+              <div className="login-qr-card">
+                <QRCodeSVG value={challenge.otpAuthUri} size={180} includeMargin />
+              </div>
+              <p className="login-qr-caption">Scan this QR code with Google Authenticator, Microsoft Authenticator, or a compatible TOTP app.</p>
+            </div>
+          ) : null}
 
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             <div className="login-otp-sequence" role="group" aria-label="One-time password input">
@@ -126,14 +211,21 @@ function OtpVerifyPage() {
               <p className="login-inline-error" role="alert">Enter the full 6-digit code.</p>
             ) : null}
 
-            <button type="submit" className="login-submit" disabled={!isCodeComplete}>
-              Verify Account
+            {submitError ? (
+              <p className="login-inline-error" role="alert">{submitError}</p>
+            ) : null}
+
+            <button type="submit" className="login-submit" disabled={!isCodeComplete || isSubmitting}>
+              {isSubmitting ? 'Verifying...' : 'Verify Account'}
             </button>
 
             <button
               type="button"
               className="login-secondary-action"
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                window.sessionStorage.removeItem(PENDING_LOGIN_CHALLENGE_KEY);
+                navigate('/login');
+              }}
             >
               Back To Login
             </button>
