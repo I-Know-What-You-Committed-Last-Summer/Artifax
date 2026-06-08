@@ -9,6 +9,11 @@ const apiInstance = axios.create({
 });
 
 /**
+ * Export the raw axios instance for use in non-React modules (services)
+ */
+export const api = apiInstance;
+
+/**
  * Custom hook that returns the shared axios instance
  * with the API base URL already set.
  * 

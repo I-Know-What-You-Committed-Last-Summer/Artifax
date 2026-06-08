@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './mostCarfted.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks/useApi';
+import { useApi } from '../../../../hooks';
 
 type SortOrder = 'high' | 'low';
 

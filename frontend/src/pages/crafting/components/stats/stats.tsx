@@ -4,7 +4,7 @@ import recipesIcon from '../../../../assets/images/recipesIcon.png';
 import activeJodIcon from '../../../../assets/images/activeJodIcon.png';
 import completedIcon from '../../../../assets/images/completeIcon.png';
 import blockedIcon from '../../../../assets/images/blockedIcon.png';
-import { useApi } from '../../../../hooks/useApi';
+import { useApi } from '../../../../hooks';
 
 interface StatItem {
   label: string;

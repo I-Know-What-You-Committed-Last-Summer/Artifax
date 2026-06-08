@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useApi } from '../../hooks/useApi';
+import { useApi } from '../../hooks';
 import Users from './users';
 
-jest.mock('../../hooks/useApi');
+jest.mock('../../hooks');
 
 const mockedUseApi = useApi as jest.MockedFunction<typeof useApi>;
 

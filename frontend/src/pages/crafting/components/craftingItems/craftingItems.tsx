@@ -59,7 +59,7 @@ const CraftingItems: FC = () => {
         api.get<EmployeeDto[]>('/User'),
       ]);
 
-      const employees = usersResponse.data.reduce<Record<number, string>>((map, user) => {
+      const employees = (usersResponse.data as EmployeeDto[]).reduce<Record<number, string>>((map, user) => {
         if (user.employeeId != null) {
           map[user.employeeId] = user.employeeName;
         }
@@ -92,21 +92,22 @@ const CraftingItems: FC = () => {
         };
       });
 
-      const uniqueItemIds = Array.from(new Set(jobs.map((job) => job.itemID)));
+      const uniqueItemIds: number[] = Array.from(new Set(jobs.map((job) => job.itemID))) as number[];
       const ingredientResponses = await Promise.all(
-        uniqueItemIds.map(async (itemID) => {
+        uniqueItemIds.map(async (itemID: number) => {
           try {
             return await api.get<IngredientDto[]>(`/Item/itemIngredient/item/${itemID}`);
           } catch (error) {
-            return null;
+            return null as null;
           }
         })
       );
 
-      const ingredientsByItemId = uniqueItemIds.reduce<Record<number, string[]>>((map, itemID, index) => {
+      const ingredientsByItemId = uniqueItemIds.reduce<Record<number, string[]>>((map, itemID: number, index: number) => {
         const response = ingredientResponses[index];
         if (response?.data) {
-          map[itemID] = response.data.map((ingredient) => {
+          const list = response.data as IngredientDto[];
+          map[itemID] = list.map((ingredient) => {
             const name = ingredient.itemName ?? `Ingredient ${ingredient.ingredientID ?? ''}`;
             const quantity = ingredient.quantity ?? 1;
             return `${name} x${quantity}`;

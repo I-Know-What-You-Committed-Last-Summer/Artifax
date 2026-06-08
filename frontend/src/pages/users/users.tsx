@@ -4,7 +4,7 @@ import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
 import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
 import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
-import { useApi } from '../../hooks/useApi';
+import { useApi } from '../../hooks';
 
 type User = {
   id: number;

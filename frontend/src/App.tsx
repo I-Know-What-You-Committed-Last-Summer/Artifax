@@ -12,7 +12,7 @@ import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
 import { useEffect } from 'react';
 import axios from 'axios';
-import { useApi } from './hooks/useApi';
+import { useApi } from './hooks';
 
 function App() {
   // Backend integration commented out - requires .NET SDK installation

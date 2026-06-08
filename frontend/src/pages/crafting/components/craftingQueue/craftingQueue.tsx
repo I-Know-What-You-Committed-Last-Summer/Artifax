@@ -55,7 +55,7 @@ const CraftingQueue: FC = () => {
           api.get<EmployeeDto[]>('/User'),
         ]);
 
-        const employees = userResponse.data.reduce<Record<number, string>>((map, user) => {
+        const employees = (userResponse.data as EmployeeDto[]).reduce<Record<number, string>>((map, user) => {
           if (user.employeeId != null) {
             map[user.employeeId] = user.employeeName;
           }
