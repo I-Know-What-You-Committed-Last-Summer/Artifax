@@ -1,4 +1,6 @@
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+import { useApi } from "../hooks";
+
+const API_BASE = 'https://artifax-5lqg.onrender.com/api';
 
 export type LoginRequest = {
   email: string;

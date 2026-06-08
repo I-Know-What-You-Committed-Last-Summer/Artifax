@@ -58,14 +58,7 @@ function LoginPage() {
         password,
       });
 
-      const serverToken = loginResponse.accessToken || loginResponse.token || '';
-
-      if (serverToken) {
-        setAuthToken(serverToken);
-      } else {
-        // Correctly falls back to HttpContext.Session cookie management set by C# backend
-        clearAuthToken();
-      }
+      console.log(loginResponse);
 
       // Fetch user profile info saved in the backend session variables
       const sessionUser = await getCurrentUserFromSession();
