@@ -11,6 +11,7 @@ namespace Artifax.DTOs
         public int InventoryItemQuantity { get; set; }
         public float? InventoryItemPrice { get; set;}
         public string InventoryItemBranchName { get; set;}
+        public int InventoryItemBranchId { get; set; }
         public InventoryItemReadDto(Item item, Branch branch, BranchItemCapacity capacity)
         {
             InventoryItemId = item.ItemID;
@@ -20,6 +21,7 @@ namespace Artifax.DTOs
             InventoryItemQuantity = capacity.ItemQuantity;
             InventoryItemPrice = item.Price;
             InventoryItemBranchName = branch.BranchName;
+            InventoryItemBranchId = branch.BranchID;
         }
     }
 }
