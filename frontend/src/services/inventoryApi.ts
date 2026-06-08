@@ -299,9 +299,9 @@ export async function updateInventoryItem(itemId: number, payload: InventoryItem
       price: payload.price,
     });
 
-    if (payload.quantity < 0) {
-      throw new Error('Quantity cannot be negative.');
-    }
+    // if (payload.quantity < 0) {
+    //   throw new Error('Quantity cannot be negative.');
+    // }
 
     const branchRows = (await getBranchItems())
       .filter((row) => row.ItemID === itemId)
