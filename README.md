@@ -120,7 +120,6 @@ Open the extracted folder and run **`Artifax.exe`** to launch the application.
     </td>
   </tr>
 </table>
-## Additional Mockups
 
 
 
