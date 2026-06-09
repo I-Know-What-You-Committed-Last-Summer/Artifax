@@ -18,7 +18,88 @@ The core objective of the system is to deliver a highly scalable backend archite
 ## Installation
     -
 ## Usage Guide
-    - 
+
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/Dash.png" alt="Dashboard">
+    </td>
+    <td width="50%">
+      <h3>Dashboard</h3>
+      <p>The dashboard provides users with a simplified overview of the inventory, featuring clear labels for low-stock alerts. It also displays currently active jobs and tracks orders waiting in the queue for efficient monitoring.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <h3>Inventory</h3>
+      <p>The inventory screen displays all stocked items alongside their relevant information. This ensures quick access to essential details for seamless warehouse management.</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/Inv.png" alt="Inventory">
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/CraftQue.png" alt="Active Jobs & Queue">
+    </td>
+    <td width="50%">
+      <h3>Crafting: Active Jobs & Queue</h3>
+      <p>This section displays actively crafting orders and upcoming queued items. Users can easily pause, cancel, or expedite orders to double the crafting speed as needed.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <h3>Crafting: Blueprints</h3>
+      <p>On the blueprint screen, users can select specific blueprints to review their material requirements. It also provides options to initiate a craft, edit, or delete existing blueprints from the system.</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/CraftItem.png" alt="Blueprints">
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/CarftHis.png" alt="Order History">
+    </td>
+    <td width="50%">
+      <h3>Crafting: Order History</h3>
+      <p>The order history page logs all previous crafting activities for easy reference. Users can review comprehensive details of both completed and cancelled orders from the past.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <h3>New Blueprint</h3>
+      <p>This screen allows users to seamlessly add a completely new blueprint to the system. Existing blueprints can also be edited here to ensure crafting requirements are kept up to date.</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/CraftNewBlue.png" alt="New Blueprint">
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/AdminAnalitics.png" alt="Analytics">
+    </td>
+    <td width="50%">
+      <h3>Analytics (Admin Only)</h3>
+      <p>The analytics dashboard provides administrators with valuable insights into crafted item volumes compared to their base costs. It also highlights the most frequently crafted blueprints to help managers optimise production.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td width="50%">
+      <h3>User Management (Admin Only)</h3>
+      <p>Administrators can use this page to add new users or assign admin privileges. It also allows for the easy editing or deletion of current user data to maintain secure access control.</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="frontend/src/assets/ReadmeImg/AdminUsers.png" alt="User Management">
+    </td>
+  </tr>
+</table>
 ## Additional Mockups
 
 
