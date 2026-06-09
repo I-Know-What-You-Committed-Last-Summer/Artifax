@@ -1,41 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentUserFromSession } from '../services/authApi';
 import './forceLogin.css';
 
 const ForceLogin: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Don't show modal or call /User/me on any login-related route or root redirect page
-  const normalizedPath = location.pathname.toLowerCase();
-  const isLoginPage =
-    normalizedPath === '/' ||
-    normalizedPath === '/login' ||
-    normalizedPath.startsWith('/login');
-
   useEffect(() => {
-    // Skip check on login page or when the app is landing on the root redirect
-    if (isLoginPage) {
-      setShowModal(false);
-      setIsChecking(false);
-      return;
-    }
-
     const checkUserSession = async () => {
+      // 1. Quick check: Is there even a token saved?
+      // (Change 'token' to whatever key you use in localStorage/sessionStorage)
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      if (!token) {
+        setShowModal(true);
+        setIsChecking(false);
+        return; // Stop here! Do not call the API and cause a 401 error console flood.
+      }
+
+      // 2. If a token exists, verify it with your backend
       try {
         const user = await getCurrentUserFromSession();
-        // If user data is returned, session is valid - don't show modal
         if (user && (user.Username || user.username)) {
           setShowModal(false);
         } else {
-          // No valid user data returned - show modal
           setShowModal(true);
         }
       } catch (error) {
-        // Error fetching user data - show modal
+        // Token was invalid or expired
         setShowModal(true);
       } finally {
         setIsChecking(false);
@@ -43,14 +37,19 @@ const ForceLogin: React.FC = () => {
     };
 
     checkUserSession();
-  }, [isLoginPage]);
+  }, []); // Empty dependency array ensures this runs strictly once when layout mounts
 
   const handleLoginRedirect = () => {
-    navigate('/login');
+    setShowModal(false);
+    navigate('/login', { replace: true });
   };
 
-  if (!showModal || isChecking) {
-    return null;
+  if (isChecking) {
+    return null; // Or a loading spinner if you want
+  }
+
+  if (!showModal) {
+    return null; 
   }
 
   return (
@@ -58,7 +57,7 @@ const ForceLogin: React.FC = () => {
       <div className="force-login-modal">
         <div className="force-login-content">
           <h1>Session Expired</h1>
-          <p>You need to be logged in to use this site. Please log in with your credentials to continue.</p>
+          <p>You need to be logged in to use this application. Please log in with your credentials to continue.</p>
         </div>
         <div className="force-login-actions">
           <button 

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { api as api } from '../hooks/useApi';
+import { api } from '../hooks/useApi';
 
 export type LoginRequest = {
   email: string;
@@ -11,8 +11,6 @@ export type LoginEmployeeResponse = {
   employeeEmail?: string;
   employeeName?: string;
   branchId?: number;
-  accessToken?: string;
-  token?: string;
 };
 
 export type CurrentUserResponse = {
@@ -68,8 +66,24 @@ export function loginEmployee(payload: LoginRequest): Promise<LoginEmployeeRespo
   );
 }
 
-export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
-  return withAxios<CurrentUserResponse>(api.get('/User/me'));
+/**
+ * Pure Session-Based Check
+ * We directly ping the API. If the session cookie is valid, it returns data.
+ * If the session is missing or expired, it catches the 401 error and returns null 
+ * gracefully, giving the React layout a safe signal to redirect.
+ */
+export async function getCurrentUserFromSession(): Promise<CurrentUserResponse | null> {
+  try {
+    return await withAxios<CurrentUserResponse>(api.get('/User/me'));
+  } catch (error: any) {
+    // Catch 401 unauthenticated safely to let Router change views smoothly
+    if (error?.status === 401 || error?.message?.includes('401')) {
+      console.warn("No active cookie session found.");
+      return null;
+    }
+    // Return null for any request failure during authentication verification
+    return null;
+  }
 }
 
 export function getEmployeeByEmail(email: string): Promise<EmployeeDetailsResponse> {
@@ -89,6 +103,7 @@ export function getBranchById(branchId: number): Promise<BranchDto> {
 export function GetOtpQrCode () {
   return withAxios<{ qrCodeUri: string }>(api.get('/User/2fa-setup-uri'));
 }
+
 export function VerifyOtpCode (code: string) {
   return withAxios(api.post('/User/employees/verify-2fa', { code }));
 }

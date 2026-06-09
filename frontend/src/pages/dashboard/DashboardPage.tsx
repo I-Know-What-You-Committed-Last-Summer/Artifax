@@ -207,7 +207,16 @@ function DashboardPage() {
                       </div>
 
                       <div className="card-actions mt-3 flex gap-2">
-                        <div className="text-xs text-muted">Created {new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(job.createdDateTime))}</div>
+                       <div className="text-xs text-muted">
+  {(() => {
+    const parsedDate = job.createdDateTime ? new Date(job.createdDateTime) : null;
+    const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
+    
+    return isValidDate 
+      ? `Created ${new Intl.DateTimeFormat('en-ZA', { dateStyle: 'short', timeStyle: 'short' }).format(parsedDate)}`
+      : 'Created: Date Unknown';
+  })()}
+</div>
                       </div>
                     </div>
                   ))}

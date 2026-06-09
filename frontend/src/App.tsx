@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
@@ -12,49 +12,37 @@ import OtpVerifyPage from './pages/auth/OtpVerifyPage';
 import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
 import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
-import ForceLogin from './forceLogin/ForceLogin';
-import { useEffect } from 'react';
-import { useApi } from './hooks';
+import ProtectedRoute from './layouts/ProtectedRoute'; // Double check this import path
 
 function App() {
-  // Backend integration commented out - requires .NET SDK installation
-  // TODO: Uncomment when backend is running on localhost:5253
-
-
-  const api = useApi();
-
-  // Removed development-only backend probe. Login will use the configured API base URL
-  // and should only fire when the backend is available.
   return (
-    <BrowserRouter>
-      <ForceLogin />
+    <HashRouter>
       <Routes>
+        {/* 1. PUBLIC ROUTES (Completely isolated from layouts & sidebars) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/login/verify" element={<OtpVerifyPage />} />
         <Route path="/login/verify-success" element={<OtpVerifySuccessPage />} />
         <Route path="/login/verify-failed" element={<OtpVerifyFailedPage />} />
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Navigate to="/login" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="crafting" element={<CraftingPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+
+        {/* 2. PROTECTED ROUTES (Sidebar can only exist inside here) */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<AppLayout />}>
+            {/* When hitting exactly "/", cleanly redirect straight to the dashboard */}
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
+            <Route path="crafting" element={<CraftingPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="users" element={<UsersPage />} />
+          </Route>
         </Route>
+
+        {/* 3. CATCH-ALL FALLBACK */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-    </BrowserRouter>
+
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+    </HashRouter>
   );
 }
 

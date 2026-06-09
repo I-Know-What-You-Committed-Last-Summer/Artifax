@@ -115,6 +115,15 @@ function OtpVerifyPage() {
         sessionUser = {};
       }
 
+      // Safe check: If session user data couldn't be loaded, redirect to fail screen
+      if (!sessionUser) {
+        setErrorMessage("Verification passed, but profile session could not be fetched.");
+        setStatus('failed');
+        return;
+      }
+
+
+
       const currentEmail = sessionUser.UserEmail ?? (sessionUser as any)?.userEmail;
       const currentName = sessionUser.Username ?? (sessionUser as any)?.username ?? currentEmail;
       const currentRole = sessionUser.UserLevel ?? (sessionUser as any)?.userLevel ?? 'Employee';
