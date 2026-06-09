@@ -197,7 +197,7 @@ The following section outlines all the technologies used for development and dep
 - **Render** - Render is our cloud platform of choice which we used to build and deploy our api contained within our docker application.
 - **Electron** - Electron is used for the deployment of the web app in the form of a sharable executable application. 
 
-## Creaters
+## Creators
 
 <a href="https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=I-Know-What-You-Committed-Last-Summer/Artifax" />
