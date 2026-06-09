@@ -1,4 +1,4 @@
-# Artifax
+![Artifax](frontend/src/assets/ReadmeImg/Artifax.png)
 
 ### Table Of Contents
 - [Overview](#overview)
