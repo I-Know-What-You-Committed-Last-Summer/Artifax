@@ -72,10 +72,6 @@ export function getCurrentUserFromSession(): Promise<CurrentUserResponse> {
   return withAxios<CurrentUserResponse>(api.get('/User/me'));
 }
 
-// Variant that explicitly does not send cookies/credentials (frontend-only use)
-export function getCurrentUserFromSessionNoCreds(): Promise<CurrentUserResponse> {
-  return withAxios<CurrentUserResponse>(api.get('/User/me', { withCredentials: false }));
-}
 export function getEmployeeByEmail(email: string): Promise<EmployeeDetailsResponse> {
   return withAxios<EmployeeDetailsResponse>(
     api.get(`/User/employee/${encodeURIComponent(email)}`),
@@ -84,4 +80,11 @@ export function getEmployeeByEmail(email: string): Promise<EmployeeDetailsRespon
 
 export function getBranches(): Promise<BranchDto[]> {
   return withAxios<BranchDto[]>(api.get('/Branch'));
+}
+
+export function GetOtpQrCode () {
+  return withAxios<{ qrCodeUri: string }>(api.get('/User/2fa-setup-uri'));
+}
+export function VerifyOtpCode (code: string) {
+  return withAxios(api.post('/User/employees/verify-2fa', { code }));
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 import { setCurrentUser } from '../../utils/currentUser';
 import { clearAuthToken, setAuthToken } from '../../utils/authToken';
-import { getCurrentUserFromSessionNoCreds, getEmployeeByEmail, getBranches, loginEmployee } from '../../services/authApi';
+import {  getEmployeeByEmail, getBranches, loginEmployee, getCurrentUserFromSession } from '../../services/authApi';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -58,44 +58,8 @@ function LoginPage() {
         password,
       });
 
-      // Try to pull authoritative user info returned by the backend at login time
-      // Use the no-cookie variant so this step does not require browser cookies
-      let sessionUser: any = {};
-      try {
-        sessionUser = await getCurrentUserFromSessionNoCreds();
-      } catch (e) {
-        sessionUser = {};
-      }
-      // Support both PascalCase and camelCase keys from backend JSON
-      const currentEmail = sessionUser.UserEmail ?? (sessionUser as any)?.userEmail ?? loginResponse.employeeEmail ?? email.trim();
-      const currentName = sessionUser.Username ?? (sessionUser as any)?.username ?? loginResponse.employeeName ?? currentEmail;
-      const currentRole = sessionUser.UserLevel ?? (sessionUser as any)?.userLevel ?? 'Employee';
 
-      let branchName: string | undefined;
-      let employeeId: number | undefined;
-      let branchId: number | undefined;
-
-      try {
-        const employeeDetails = await getEmployeeByEmail(currentEmail);
-        employeeId = employeeDetails.employeeId;
-        branchId = employeeDetails.branchId;
-        const branches = await getBranches();
-        branchName = branches.find((branch) => branch.BranchID === branchId)?.BranchName;
-      } catch (branchError) {
-        // If branch lookup fails, fall back to default display.
-        branchName = undefined;
-      }
-
-      setCurrentUser({
-        name: currentName,
-        role: currentRole,
-        email: currentEmail,
-        employeeId,
-        branchId,
-        branchName,
-      });
-
-      navigate('/dashboard');
+      navigate('/login/verify');
     } catch (error) {
       let message = 'Login failed. Please check your credentials.';
       const errAny = error as any;
