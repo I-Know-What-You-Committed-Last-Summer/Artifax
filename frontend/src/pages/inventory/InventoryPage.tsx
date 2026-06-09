@@ -13,6 +13,7 @@ import InventoryItemEditModal from './components/InventoryItemEditModal';
 import InventoryItemCreateModal from './components/InventoryItemCreateModal';
 import InventoryItemIngredientModal from './components/InventoryItemIngredientModal';
 import { createInventoryItem, getItemCategoryOptions, getItems, getInventoryOverview, getItemMaterialDetails, updateInventoryItem, InventoryCreatedItem, InventoryItem, InventoryMaterialDetails, InventoryOverview, InventoryItemCreate, InventoryItemUpdate } from '../../services/inventoryApi';
+import { getCurrentUserFromSession } from '../../services/authApi'; // <-- Adjust path if needed
 import { getCurrentDateSAST } from '../../Date/dateUtils';
 import editIcon from '../../assets/images/Edit Icon.png';
 import viewIcon from '../../assets/images/View Icon.png';
@@ -36,9 +37,13 @@ function InventoryPage() {
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [ingredientItem, setIngredientItem] = useState<InventoryCreatedItem | null>(null);
 
+  // Added state to track the logged-in user's branch
+  const [loggedInBranchId, setLoggedInBranchId] = useState<number | null>(null);
+
   useEffect(() => {
     let mounted = true;
 
+    // Fetch Inventory
     Promise.all([getInventoryOverview(), getItems()])
       .then(([overview, items]) => {
         if (mounted) {
@@ -55,22 +60,21 @@ function InventoryPage() {
         }
       });
 
+    // Fetch Logged-in User
+    getCurrentUserFromSession()
+      .then((user) => {
+        if (mounted && user) {
+          // Safely extract branchId (handling potential naming variations)
+          const branchId = (user as any).branchId ?? (user as any).BranchId;
+          if (branchId) {
+            setLoggedInBranchId(Number(branchId));
+          }
+        }
+      })
+      .catch((error) => console.warn('Could not load user session for branch filtering', error));
+
     return () => {
       mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setExpandedViewItemId(null);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -162,24 +166,47 @@ function InventoryPage() {
     }
   };
 
-  // prefer server-provided overview items, fall back to per-item list
-  const sourceItems = inventoryOverview.items && inventoryOverview.items.length ? inventoryOverview.items : inventoryItems;
+  const sourceItems = inventoryItems;
+
   const locationOptions = useMemo(() => {
-    const locations = Array.from(new Set(sourceItems.map((item) => item.location))).sort((left, right) => left.localeCompare(right));
+    const locations = Array.from(new Set(sourceItems.map((item) => item.location))).sort((left, right) => (left || '').localeCompare(right || ''));
 
     return [
       { label: 'Location: All', value: 'ALL' },
-      ...locations.map((location) => ({ label: `Location: ${location}`, value: location })),
+      ...locations.filter(Boolean).map((location) => ({ label: `Location: ${location}`, value: location })),
     ];
   }, [sourceItems]);
 
+  // FIX 2: Reconstruct alerts based on branchId rather than relying on the pre-formatted strings
+  const filteredAlerts = useMemo(() => {
+    if (!loggedInBranchId) {
+      // Fallback: If no branch ID is loaded (e.g. an Admin user), show all alerts
+      return inventoryOverview.alerts;
+    }
+
+    return inventoryOverview.items
+      .filter((item) => item.status === 'LOW' && item.branchId === loggedInBranchId)
+      .map((item) => `${item.name} (${item.quantity} remaining)`);
+  }, [inventoryOverview.items, inventoryOverview.alerts, loggedInBranchId]);
+
   const filteredItems = useMemo(() => {
     const searchLower = search.toLowerCase();
+    const isActivelySearchingOrFiltering = searchLower.length > 0 || zone !== 'ALL';
 
     return sourceItems
       .filter((item) => {
-        if (activeTab !== 'all' && item.tab !== activeTab) {
-          return false;
+        // FIX 1: Safely check for matches, accounting for an optional 's' at the end
+        if (!isActivelySearchingOrFiltering && activeTab !== 'all') {
+          const itemCategory = (item.category || '').toLowerCase();
+          const itemTab = (item.tab || '').toLowerCase();
+          const targetTab = activeTab.toLowerCase();
+          
+          const isMatch = (val1: string, val2: string) => 
+            val1 === val2 || `${val1}s` === val2 || `${val2}s` === val1;
+
+          if (!isMatch(itemCategory, targetTab) && !isMatch(itemTab, targetTab)) {
+            return false;
+          }
         }
 
         if (status !== 'ALL' && item.status !== status) {
@@ -194,20 +221,22 @@ function InventoryPage() {
           return true;
         }
 
+        const safeName = (item.name || '').toLowerCase();
+        const safeSku = (item.sku || '').toLowerCase();
+        const safeLocation = (item.location || '').toLowerCase();
+
         return (
-          item.name.toLowerCase().includes(searchLower) ||
-          item.sku.toLowerCase().includes(searchLower) ||
-          item.location.toLowerCase().includes(searchLower)
+          safeName.includes(searchLower) ||
+          safeSku.includes(searchLower) ||
+          safeLocation.includes(searchLower)
         );
       })
       .sort((left, right) => {
         if (sortBy === 'QTY') {
-          return right.quantity - left.quantity;
+          return (right.quantity || 0) - (left.quantity || 0);
         }
-
-        return left.name.localeCompare(right.name);
+        return (left.name || '').localeCompare(right.name || '');
       });
-      
   }, [activeTab, sourceItems, search, sortBy, status, zone]);
 
   useEffect(() => {
@@ -234,7 +263,7 @@ function InventoryPage() {
         }
       />
 
-      <AlertStrip label={`Low Stock: ${inventoryOverview.alerts.length}`} items={inventoryOverview.alerts} />
+      <AlertStrip label={`Low Stock: ${filteredAlerts.length}`} items={filteredAlerts} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {inventoryOverview.stats.map((stat) => (
@@ -275,7 +304,7 @@ function InventoryPage() {
                   <th className="pb-2 font-medium">Material / SKU</th>
                   <th className="pb-2 font-medium">Category</th>
                   <th className="pb-2 text-right font-medium">Qty</th>
-                  <th className="pb-2 font-medium">Min</th>
+                  <th className="pb-2 font-medium">Prod.</th>
                   <th className="pb-2 font-medium">Location</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Edit</th>
@@ -283,12 +312,13 @@ function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => {
+                {filteredItems.map((item, index) => {
                   const itemId = Number(item.id);
                   const isExpanded = expandedViewItemId === itemId;
+                  const uniqueRowKey = `${item.id}-${item.location || 'none'}-${index}`;
 
                   return (
-                    <React.Fragment key={item.id}>
+                    <React.Fragment key={uniqueRowKey}>
                       <tr className={`border-b border-border/70 ${isExpanded ? 'bg-bg/30' : ''}`}>
                         <td className="py-2.5 pr-3">
                           <p className="font-semibold text-text">{item.name}</p>
@@ -296,7 +326,9 @@ function InventoryPage() {
                         </td>
                         <td className="py-2.5 pr-3 text-muted">{item.category}</td>
                         <td className="py-2.5 pr-3 text-right font-semibold text-text">{item.quantity}</td>
-                        <td className="py-2.5 pr-3 text-muted">{item.minStock}</td>
+                        <td className="py-2.5 pr-3">
+                          <p className="text-xs text-muted">{item.productionTime} min</p>
+                        </td>
                         <td className="inventory-location-cell py-2.5 pr-3 text-muted">{item.location}</td>
                         <td className="py-2.5 pr-3">
                           <StatusBadge status={item.status} />
@@ -334,9 +366,9 @@ function InventoryPage() {
                           <td colSpan={8} className="px-0 py-3">
                             <div id={`inventory-details-${item.id}`} className="inventory-view-details px-0 sm:px-1">
                               <InventoryMaterialsPopover
-                              loading={loadingMaterialItemId === itemId && materialDetailsById[itemId] === undefined}
-                              details={materialDetailsById[itemId] ?? null}
-                              compact
+                                loading={loadingMaterialItemId === itemId && materialDetailsById[itemId] === undefined}
+                                details={materialDetailsById[itemId] ?? null}
+                                compact
                               />
                             </div>
                           </td>

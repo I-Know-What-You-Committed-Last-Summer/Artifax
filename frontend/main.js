@@ -12,8 +12,6 @@ function createWindow() {
     }
   })
 
-  mainWindow.webContents.openDevTools();
-
   // 1. CHECK IF RUNNING IN DEVELOPMENT MODE
   // Vite usually runs on 5173, Create-React-App/Webpack usually runs on 3000
   // Adjust the port number below to match your terminal's local server port

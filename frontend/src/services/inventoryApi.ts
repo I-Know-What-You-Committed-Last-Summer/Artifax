@@ -392,11 +392,7 @@ export type InventoryItem = {
 
 export async function getInventoryItems(): Promise<InventoryItem[]> {
   const rows = await fetchJson<InventoryRowDto[]>('Item/item/allInventoryItems');
-
-  // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
-  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; branchId: number ; productionTime?: number }>();
-
-  for (const r of rows) {
+  const items: InventoryItem[] = rows.map((r) => {
     const id = r.inventoryItemId;
     const category = normalizeCategory(r.inventoryItemCategory);
     const name = r.inventoryItemName || `Item ${id}`;
@@ -404,48 +400,23 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const qty = r.inventoryItemQuantity ?? 0;
     const loc = normalizeLocation(r.inventoryItemBranchName);
     const branchId = r.inventoryItemBranchId;
-
-    if (!map.has(id)) {
-      map.set(id, {
-        id,
-        name,
-        category,
-        sku,
-        quantity: qty,
-        price: r.inventoryItemPrice == null ? null : Number(r.inventoryItemPrice),
-        locations: { [loc]: qty },
-        branchId,
-        productionTime: r.inventoryItemProductionTime,
-      });
-    } else {
-      const entry = map.get(id)!;
-      entry.quantity += qty;
-      entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
-      if (entry.price == null && r.inventoryItemPrice != null) {
-        entry.price = Number(r.inventoryItemPrice);
-      }
-    }
-  }
-
-  const items: InventoryItem[] = Array.from(map.values()).map((e) => {
-    // pick primary location as the one with highest quantity
-    const primaryLocation = Object.entries(e.locations).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unassigned';
+    
     const minStock = DEFAULT_MIN_STOCK;
-    const status = e.quantity <= minStock ? 'LOW' : 'OK';
+    const status = qty <= minStock ? 'LOW' : 'OK';
 
     return {
-      id: String(e.id),
-      name: e.name,
-      sku: e.sku,
-      category: e.category,
-      quantity: e.quantity,
-      price: e.price,
+      id: String(id),
+      name,
+      sku,
+      category,
+      quantity: qty,
+      price: r.inventoryItemPrice == null ? null : Number(r.inventoryItemPrice),
       minStock,
-      location: primaryLocation,
-      branchId: e.branchId,
+      location: loc,
+      branchId,
       status,
-      productionTime: e.productionTime ?? 0,
-      tab: slugifyCategory(e.category),
+      productionTime: r.inventoryItemProductionTime ?? 0,
+      tab: slugifyCategory(category),
     };
   });
 
