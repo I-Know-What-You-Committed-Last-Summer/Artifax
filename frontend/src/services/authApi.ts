@@ -82,6 +82,10 @@ export function getBranches(): Promise<BranchDto[]> {
   return withAxios<BranchDto[]>(api.get('/Branch'));
 }
 
+export function getBranchById(branchId: number): Promise<BranchDto> {
+  return withAxios<BranchDto>(api.get(`/Branch/${branchId}`));
+}
+
 export function GetOtpQrCode () {
   return withAxios<{ qrCodeUri: string }>(api.get('/User/2fa-setup-uri'));
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '../../utils/currentUser';
+import { getBranchById } from '../../services/authApi';
 
 // Mapping route segments to friendly breadcrumb labels
 const ROUTE_LABELS = {
@@ -33,6 +34,7 @@ function getBreadcrumbItems(pathname) {
 function Topbar() {
   const { pathname } = useLocation();
   const currentUser = useCurrentUser();
+  const [branchName, setBranchName] = useState<string | undefined>(() => currentUser?.branchName);
   // `isSynthwave` tracks whether the synthwave/dark theme is active
   const [isSynthwave, setIsSynthwave] = useState(() => {
     if (typeof window === 'undefined') {
@@ -43,6 +45,41 @@ function Topbar() {
     return savedTheme !== 'light';
   });
   const breadcrumbItems = getBreadcrumbItems(pathname);
+
+  useEffect(() => {
+    if (currentUser?.branchName) {
+      setBranchName(currentUser.branchName);
+      return;
+    }
+
+    if (!currentUser?.branchId) {
+      setBranchName(undefined);
+      return;
+    }
+
+    let isMounted = true;
+
+    getBranchById(currentUser.branchId)
+      .then((branch) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const resolvedName = branch.BranchName ?? (branch as any).branchName;
+        if (resolvedName) {
+          setBranchName(resolvedName);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setBranchName(undefined);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.branchId, currentUser?.branchName]);
 
   useEffect(() => {
     // On mount, default the app to synthwave unless the user explicitly saved light mode.
@@ -163,8 +200,8 @@ function Topbar() {
               </svg>
             </span>
           </label>
-          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]">
-            {currentUser?.branchName ?? 'Warehouse A'}
+          <button className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-muted transition hover:border-primary hover:text-text sm:px-3.5 sm:text-[0.95rem]" title={branchName ?? (currentUser?.branchId ? `Branch ${currentUser.branchId}` : 'Branch')}>
+            {branchName ?? (currentUser?.branchId ? `Branch ${currentUser.branchId}` : 'Branch')}
           </button>
           <div className="shrink-0 whitespace-nowrap rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-medium nav-pill text-text sm:px-3.5 sm:text-[0.95rem]">
             {currentUser?.name ?? 'D. Dastardly'}
