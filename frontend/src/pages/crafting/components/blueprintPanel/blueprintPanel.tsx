@@ -1,9 +1,11 @@
 import React, { FC, useState, useEffect } from 'react';
 import './blueprintPanel.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 import { Blueprint, BlueprintMaterial } from '../craftingData';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useCurrentUser } from '../../../../utils/currentUser';
 
 interface Category {
   id: string;
@@ -23,6 +25,7 @@ interface BlueprintPanelProps {
   onFilterChange: (filter: string) => void;
   onSelectBlueprint: (blueprintId: string) => void;
   onCreateBlueprint: () => void;
+  refreshKey?: number;
 }
 
 const categories: Category[] = [
@@ -50,8 +53,12 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
   onFilterChange, 
   onSelectBlueprint,
   onCreateBlueprint,
+  refreshKey,
 }) => {
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
   const api = useApi();
+  const currentUser = useCurrentUser();
+  const currentBranchId = currentUser?.branchId;
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +68,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
    */
   useEffect(() => {
     fetchBlueprintsFromApi();
-  }, []);
+  }, [currentBranchId, refreshKey]);
 
   /**
    * Auto-select the first blueprint when blueprints are loaded.
@@ -86,30 +93,31 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
       const response = await api.get('/Item/item/allItemBlueprints');
       const apiBlueprints = response.data;
 
-      // Also fetch inventory (items + branch quantities) so we can populate "have" values
-      const [itemsResp, branchResp] = await Promise.all([
-        api.get('/Item/item'),
-        api.get('/Item/Branch')
-      ]);
+      // Fetch branch inventory first, then item metadata so we can populate "have" values from branch quantities.
+      const branchResp = await api.get(currentBranchId != null ? `/Item/Branch/${currentBranchId}` : '/Item/Branch');
+      const itemsResp = await api.get('/Item/item');
 
-      let inventoryMap: Record<string, number> = {};
-      const items = itemsResp.data;
+      const allItems = itemsResp.data;
+      const itemById: Record<number, any> = {};
+      allItems.forEach((it: any) => {
+        const id = Number(it.ItemID ?? it.itemID ?? it.itemId ?? 0);
+        if (id) itemById[id] = it;
+      });
+
       const branchItems = branchResp.data;
-
-      // map itemID -> itemName
-      const idToName: Record<number, string> = {};
-      items.forEach((it: any) => { idToName[it.itemID] = it.itemName; });
-
-      // sum quantities by itemName across branches
+      const inventoryMap: Record<number, number> = {};
       branchItems.forEach((bic: any) => {
-        const name = idToName[bic.itemID];
-        if (!name) return;
-        inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
+        const itemKey = Number(bic.ItemID ?? bic.itemID ?? bic.itemId ?? 0);
+        const quantity = Number(bic.ItemQuantity ?? bic.itemQuantity ?? 0);
+        if (!itemKey) return;
+        inventoryMap[itemKey] = (inventoryMap[itemKey] || 0) + quantity;
       });
 
       // Map API shape into our local Blueprint type.
       const blueprints: Blueprint[] = apiBlueprints.map((item: any) => {
-        const rawCategory = (item.itemCategory ?? 'other').toLowerCase();
+        const itemId = Number(item.itemID ?? item.ItemID ?? 0);
+        const itemInfo = itemById[itemId];
+        const rawCategory = (itemInfo?.ItemCategory ?? item.itemCategory ?? 'other').toString().toLowerCase();
         // Map to valid categories
         let normalizedCategory = 'other';
         if (rawCategory.includes('metal')) normalizedCategory = 'metal';
@@ -117,18 +125,23 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
         else if (rawCategory.includes('electronics')) normalizedCategory = 'electronics';
         else if (rawCategory.includes('furniture')) normalizedCategory = 'furniture';
 
-        const materials = (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => ({
-          name: ing.itemName,
-          need: ing.quantity,
-          have: inventoryMap[ing.itemName] || 0,
-        }));
+        const materials = (item.ingredients ?? item.Ingredients ?? []).map((ing: any) => {
+          const ingredientId = Number(ing.IngredientID ?? ing.ingredientID ?? ing.itemID ?? ing.itemId ?? 0);
+          const ingredientInfo = itemById[ingredientId];
+          return {
+            itemId: ingredientId || undefined,
+            name: ingredientInfo?.ItemName ?? ing.itemName ?? `Item ${ingredientId}`,
+            need: Number(ing.Quantity ?? ing.quantity ?? 0),
+            have: ingredientId ? inventoryMap[ingredientId] ?? 0 : 0,
+          };
+        });
 
         return {
-          id: `bp-${item.itemID}`,
-          name: item.itemName,
-          description: `Production time: ${item.productionTime}s`,
+          id: `bp-${itemId}`,
+          name: itemInfo?.ItemName ?? item.itemName,
+          description: `Production time: ${itemInfo?.ProductionTime ?? item.productionTime}s`,
           category: normalizedCategory as any,
-          have: inventoryMap[item.itemName] || 0,
+          have: inventoryMap[itemId] ?? 0,
           craft: 0,
           materials,
         } as Blueprint;
@@ -180,7 +193,7 @@ const BlueprintPanel: FC<BlueprintPanelProps> = ({
               onClick={() => onSelectBlueprint(blueprint.id)}
             >
               <div className="blueprint-card-main">
-                <img src={unitIcon} alt="Blueprint icon" className="blueprint-card-icon" />
+                <img src={unitIconSrc} alt="Blueprint icon" className="blueprint-card-icon" />
                 <div>
                   <h4>{blueprint.name}</h4>
                 </div>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useApi } from '../../hooks/useApi';
+import { useApi } from '../../hooks';
 import Users from './users';
 
-jest.mock('../../hooks/useApi');
+jest.mock('../../hooks');
 
 const mockedUseApi = useApi as jest.MockedFunction<typeof useApi>;
 
@@ -48,6 +48,9 @@ describe('Users page', () => {
         }
         if (url === '/Branch') {
           return Promise.resolve({ data: branchList });
+        }
+        if (url === '/User/me') {
+          return Promise.resolve({ data: { employeeEmail: 'admin.one@example.com' } });
         }
         return Promise.reject(new Error(`Unexpected GET ${url}`));
       }),

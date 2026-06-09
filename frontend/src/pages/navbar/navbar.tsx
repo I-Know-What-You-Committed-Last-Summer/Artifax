@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './navbar.css';
+import { getCurrentUserFromSession } from '../../services/authApi';
 
 // DUMMY DATA - 
 const MENU_DATA = {
@@ -13,9 +14,9 @@ const MENU_DATA = {
     { id: 'dashboard', label: 'Dashboard', icon: '⊞' }, // 
     { id: 'inventory', label: 'Inventory', icon: '⬢' },
     { id: 'crafting', label: 'Crafting', icon: '⚒' },
-    { id: 'analytics', label: 'Analytics', icon: '📊', active: true },
   ],
   adminMenu: [
+    { id: 'analytics', label: 'Analytics', icon: '📊', badge: 'Admin' },
     { id: 'users', label: 'Users', icon: '👥', badge: 'Admin' },
     { id: 'settings', label: 'Settings', icon: '⚙' },
   ],
@@ -27,6 +28,23 @@ const MENU_DATA = {
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const me = await getCurrentUserFromSession();
+        if (!mounted) return;
+        const level = (me?.UserLevel ?? '').toString().toLowerCase();
+        setIsAdmin(level === 'admin');
+      } catch (err) {
+        // If session not present or request fails, treat as non-admin
+        if (mounted) setIsAdmin(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleNavClick = (id) => {
     navigate(`/${id}`);
@@ -47,7 +65,7 @@ const Navbar = () => {
         <p className="section-title nav-text">MAIN MENU</p>
         <ul className="nav-list">
           {MENU_DATA.mainMenu.map((item) => (
-            <li key={item.id} className={`nav-item ${item.active ? 'active' : ''}`} onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
+            <li key={item.id} className="nav-item" onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
               <div className="nav-icon">{/* ICON HERE */ item.icon}</div>
               <span className="nav-text">{item.label}</span>
             </li>
@@ -55,16 +73,20 @@ const Navbar = () => {
         </ul>
 
         {/* ADMIN SECTION */}
-        <p className="section-title nav-text">ADMIN</p>
-        <ul className="nav-list">
-          {MENU_DATA.adminMenu.map((item) => (
-            <li key={item.id} className="nav-item" onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
-              <div className="nav-icon">{/* ICON HERE */ item.icon}</div>
-              <span className="nav-text">{item.label}</span>
-              {item.badge && <span className="admin-badge nav-text">{item.badge}</span>}
-            </li>
-          ))}
-        </ul>
+        {isAdmin && (
+          <>
+            <p className="section-title nav-text">ADMIN</p>
+            <ul className="nav-list">
+              {MENU_DATA.adminMenu.map((item) => (
+                <li key={item.id} className="nav-item" onClick={() => handleNavClick(item.id)} style={{ cursor: 'pointer' }}>
+                  <div className="nav-icon">{/* ICON HERE */ item.icon}</div>
+                  <span className="nav-text">{item.label}</span>
+                  {item.badge && <span className="admin-badge nav-text">{item.badge}</span>}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
 
       {/* FOOTER / USER SECTION */}

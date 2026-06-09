@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../../components/layout/PageHeader';
 import CraeteUsersPage from './componets/craeteUser/craeteusers';
 import UserList from './componets/userList/UserList';
-import { getCurrentDateSAST } from '../../Date/dateUtils'; // Imported date utility
-import { clearCurrentUser, setCurrentUser } from '../../utils/currentUser';
-import { useCurrentUser } from '../../utils/currentUser';
-import { useApi } from '../../hooks/useApi';
+import { getCurrentDateSAST } from '../../Date/dateUtils';
+import { useApi } from '../../hooks';
+import { getCurrentUser, setCurrentUser } from '../../utils/currentUser';
+import { showError, showSuccess } from '../../utils/toast';
+
 
 type User = {
   id: number;
@@ -18,16 +19,7 @@ type User = {
 
 const Users: React.FC = () => {
   const currentDate = getCurrentDateSAST();
-  const currentUser = useCurrentUser();
-  const isAdmin = currentUser?.role === 'Admin';
   const api = useApi();
-  // `api` is an axios instance configured in `src/hooks/useApi.ts`.
-  // All backend HTTP calls in this file use `api` and the base URL `http://localhost:5253/api`.
-  // Backend endpoints used:
-  //  - GET  /User             -> fetch all users (used in useEffect)
-  //  - POST /User/employee    -> create a new employee (used in handleSaveUser)
-  //  - PATCH /User/employee   -> update existing employee details (used in handleSaveUser)
-  //  - DELETE /User/employee  -> delete an employee by id (used in handleDeleteUser)
   const [users, setUsers] = useState<User[]>([]);
   const [branchMap, setBranchMap] = useState<Record<number, string>>({});
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -48,7 +40,7 @@ const Users: React.FC = () => {
     setSelectedUserId(null);
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (): Promise<User[]> => {
     setLoading(true);
     try {
       const [adminsResp, employeesResp, branchesResp] = await Promise.all([
@@ -83,10 +75,14 @@ const Users: React.FC = () => {
 
       const adminUsers = (adminsResp.data ?? []).map((e: any) => makeUser(e, 'Admin'));
       const employeeUsers = (employeesResp.data ?? []).map((e: any) => makeUser(e, 'Employee'));
+      const combinedUsers = [...adminUsers, ...employeeUsers];
 
-      setUsers([...adminUsers, ...employeeUsers]);
+      setUsers(combinedUsers);
+      return combinedUsers;
     } catch (err) {
       console.error('Fetch users failed', err);
+      showError('Unable to load users. Please refresh the page.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -103,12 +99,19 @@ const Users: React.FC = () => {
           EmployeePassword: user.password ?? '',
           EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
         };
+        // Verify current session is authorized (admin) before attempting create
+        await api.get('/User/me');
         const resp = await api.post('/User/employee', payload);
-        await fetchUsers();
         const created = resp.data;
-        const createdId = created?.employeeId ?? created?.EmployeeId ?? null;
-        if (createdId) setSelectedUserId(createdId);
-        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        const createdId = created?.employeeId ?? created?.EmployeeId ?? created?.EmployeeID ?? null;
+        const updatedUsers = await fetchUsers();
+        if (createdId) {
+          setSelectedUserId(createdId);
+        } else {
+          const matched = updatedUsers.find((u) => u.email.toLowerCase() === user.email.toLowerCase());
+          if (matched) setSelectedUserId(matched.id);
+        }
+        showSuccess('User created successfully.');
         return;
       }
 
@@ -118,9 +121,22 @@ const Users: React.FC = () => {
 
       // If only branch changed, call branch-specific endpoint
       if (existing && existing.branch !== user.branch && existing.name === user.name && existing.email === user.email) {
-        await api.patch('/User/employee/branch', null, { params: { EmployeeEmail: originalEmail, BranchId: Number(user.branch) } });
+        const branchUrl = `/User/employee/branch?EmployeeEmail=${encodeURIComponent(originalEmail)}&BranchId=${Number(
+          user.branch
+        )}`;
+        await api.patch(branchUrl);
         await fetchUsers();
-        setCurrentUser({ name: user.name, role: user.role, email: user.email });
+        setSelectedUserId(user.id);
+
+        const currentUser = getCurrentUser();
+        if (currentUser?.email?.toLowerCase() === originalEmail.toLowerCase()) {
+          setCurrentUser({
+            ...currentUser,
+            branchId: Number(user.branch),
+          });
+        }
+
+        showSuccess('User updated successfully.');
         return;
       }
 
@@ -129,37 +145,62 @@ const Users: React.FC = () => {
         BranchID: Number(user.branch),
         EmployeeEmail: user.email,
         EmployeeName: user.name,
-        EmployeePassword: user.password ?? '',
         EmployeeLevel: user.role === 'Admin' ? 'Admin' : 'Employee',
       };
 
-      await api.patch('/User/employee', updatePayload, { params: { EmployeeEmail: originalEmail } });
+      if (typeof user.password === 'string' && user.password.length > 0) {
+        updatePayload.EmployeePassword = user.password;
+      }
+
+      const updUrl = `/User/employee?EmployeeEmail=${encodeURIComponent(originalEmail)}`;
+      await api.patch(updUrl, updatePayload);
       await fetchUsers();
-      setCurrentUser({ name: user.name, role: user.role, email: user.email });
+      setSelectedUserId(user.id);
+
+      const currentUser = getCurrentUser();
+      if (currentUser?.email?.toLowerCase() === originalEmail.toLowerCase()) {
+        setCurrentUser({
+          ...currentUser,
+          branchId: Number(user.branch),
+          branchName: branchMap[Number(user.branch)] ?? currentUser.branchName,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        });
+      }
+
+      showSuccess('User updated successfully.');
     } catch (err) {
       console.error('Save user failed', err);
+      showError('Unable to save user. Please try again.');
     }
   };
 
   const handleDeleteUser = async (id: number) => {
     try {
-      await api.delete('/User/employee', { params: { id } });
+      await api.delete(`/User/employee?id=${encodeURIComponent(String(id))}`);
       await fetchUsers();
       setSelectedUserId(null);
-      clearCurrentUser();
+      showSuccess('User deleted successfully.');
+      // do not clear or change current session when deleting a user
     } catch (err) {
       console.error('Delete user failed', err);
+      showError('Unable to delete user. Please try again.');
+    }
+  };
+
+  const handleRequestEdit = async (id: number) => {
+    try {
+      // Refresh users/branches from backend to ensure latest state before editing.
+      await fetchUsers();
+      return true;
+    } catch (err) {
+      console.error('Request edit failed', err);
+      return false;
     }
   };
 
   useEffect(() => {
-    if (!isAdmin) {
-      setUsers([]);
-      setBranchMap({});
-      setLoading(false);
-      return;
-    }
-
     let mounted = true;
     if (usersFetchedRef.current) return; // already attempted fetch
     usersFetchedRef.current = true;
@@ -183,25 +224,7 @@ const Users: React.FC = () => {
     })();
 
     return () => { mounted = false; clearTimeout(timeoutId); };
-  }, [api, isAdmin]);
-
-  if (!isAdmin) {
-    return (
-      <div className="page-content">
-        <div className="space-y-4 sm:space-y-5">
-          <PageHeader
-            title="User Management"
-            subtitle={`View-only access · ${currentDate}`}
-          />
-
-          <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted">
-            <p className="text-base font-semibold text-text">Employee access only</p>
-            <p className="mt-2">You do not have permission to create, edit, or delete users.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <div className="page-content">
@@ -217,6 +240,7 @@ const Users: React.FC = () => {
               user={selectedUser}
               onSave={handleSaveUser}
               onDelete={handleDeleteUser}
+              onRequestEdit={handleRequestEdit}
             />
           </div>
           <div className="users-panel">

@@ -112,6 +112,18 @@ html[data-theme='synthwave'] .userlist-search {
   display: grid;
   gap: 14px;
   padding: 20px 24px 16px;
+  max-height: 485px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.userlist-items::-webkit-scrollbar {
+  width: 8px;
+}
+
+.userlist-items::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
 }
 
 .userlist-item {

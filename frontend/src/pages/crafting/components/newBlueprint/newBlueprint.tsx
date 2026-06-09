@@ -1,9 +1,11 @@
 import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
+import { showError, showSuccess } from '../../../../utils/toast';
 import './newBlueprint.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 
 interface MaterialRow {
   id: string;
@@ -25,6 +27,8 @@ const categoryOptions = [
   { value: 'mechanical', label: 'Mechanical' },
   { value: 'electronics', label: 'Electronics' },
   { value: 'furniture', label: 'Furniture' },
+  { value: 'paper', label: 'Paper' },
+  { value: 'plastic', label: 'Plastic' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -75,6 +79,8 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     );
   };
 
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
+
   const addMaterialRow = () => {
     setMaterials((current) => [
       ...current,
@@ -90,7 +96,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     event.preventDefault();
     const validMaterials = materials.filter((material) => material.item.trim());
     if (!blueprintName.trim() || validMaterials.length === 0) {
-      alert('Please add a blueprint name and at least one material.');
+      showError('Please add a blueprint name and at least one material.');
       return;
     }
 
@@ -180,11 +186,11 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
         // optional inventory zero-quantity creation; ignore if branch data is unavailable
       }
 
-      alert('Blueprint created successfully. Returning to crafting page.');
+      showSuccess('Blueprint created successfully. Returning to crafting page.');
       onCancel();
     } catch (error) {
       console.error('Error creating blueprint:', error);
-      alert('Unable to save blueprint. Please fix the issue and try again.');
+      showError('Unable to save blueprint. Please fix the issue and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -196,7 +202,7 @@ const NewBlueprint: FC<NewBlueprintProps> = ({ onCancel }) => {
     <div className="new-blueprint-panel">
       <div className="new-blueprint-header">
         <div className="new-blueprint-heading">
-          <img src={unitIcon} alt="Blueprint icon" className="new-blueprint-icon" />
+          <img src={unitIconSrc} alt="Blueprint icon" className="new-blueprint-icon" />
           <span className="new-blueprint-tag">New Blueprint</span>
         </div>
       </div>

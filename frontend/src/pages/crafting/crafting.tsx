@@ -13,9 +13,11 @@ import BlueprintPanel from './components/blueprintPanel/blueprintPanel';
 import NewBlueprint from './components/newBlueprint/newBlueprint';
 import BlueprintEdit from './components/blueprintEdit/BlueprintEdit';
 import { useApi } from '../../hooks';
+import { showError, showSuccess } from '../../utils/toast';
 import { getInventoryOverview } from '../../services/inventoryApi';
 import { Blueprint } from './components/craftingData';
 import { getCurrentDateSAST } from '../../Date/dateUtils';
+import { useCurrentUser } from '../../utils/currentUser';
 
 interface PageProps {
   activeTab: string;
@@ -54,6 +56,7 @@ interface CraftPageProps {
   onCraft: () => Promise<void>;
   onEditBlueprint: () => void;
   onDeleteBlueprint: () => void;
+  blueprintRefreshKey: number;
 }
 
 const CraftPage: FC<PageProps & CraftPageProps> = ({
@@ -71,6 +74,7 @@ const CraftPage: FC<PageProps & CraftPageProps> = ({
   onCraft,
   onEditBlueprint,
   onDeleteBlueprint,
+  blueprintRefreshKey,
 }) => {
   if (!selectedBlueprint) {
     return (
@@ -103,6 +107,7 @@ const CraftPage: FC<PageProps & CraftPageProps> = ({
               onFilterChange={onFilterChange}
               onSelectBlueprint={onSelectBlueprint}
               onCreateBlueprint={() => onTabChange('new')}
+              refreshKey={blueprintRefreshKey}
             />
             <CraftingQueue />
           </div>
@@ -139,6 +144,7 @@ const CraftPage: FC<PageProps & CraftPageProps> = ({
             onFilterChange={onFilterChange}
             onSelectBlueprint={onSelectBlueprint}
             onCreateBlueprint={() => onTabChange('new')}
+            refreshKey={blueprintRefreshKey}
           />
           <CraftingQueue />
         </div>
@@ -200,7 +206,10 @@ const Crafting: FC = () => {
   const [filter, setFilter] = useState<string>('all');
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
+  const [blueprintRefreshKey, setBlueprintRefreshKey] = useState<number>(0);
   const api = useApi();
+  const currentUser = useCurrentUser();
+  const currentBranchId = currentUser?.branchId;
   const currentDate = getCurrentDateSAST();
 
   const handleSelectBlueprint = async (blueprintId: string) => {
@@ -210,51 +219,58 @@ const Crafting: FC = () => {
 
     try {
       const [itemResponse, ingredientsResponse] = await Promise.all([
-        fetch(`http://localhost:5253/api/Item/item/${itemId}`),
-        fetch(`http://localhost:5253/api/Item/itemIngredient/item/${itemId}`),
+        api.get(`/Item/item/${itemId}`),
+        api.get(`/Item/itemIngredient/item/${itemId}`),
       ]);
+      const branchResp = await api.get(currentBranchId != null ? `/Item/Branch/${currentBranchId}` : '/Item/Branch');
+      const itemsResp = await api.get('/Item/item');
 
-      if (itemResponse.ok && ingredientsResponse.ok) {
-        const item = await itemResponse.json();
-        const ingredients = await ingredientsResponse.json();
+      if (itemResponse.data && ingredientsResponse.data) {
+        const item = itemResponse.data;
+        const ingredients = ingredientsResponse.data;
+        const allItems = itemsResp.data;
 
-        let inventoryMap: Record<string, number> = {};
+        const itemById: Record<number, any> = {};
+        allItems.forEach((it: any) => {
+          const id = Number(it.ItemID ?? it.itemID ?? it.itemId ?? 0);
+          if (id) itemById[id] = it;
+        });
+
+        let inventoryMap: Record<number, number> = {};
         try {
-          const [itemsResp, branchResp] = await Promise.all([
-            fetch('http://localhost:5253/api/Item/item'),
-            fetch('http://localhost:5253/api/Item/Branch'),
-          ]);
-
-          if (itemsResp.ok && branchResp.ok) {
-            const items = await itemsResp.json();
-            const branchItems = await branchResp.json();
-            const idToName: Record<number, string> = {};
-            items.forEach((it: any) => {
-              idToName[it.itemID] = it.itemName;
-            });
+          if (branchResp.data) {
+            const branchItems = branchResp.data;
             branchItems.forEach((bic: any) => {
-              const name = idToName[bic.itemID];
-              if (!name) return;
-              inventoryMap[name] = (inventoryMap[name] || 0) + (bic.itemQuantity || 0);
+              const itemKey = Number(bic.ItemID ?? bic.itemID ?? bic.itemId ?? 0);
+              const quantity = Number(bic.ItemQuantity ?? bic.itemQuantity ?? 0);
+              if (!itemKey) return;
+              inventoryMap[itemKey] = (inventoryMap[itemKey] || 0) + quantity;
             });
           }
         } catch (e) {
           console.error('Error fetching inventory for blueprint:', e);
         }
 
+        const blueprintItemId = Number(item.itemID ?? item.ItemID ?? 0);
+        const blueprintInfo = itemById[blueprintItemId];
         const blueprint: Blueprint = {
-          id: `bp-${item.itemID}`,
-          name: item.itemName,
-          description: `Production time: ${item.productionTime}s`,
-          category: item.itemCategory?.toLowerCase() as any || 'mechanical',
-          have: inventoryMap[item.itemName] || 0,
+          id: `bp-${blueprintItemId}`,
+          name: blueprintInfo?.ItemName ?? item.itemName,
+          description: `Production time: ${blueprintInfo?.ProductionTime ?? item.productionTime}s`,
+          category: (blueprintInfo?.ItemCategory ?? item.itemCategory ?? 'mechanical').toString().toLowerCase() as any,
+          have: inventoryMap[blueprintItemId] ?? 0,
           craft: 0,
           productionTime: item.productionTime,
-          materials: ingredients.map((ing: any) => ({
-            name: ing.itemName,
-            need: ing.quantity,
-            have: inventoryMap[ing.itemName] || 0,
-          })),
+          materials: ingredients.map((ing: any) => {
+            const ingredientId = Number(ing.ingredientID ?? ing.IngredientID ?? ing.itemID ?? ing.itemId ?? 0);
+            const ingredientInfo = itemById[ingredientId];
+            return {
+              itemId: ingredientId || undefined,
+              name: ingredientInfo?.ItemName ?? ing.itemName ?? `Item ${ingredientId}`,
+              need: Number(ing.quantity ?? 0),
+              have: ingredientId ? inventoryMap[ingredientId] ?? 0 : 0,
+            };
+          }),
         };
 
         setSelectedBlueprint(blueprint);
@@ -273,16 +289,16 @@ const Crafting: FC = () => {
       return;
     }
 
-    try {
-      const [branchesResponse, usersResponse] = await Promise.all([
-        api.get('/Branch'),
-        api.get('/User'),
-      ]);
+    if (currentUser?.branchId === 3) {
+      showError(
+        'Branch 3 is a virtual branch and cannot craft directly. Please switch to branch 1 or 2 to craft.'
+      );
+      return;
+    }
 
-      const branch = branchesResponse.data?.[0];
-      const user = usersResponse.data?.[0];
-      const branchID = branch?.branchID ?? branch?.BranchID ?? 1;
-      const employeeID = user?.employeeId ?? user?.EmployeeID ?? 1;
+    try {
+      const branchID = currentUser?.branchId ?? 1;
+      const employeeID = currentUser?.employeeId ?? 1;
 
       await api.post('/Order/create', {
         itemID: itemId,
@@ -292,11 +308,56 @@ const Crafting: FC = () => {
         orderExpedite,
       });
 
-      window.dispatchEvent(new CustomEvent('crafting-order-updated'));
-      alert('Craft order submitted successfully.');
+      const branchItemsResp = await api.get(`/Item/Branch/${branchID}`);
+      const branchItems = branchItemsResp.data;
+
+      const branchQuantityByItemId = branchItems.reduce((map: Record<number, number>, bic: any) => {
+        const id = bic.ItemID ?? bic.itemID ?? bic.itemId ?? 0;
+        if (!id) return map;
+        map[id] = (map[id] || 0) + (bic.ItemQuantity || bic.itemQuantity || 0);
+        return map;
+      }, {} as Record<number, number>);
+
+      const updateResults = await Promise.allSettled(
+        selectedBlueprint.materials.map(async (material) => {
+          const materialItemId = material.itemId;
+          if (!materialItemId) {
+            return;
+          }
+
+          const currentMaterialQuantity = branchQuantityByItemId[materialItemId] ?? 0;
+          const updatedQuantity = Math.max(0, currentMaterialQuantity - (material.need * amount));
+          await api.put(
+            `/Item/Branch/${branchID}/Item/${materialItemId}`,
+            null,
+            { params: { quantity: updatedQuantity } },
+          );
+        }),
+      );
+
+      const failedUpdates = updateResults.filter((result) => result.status === 'rejected');
+      if (failedUpdates.length > 0) {
+        console.error('Some branch inventory updates failed', failedUpdates);
+        showError('Craft order created, but updating some branch item quantities failed.');
+      } else {
+        showSuccess('Craft order submitted successfully and inventory updated.');
+      }
+
+      setBlueprintRefreshKey((prev) => prev + 1);
+
+      setSelectedBlueprint((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          materials: prev.materials.map((material) => ({
+            ...material,
+            have: Math.max(0, material.have - (material.need * amount)),
+          })),
+        };
+      });
     } catch (error) {
       console.error('Failed to create craft order', error);
-      alert('Unable to place craft order. Please try again.');
+      showError('Unable to place craft order. Please try again.');
     }
   };
 
@@ -323,14 +384,15 @@ const Crafting: FC = () => {
 
     try {
       await api.delete(`/Item/${itemId}`);
-      alert('Blueprint deleted successfully.');
+      showSuccess('Blueprint deleted successfully.');
       setSelectedBlueprint(null);
       setSelectedBlueprintId('');
       setAmount(1);
       setActiveTab('active');
+      setBlueprintRefreshKey((prev) => prev + 1);
     } catch (error) {
       console.error('Error deleting blueprint:', error);
-      alert('Unable to delete blueprint. Please try again.');
+      showError('Unable to delete blueprint. Please try again.');
     }
   };
 
@@ -375,6 +437,7 @@ const Crafting: FC = () => {
               onCraft={handleCraft}
               onEditBlueprint={handleEditBlueprint}
               onDeleteBlueprint={handleDeleteBlueprint}
+              blueprintRefreshKey={blueprintRefreshKey}
             />
           )}
           {activeTab === 'new' && (

@@ -1,9 +1,11 @@
 import React, { FC, useEffect, useState } from 'react';
 import Button from '../../../../components/common/Button';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
+import { showError, showSuccess } from '../../../../utils/toast';
 import './blueprintEdit.css';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 
 interface MaterialRow {
   id: string;
@@ -27,6 +29,8 @@ const categoryOptions = [
   { value: 'mechanical', label: 'Mechanical' },
   { value: 'electronics', label: 'Electronics' },
   { value: 'furniture', label: 'Furniture' },
+  { value: 'paper', label: 'Paper' },
+  { value: 'plastic', label: 'Plastic' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -41,6 +45,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
   const [itemOptions, setItemOptions] = useState<ItemOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
 
   useEffect(() => {
     const loadBlueprint = async () => {
@@ -114,7 +119,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
     event.preventDefault();
     const validMaterials = materials.filter((material) => material.item.trim());
     if (!blueprintName.trim() || validMaterials.length === 0) {
-      alert('Please add a blueprint name and at least one material.');
+      showError('Please add a blueprint name and at least one material.');
       return;
     }
 
@@ -172,11 +177,11 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
         ingredients: ingredientPayloads,
       });
 
-      alert('Blueprint updated successfully. Returning to crafting page.');
+      showSuccess('Blueprint updated successfully. Returning to crafting page.');
       onSaved();
     } catch (saveError) {
       console.error('Failed to save blueprint edit:', saveError);
-      alert('Unable to save blueprint changes. Please try again.');
+      showError('Unable to save blueprint changes. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -207,7 +212,7 @@ const BlueprintEdit: FC<BlueprintEditProps> = ({ itemId, onCancel, onSaved }) =>
     <div className="new-blueprint-panel">
       <div className="new-blueprint-header">
         <div className="new-blueprint-heading">
-          <img src={unitIcon} alt="Blueprint icon" className="new-blueprint-icon" />
+          <img src={unitIconSrc} alt="Blueprint icon" className="new-blueprint-icon" />
           <span className="new-blueprint-tag">Edit Blueprint</span>
         </div>
       </div>

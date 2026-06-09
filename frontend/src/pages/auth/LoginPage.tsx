@@ -1,54 +1,49 @@
-// Hooks and navigation used by the login page
 import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
-import { clearCurrentUser } from '../../utils/currentUser';
-import { clearAuthToken } from '../../utils/authToken';
-import { loginEmployee } from '../../services/authApi';
-
-const PENDING_LOGIN_CHALLENGE_KEY = 'artifax.pendingLoginChallenge';
+import { setCurrentUser } from '../../utils/currentUser';
+import { clearAuthToken, setAuthToken } from '../../utils/authToken';
+import { getCurrentUserFromSessionNoCreds, getEmployeeByEmail, getBranches, loginEmployee } from '../../services/authApi';
 
 function LoginPage() {
-  // Router helper to navigate on successful login
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState('');
+  // State strictly for credentials and form tracking
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [fullNameTouched, setFullNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
 
-  // Basic email validation only
+  // Email validation
   const emailError = useMemo(() => {
     if (!email.trim()) {
       return 'Email is required';
     }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return 'Enter a valid email address';
     }
-
     return '';
   }, [email]);
 
-  const fullNameError = useMemo(() => '', []);
-
+  // Password validation
   const passwordError = useMemo(() => {
-    if (!password.trim()) return 'Password is required';
-    if (password.trim().length < 5) return 'Password must be at least 8 characters';
+    if (!password.trim()) {
+      return 'Password is required';
+    }
     return '';
   }, [password]);
 
-  const isFormValid = !emailError && !fullNameError && !passwordError;
+  // Form validity matches backend expectations (Email + Password only)
+  const isFormValid = !emailError && !passwordError;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitAttempted(true);
+    
     if (!isFormValid) {
       return;
     }
@@ -57,29 +52,56 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
+      // Maps precisely to LoginDto: { Email, Password }
       const loginResponse = await loginEmployee({
         email: email.trim(),
         password,
       });
 
-      clearAuthToken();
-      clearCurrentUser();
+      // Try to pull authoritative user info returned by the backend at login time
+      // Use the no-cookie variant so this step does not require browser cookies
+      let sessionUser: any = {};
+      try {
+        sessionUser = await getCurrentUserFromSessionNoCreds();
+      } catch (e) {
+        sessionUser = {};
+      }
+      // Support both PascalCase and camelCase keys from backend JSON
+      const currentEmail = sessionUser.UserEmail ?? (sessionUser as any)?.userEmail ?? loginResponse.employeeEmail ?? email.trim();
+      const currentName = sessionUser.Username ?? (sessionUser as any)?.username ?? loginResponse.employeeName ?? currentEmail;
+      const currentRole = sessionUser.UserLevel ?? (sessionUser as any)?.userLevel ?? 'Employee';
 
-      if (!loginResponse.requiresTwoFactor) {
-        setSubmitError('Two-factor authentication challenge was not created.');
-        return;
+      let branchName: string | undefined;
+      let employeeId: number | undefined;
+      let branchId: number | undefined;
+
+      try {
+        const employeeDetails = await getEmployeeByEmail(currentEmail);
+        employeeId = employeeDetails.employeeId;
+        branchId = employeeDetails.branchId;
+        const branches = await getBranches();
+        branchName = branches.find((branch) => branch.BranchID === branchId)?.BranchName;
+      } catch (branchError) {
+        // If branch lookup fails, fall back to default display.
+        branchName = undefined;
       }
 
-      window.sessionStorage.setItem(PENDING_LOGIN_CHALLENGE_KEY, JSON.stringify(loginResponse));
-      navigate('/login/verify');
+      setCurrentUser({
+        name: currentName,
+        role: currentRole,
+        email: currentEmail,
+        employeeId,
+        branchId,
+        branchName,
+      });
+
+      navigate('/dashboard');
     } catch (error) {
       let message = 'Login failed. Please check your credentials.';
-      // If the fetch helper attached a status, prefer mapping 401 to a friendly message
       const errAny = error as any;
       if (errAny?.status === 401) {
         message = 'Incorrect email or password.';
       } else if (error instanceof Error && error.message) {
-        // backend may return a useful message
         message = error.message;
       }
       setSubmitError(message);
@@ -94,7 +116,6 @@ function LoginPage() {
         <header className="login-card-header">
           <div className="login-title-row">
             <div className="login-avatar" aria-hidden="true">
-              {/* decorative avatar icon */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="8" r="3.5" />
                 <path d="M4.5 20c1.8-3.3 4.5-5 7.5-5s5.7 1.7 7.5 5" />
@@ -107,37 +128,12 @@ function LoginPage() {
         <div className="login-card-body">
           <div className="login-section-heading">Required User Information</div>
 
-          {/* Controlled form with labels, inputs and inline validation hints */}
           <form className="login-form" onSubmit={handleSubmit} noValidate>
-            <label className="login-field">
-              <span className="login-label">Full Name</span>
-              <div className="login-input-shell">
-                <input
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  onBlur={() => setFullNameTouched(true)}
-                  aria-invalid={!!(submitAttempted || fullNameTouched) && !!fullNameError}
-                  aria-describedby="full-name-hint"
-                  type="text"
-                  autoComplete="name"
-                  className="login-input"
-                />
-                {((submitAttempted || fullNameTouched) && fullNameError) ? (
-                  <span className="login-field-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 8.3v4.2" />
-                      <path d="M12 15.8h.01" />
-                    </svg>
-                  </span>
-                ) : null}
-              </div>
-              {((submitAttempted || fullNameTouched) && fullNameError) ? <p id="full-name-hint" className="login-field-hint error">{fullNameError}</p> : null}
-            </label>
-
+            
+            {/* Email Field */}
             <label className="login-field">
               <span className="login-label">Email</span>
-              <div className={`login-input-shell ${( (submitAttempted || emailTouched) && emailError) ? 'error' : ''}`}>
+              <div className={`login-input-shell ${((submitAttempted || emailTouched) && emailError) ? 'error' : ''}`}>
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -158,7 +154,6 @@ function LoginPage() {
                   </span>
                 ) : null}
               </div>
-              {/* Inline validation hint for email */}
               {((submitAttempted || emailTouched) && emailError) ? (
                 <p id="email-hint" className="login-field-hint error">{emailError}</p>
               ) : (
@@ -166,9 +161,10 @@ function LoginPage() {
               )}
             </label>
 
+            {/* Password Field */}
             <label className="login-field">
               <span className="login-label">Password</span>
-              <div className="login-input-shell has-password-toggle">
+              <div className={`login-input-shell has-password-toggle ${((submitAttempted || passwordTouched) && passwordError) ? 'error' : ''}`}>
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -213,7 +209,7 @@ function LoginPage() {
               {((submitAttempted || passwordTouched) && passwordError) ? <p id="password-hint" className="login-field-hint error">{passwordError}</p> : null}
             </label>
 
-            {/* Accessible alert region showing validation messages */}
+            {/* Alert Message Box */}
             <div className={`login-alert ${submitError ? 'error' : ''}`} role="alert" aria-live="polite">
               <div className="login-alert-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -224,11 +220,11 @@ function LoginPage() {
               </div>
               <div>
                 <strong>{submitError ? 'Login error' : 'Input required'}</strong>
-                <p>{submitError || 'Enter Email and Password to continue.'}</p>
+                <p>{submitError || 'Enter details to continue.'}</p>
               </div>
             </div>
 
-            {/* Submit button disabled until form is valid */}
+            {/* Submit button */}
             <button type="submit" className="login-submit" disabled={!isFormValid || isSubmitting}>
               {isSubmitting ? 'Signing in...' : 'Login'}
             </button>

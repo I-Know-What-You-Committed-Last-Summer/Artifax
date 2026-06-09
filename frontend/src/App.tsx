@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 import AppLayout from './layouts/AppLayout';
 import CraftingPage from './pages/crafting/crafting';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -10,85 +12,28 @@ import OtpVerifyPage from './pages/auth/OtpVerifyPage';
 import OtpVerifySuccessPage from './pages/auth/OtpVerifySuccessPage';
 import OtpVerifyFailedPage from './pages/auth/OtpVerifyFailedPage';
 import UsersPage from './pages/users/users';
-import { useEffect, useState } from 'react';
-import { clearCurrentUser, setCurrentUser } from './utils/currentUser';
-import { clearAuthToken } from './utils/authToken';
-import { getCurrentUserFromSession } from './services/authApi';
-
-type RequireSessionProps = {
-  children: JSX.Element;
-};
-
-function RequireSession({ children }: RequireSessionProps) {
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkSession = async () => {
-      try {
-        const sessionUser = await getCurrentUserFromSession();
-
-        if (!mounted) {
-          return;
-        }
-
-        setCurrentUser({
-          name: sessionUser.Username || sessionUser.UserEmail || 'User',
-          role: sessionUser.UserLevel || 'Employee',
-          email: sessionUser.UserEmail,
-        });
-        setIsAuthenticated(true);
-      } catch {
-        if (!mounted) {
-          return;
-        }
-
-        clearAuthToken();
-        clearCurrentUser();
-        setIsAuthenticated(false);
-      } finally {
-        if (mounted) {
-          setIsChecking(false);
-        }
-      }
-    };
-
-    void checkSession();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (isChecking) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-}
+import ForceLogin from './forceLogin/ForceLogin';
+import { useEffect } from 'react';
+import { useApi } from './hooks';
 
 function App() {
+  // Backend integration commented out - requires .NET SDK installation
+  // TODO: Uncomment when backend is running on localhost:5253
+
+
+  const api = useApi();
+
+  // Removed development-only backend probe. Login will use the configured API base URL
+  // and should only fire when the backend is available.
   return (
     <BrowserRouter>
+      <ForceLogin />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/login/verify" element={<OtpVerifyPage />} />
         <Route path="/login/verify-success" element={<OtpVerifySuccessPage />} />
         <Route path="/login/verify-failed" element={<OtpVerifyFailedPage />} />
-        <Route
-          path="/"
-          element={(
-            <RequireSession>
-              <AppLayout />
-            </RequireSession>
-          )}
-        >
+        <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="inventory" element={<InventoryPage />} />
@@ -98,6 +43,17 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </BrowserRouter>
   );
 }

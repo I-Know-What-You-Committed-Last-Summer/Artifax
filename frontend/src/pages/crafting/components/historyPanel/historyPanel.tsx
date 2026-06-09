@@ -3,8 +3,9 @@ import './historyPanel.css';
 import SearchInput from '../../../../components/common/SearchInput';
 import FilterSelect from '../../../../components/common/FilterSelect';
 import unitIcon from '../../../../assets/images/uniitIcon.png';
+import unitIconWhite from '../../../../assets/images/uniitIconWhite.png';
 import viewIcon from '../../../../assets/images/View Icon.png';
-import { useApi } from '../../../../hooks';
+import { useApi, useThemeAwareIcon } from '../../../../hooks';
 
 interface OrderHistoryDto {
   orderID: number;
@@ -60,6 +61,7 @@ const HistoryPanel: FC = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [ingredientsByOrderId, setIngredientsByOrderId] = useState<Record<number, IngredientDto[]>>({});
   const [loadingIngredientsOrderId, setLoadingIngredientsOrderId] = useState<number | null>(null);
+  const unitIconSrc = useThemeAwareIcon(unitIcon, unitIconWhite);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -255,7 +257,7 @@ const HistoryPanel: FC = () => {
                   <tr>
                     <td>
                       <div className="history-item-cell">
-                        <img src={unitIcon} alt="item icon" className="table-item-icon" />
+                        <img src={unitIconSrc} alt="item icon" className="table-item-icon" />
                         <div>
                           <div className="item-name">{order.itemName}</div>
                           <div className="item-subtitle">{`Order #${order.orderID}`}</div>

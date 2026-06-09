@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './createusers.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { clearCurrentUser, setCurrentUser } from '../../../../utils/currentUser';
-import { useApi } from '../../../../hooks/useApi';
+import { useApi } from '../../../../hooks';
 
 type User = {
   id: number;
@@ -15,22 +14,24 @@ type User = {
 
 interface CreateUsersPageProps {
   user?: User;
-  onSave: (user: Omit<User, 'id'> & { id: number | null; password?: string }) => void;
+  onSave: (user: Omit<User, 'id'> & { id: number | null; password?: string }) => Promise<void>;
   onDelete: (id: number) => void;
+  onRequestEdit?: (id: number) => Promise<boolean>;
 }
 
-function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
+function CraeteUsersPage({ user, onSave, onDelete, onRequestEdit }: CreateUsersPageProps) {
   const api = useApi();
-  // `api` is the shared axios instance from `src/hooks/useApi.ts`.
-  // This file does not call backend endpoints directly for create/update; it passes data
-  // up to the parent (`users.tsx`) via `onSave`/`onDelete`. Parent handles POST/PATCH/DELETE.
   const [fullName, setFullName] = useState('');
   const [branch, setBranch] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordDirty, setPasswordDirty] = useState(false);
   const [role, setRole] = useState('Admin');
   const [isEditing, setIsEditing] = useState(true);
+  const [editLoading, setEditLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const lastUserIdRef = useRef<number | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const [branchOptions, setBranchOptions] = useState<Array<{ label: string; value: string }>>([]);
 
@@ -39,22 +40,20 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
     { label: 'Employee', value: 'Employee' },
   ];
 
-  // Fetch branches once on mount
+  // Fetch branches once on mount. Temporarily use local backend on localhost.
   useEffect(() => {
-    // Load branch list from backend once on mount.
-    // We map BranchDto -> { label: BranchName, value: BranchID }
     let mounted = true;
     (async () => {
       try {
-        const resp = await api.get('/Branch');
+        const res = await api.get('/Branch');
+        const data = res.data;
         if (!mounted) return;
-        const opts = (resp.data ?? []).map((b: any) => {
+        const opts = (data ?? []).map((b: any) => {
           const id = b.branchID ?? b.BranchID ?? b.branchId ?? b.BranchId ?? 0;
           const name = b.branchName ?? b.BranchName ?? b.name ?? '';
           return { label: name, value: String(id) };
         });
         setBranchOptions(opts);
-        // If the form is for a new user and branch is empty, pick the first branch as default.
         setBranch((current) => (current ? current : (opts.length > 0 ? opts[0].value : '')));
       } catch (err) {
         console.error('Failed to load branches', err);
@@ -64,25 +63,42 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
     return () => { mounted = false; };
   }, [api]);
 
-  // Sync incoming `user` prop to local form state when it changes
+  // Sync incoming `user` prop to local form state when it changes.
+  // Important: only reset `isEditing` to false when a different user is selected.
+  // This prevents parent refreshes (which may replace the `user` object) from
+  // cancelling an in-progress edit for the same selected user.
   useEffect(() => {
+    let mounted = true;
+
     if (user) {
       setFullName(user.name);
       setBranch(user.branch);
       setEmail(user.email);
-      setPassword('************');
+      setPassword('');
+      setPasswordDirty(false);
       setRole(user.role);
-      setIsEditing(false);
       setShowPassword(false);
+
+      // If a new user was selected (different id), exit edit mode. If the same
+      // user is re-provided (e.g. after a data refresh), preserve current
+      // `isEditing` state so an in-progress edit isn't cancelled.
+      if (lastUserIdRef.current !== user.id) {
+        setIsEditing(false);
+      }
+      lastUserIdRef.current = user.id;
     } else {
+      // Creating a new user: clear form and enter edit mode
       setFullName('');
-      // keep current branch (from fetched defaults) when creating new user
       setEmail('');
       setPassword('');
+      setPasswordDirty(true);
       setRole('Admin');
       setIsEditing(true);
       setShowPassword(false);
+      lastUserIdRef.current = null;
     }
+
+    return () => { mounted = false; };
   }, [user]);
 
   const emailError = useMemo(() => {
@@ -100,6 +116,10 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
   }, [email]);
 
   const passwordError = useMemo(() => {
+    if (user && !passwordDirty) {
+      return '';
+    }
+
     const length = password.length;
     if (!password) {
       return 'Password is required';
@@ -111,7 +131,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
       return 'Password must be no more than 15 characters';
     }
     return '';
-  }, [password]);
+  }, [password, passwordDirty, user]);
 
   const isFormValid =
     fullName.trim().length > 0 &&
@@ -120,31 +140,34 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
     !emailError &&
     !passwordError;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    setServerError(null);
 
     if (!isFormValid) {
       return;
     }
 
-    // Pass form data up to the parent `Users` component via `onSave` (includes password).
-    onSave({
-      id: user?.id ?? null,
-      name: fullName,
-      email,
-      branch,
-      role,
-      status: user?.status ?? 'Active',
-      password,
-    });
+    // Only send a password when the field was changed or when creating a new user.
+    const passwordToSend = !user || passwordDirty ? password : undefined;
 
-    setCurrentUser({
-      name: fullName.trim(),
-      role,
-      email: email.trim(),
-    });
+    try {
+      await onSave({
+        id: user?.id ?? null,
+        name: fullName,
+        email,
+        branch,
+        role,
+        status: user?.status ?? 'Active',
+        password: passwordToSend,
+      });
 
-    setIsEditing(false);
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error('Create/Edit failed', err);
+      setServerError(err?.message ?? 'Save failed');
+    }
   };
 
   return (
@@ -170,7 +193,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             <div className="createusers-input-shell">
               <input
                 value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
+                onChange={(event) => { setServerError(null); setFullName(event.target.value); }}
                 type="text"
                 autoComplete="name"
                 className="createusers-input"
@@ -184,7 +207,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             <div className="createusers-input-shell createusers-select-shell">
               <FilterSelect
                 value={branch}
-                onChange={setBranch}
+                onChange={(v) => { setServerError(null); setBranch(v); }}
                 options={branchOptions.length > 0 ? branchOptions : [
                   { label: 'Warehouse A', value: 'Warehouse A' },
                   { label: 'Warehouse B', value: 'Warehouse B' },
@@ -202,7 +225,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             <div className="createusers-input-shell createusers-select-shell">
               <FilterSelect
                 value={role}
-                onChange={setRole}
+                onChange={(v) => { setServerError(null); setRole(v); }}
                 options={roleOptions}
                 className="createusers-select"
                 ariaLabel="Select role"
@@ -216,7 +239,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             <div className={`createusers-input-shell ${emailError ? 'error' : ''}`}>
               <input
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => { setServerError(null); setEmail(event.target.value); }}
                 type="email"
                 autoComplete="email"
                 className="createusers-input"
@@ -230,7 +253,7 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             <div className="createusers-input-shell">
               <input
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => { setServerError(null); setPassword(event.target.value); setPasswordDirty(true); }}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 className="createusers-input"
@@ -278,6 +301,22 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
             </div>
           )}
 
+          {serverError && (
+            <div className="createusers-alert" role="alert" aria-live="polite">
+              <div className="createusers-alert-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8.3v4.2" />
+                  <path d="M12 15.8h.01" />
+                </svg>
+              </div>
+              <div>
+                <strong>Save failed</strong>
+                <p>{serverError}</p>
+              </div>
+            </div>
+          )}
+
           <div className="createusers-action-row">
             {user ? (
               isEditing ? (
@@ -308,16 +347,25 @@ function CraeteUsersPage({ user, onSave, onDelete }: CreateUsersPageProps) {
                   <button
                     type="button"
                     className="createusers-submit"
-                    onClick={() => setIsEditing(true)}
+                    onClick={async () => {
+                      if (!user) return;
+                      try {
+                        setEditLoading(true);
+                        const allowed = await (onRequestEdit ? onRequestEdit(user.id) : Promise.resolve(true));
+                        if (allowed) setIsEditing(true);
+                      } finally {
+                        setEditLoading(false);
+                      }
+                    }}
+                    disabled={editLoading}
                   >
-                    Edit
+                    {editLoading ? 'Loading...' : 'Edit'}
                   </button>
                   <button
                     type="button"
                     className="createusers-secondary"
                     onClick={() => {
                       if (user) {
-                        clearCurrentUser();
                         onDelete(user.id);
                       }
                     }}

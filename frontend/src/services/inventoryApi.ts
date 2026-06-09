@@ -1,8 +1,30 @@
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+import axios from 'axios';
+import { api as apiClient } from '../hooks/useApi';
+
+function toFetchStyleError(error: unknown): Error {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+
+    if (status != null) {
+      return new Error(`Fetch error ${status} ${statusText ?? ''}`.trim());
+    }
+
+    if (error.message) {
+      return new Error(error.message);
+    }
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error('Request failed');
+}
 
 const DEFAULT_MIN_STOCK = 5;
 
-type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number; Price: number };
+type ItemDto = { ItemID: number; ItemName: string; ItemCategory: string; ProductionTime: number; Price?: number | null };
 type BranchDto = { BranchID: number; BranchName: string };
 type BranchItemCapacityDto = { BranchItemCapacityID: number; BranchID: number; ItemID: number; ItemQuantity: number };
 type InventoryRowDto = {
@@ -11,8 +33,9 @@ type InventoryRowDto = {
   inventoryItemCategory: string;
   inventoryItemProductionTime: number;
   inventoryItemQuantity: number;
-  inventoryItemPrice?: number;
+  inventoryItemPrice?: number | null;
   inventoryItemBranchName: string;
+  inventoryItemBranchId: number;
 };
 
 type IngredientBlueprintDto = {
@@ -23,9 +46,12 @@ type IngredientBlueprintDto = {
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error(`Fetch error ${res.status} ${res.statusText}`);
-  return (await res.json()) as T;
+  try {
+    const response = await apiClient.get<T>(url);
+    return response.data;
+  } catch (error) {
+    throw toFetchStyleError(error);
+  }
 }
 
 function normalizeItemDto(row: Record<string, unknown>): ItemDto {
@@ -34,12 +60,12 @@ function normalizeItemDto(row: Record<string, unknown>): ItemDto {
     ItemName: String(row.ItemName ?? row.itemName ?? ''),
     ItemCategory: String(row.ItemCategory ?? row.itemCategory ?? ''),
     ProductionTime: Number(row.ProductionTime ?? row.productionTime ?? 0),
-    Price: Number(row.Price ?? row.price ?? 0),
+    Price: row.Price == null && row.price == null ? null : Number(row.Price ?? row.price ?? 0),
   };
 }
 
 export async function getItems(): Promise<ItemDto[]> {
-  const rows = await fetchJson<Array<Record<string, unknown>>>(`${API_BASE}/Item/item/`);
+  const rows = await fetchJson<Array<Record<string, unknown>>>('Item/item/');
   return rows.map(normalizeItemDto);
 }
 
@@ -54,29 +80,34 @@ export function getItemCategoryOptions(items: ItemDto[]): string[] {
 }
 
 export async function getBranchItems(): Promise<BranchItemCapacityDto[]> {
-  return fetchJson<BranchItemCapacityDto[]>(`${API_BASE}/Item/Branch`);
+  return fetchJson<BranchItemCapacityDto[]>('Item/Branch');
 }
 
 export async function getBranches(): Promise<BranchDto[]> {
-  return fetchJson<BranchDto[]>(`${API_BASE}/Branch`);
+  return fetchJson<BranchDto[]>('Branch');
 }
 
 export type InventoryItemUpdate = {
   itemName: string;
   itemCategory: string;
   productionTime: number;
-  price: number;
+  price: number | null;
   quantity: number;
+  branchId: number;
 };
 
-export type InventoryItemCreate = Omit<InventoryItemUpdate, 'quantity'>;
+export type InventoryItemCreate = {
+  itemName: string;
+  itemCategory: string;
+  productionTime: number;
+  price: number | null;
+};
 
 export type InventoryCreatedItem = {
   itemID: number;
   itemName: string;
   itemCategory: string;
   productionTime: number;
-  price: number;
 };
 
 export type InventoryItemIngredientCreate = {
@@ -239,21 +270,21 @@ export async function getDashboardPreview(): Promise<DashboardPreviewRow[]> {
 
 export async function getItemMaterialDetails(itemId: number): Promise<InventoryMaterialDetails | null> {
   const [itemResponse, ingredientResponse, inventoryRows] = await Promise.all([
-    fetchJson<Record<string, unknown>>(`${API_BASE}/Item/item/${itemId}`).catch((error) => {
+    fetchJson<Record<string, unknown>>(`Item/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return null;
       }
 
       throw error;
     }),
-    fetchJson<IngredientBlueprintDto[]>(`${API_BASE}/Item/itemIngredient/item/${itemId}`).catch((error) => {
+    fetchJson<IngredientBlueprintDto[]>(`Item/itemIngredient/item/${itemId}`).catch((error) => {
       if (String(error).includes('404')) {
         return [];
       }
 
       throw error;
     }),
-    fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
+    fetchJson<InventoryRowDto[]>('Item/item/allInventoryItems'),
   ]);
 
   if (!itemResponse) {
@@ -283,84 +314,64 @@ export async function getItemMaterialDetails(itemId: number): Promise<InventoryM
   };
 }
 
-export async function updateInventoryItem(itemId: number, payload: InventoryItemUpdate): Promise<void> {
-  const response = await fetch(`${API_BASE}/Item/${itemId}`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+export async function updateInventoryItem(
+  itemId: number, 
+  payload: InventoryItemUpdate & { branchId: number }
+): Promise<void> {
+  try {
+    await apiClient.put(`Item/${itemId}`, {
       itemName: payload.itemName,
       itemCategory: payload.itemCategory,
-      productionTime: normalizeQuantity(payload.productionTime),
-      price: normalizePrice(payload.price),
-    }),
-  });
+      productionTime: payload.productionTime,
+      price: payload.price,
+    });
+    if (payload.quantity < 0) {
+      throw new Error('Quantity cannot be negative.');
+    }
+    if (!payload.branchId) {
+      throw new Error(`Cannot update quantity: No branchId provided for item ${itemId}.`);
+    }
+    await apiClient.put(`Item/Branch/${payload.branchId}/Item/${itemId}`, null, {
+      params: { quantity: payload.quantity },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
-  }
-}
-
-export async function updateInventoryItemQuantity(itemId: number, branchId: number, quantity: number): Promise<void> {
-  const normalizedQuantity = normalizeQuantity(quantity);
-  const response = await fetch(`${API_BASE}/Item/Branch/${branchId}/Item/${itemId}?quantity=${normalizedQuantity}`, {
-    method: 'PUT',
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
 export async function createInventoryItem(payload: InventoryItemCreate): Promise<InventoryCreatedItem> {
-  const response = await fetch(`${API_BASE}/Item/item/CreateItemDefaultQuantity`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  let body: Record<string, unknown>;
+
+  try {
+    const response = await apiClient.post<Record<string, unknown>>('Item/item/CreateItemDefaultQuantity', {
       itemName: payload.itemName,
       itemCategory: payload.itemCategory,
-      productionTime: normalizeQuantity(payload.productionTime),
-      price: normalizePrice(payload.price),
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+      productionTime: payload.productionTime,
+      price: payload.price,
+    });
+    body = response.data;
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
-
-  const body = (await response.json()) as Record<string, unknown>;
 
   return {
     itemID: Number(body.itemID ?? body.ItemID ?? 0),
     itemName: String(body.itemName ?? body.ItemName ?? payload.itemName),
     itemCategory: String(body.itemCategory ?? body.ItemCategory ?? payload.itemCategory),
     productionTime: Number(body.productionTime ?? body.ProductionTime ?? payload.productionTime),
-    price: normalizePrice(Number(body.price ?? body.Price ?? payload.price ?? 0)),
   };
 }
 
 export async function createInventoryItemIngredient(payload: InventoryItemIngredientCreate): Promise<void> {
-  const response = await fetch(`${API_BASE}/Item/itemIngredient/`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    await apiClient.post('Item/itemIngredient/', {
       ProductID: payload.productID,
       IngredientID: payload.ingredientID,
       IngredientQuantity: payload.ingredientQuantity,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+    });
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
@@ -370,43 +381,20 @@ export type InventoryItem = {
   sku: string;
   category: string;
   quantity: number;
-  price: number;
+  price: number | null;
   minStock: number;
   location: string;
-  primaryBranchId?: number;
+  branchId: number;
   status: string;
   productionTime: number;
   tab?: string;
 };
 
-function normalizePrice(value: number): number {
-  if (!Number.isFinite(value)) {
-    return 0;
-  }
-
-  const rounded = Math.round(Math.max(0, value) * 100) / 100;
-  return Number(rounded.toFixed(2));
-}
-
-function normalizeQuantity(value: number): number {
-  if (!Number.isFinite(value)) {
-    return 0;
-  }
-
-  return Math.max(0, Math.trunc(value));
-}
-
 export async function getInventoryItems(): Promise<InventoryItem[]> {
-  const [rows, branchCapacities, branches] = await Promise.all([
-    fetchJson<InventoryRowDto[]>(`${API_BASE}/Item/item/allInventoryItems`),
-    getBranchItems(),
-    getBranches(),
-  ]);
-
-  const branchNameById = new Map<number, string>(branches.map((branch) => [branch.BranchID, normalizeLocation(branch.BranchName)]));
+  const rows = await fetchJson<InventoryRowDto[]>('Item/item/allInventoryItems');
 
   // Collapse branch-level rows into per-item aggregates (sum quantities, choose primary location)
-  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number; locations: Record<string, number>; productionTime?: number }>();
+  const map = new Map<number, { id: number; name: string; category: string; sku: string; quantity: number; price: number | null; locations: Record<string, number>; branchId: number ; productionTime?: number }>();
 
   for (const r of rows) {
     const id = r.inventoryItemId;
@@ -415,16 +403,26 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
     const sku = `${category.slice(0, 3).toUpperCase()}-${id}`;
     const qty = r.inventoryItemQuantity ?? 0;
     const loc = normalizeLocation(r.inventoryItemBranchName);
-    const price = normalizePrice(Number(r.inventoryItemPrice ?? 0));
+    const branchId = r.inventoryItemBranchId;
 
     if (!map.has(id)) {
-      map.set(id, { id, name, category, sku, quantity: qty, price, locations: { [loc]: qty }, productionTime: r.inventoryItemProductionTime });
+      map.set(id, {
+        id,
+        name,
+        category,
+        sku,
+        quantity: qty,
+        price: r.inventoryItemPrice == null ? null : Number(r.inventoryItemPrice),
+        locations: { [loc]: qty },
+        branchId,
+        productionTime: r.inventoryItemProductionTime,
+      });
     } else {
       const entry = map.get(id)!;
       entry.quantity += qty;
       entry.locations[loc] = (entry.locations[loc] ?? 0) + qty;
-      if (entry.price === 0 && price > 0) {
-        entry.price = price;
+      if (entry.price == null && r.inventoryItemPrice != null) {
+        entry.price = Number(r.inventoryItemPrice);
       }
     }
   }
@@ -432,9 +430,6 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
   const items: InventoryItem[] = Array.from(map.values()).map((e) => {
     // pick primary location as the one with highest quantity
     const primaryLocation = Object.entries(e.locations).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unassigned';
-    const primaryBranchId = branchCapacities
-      .filter((capacity) => capacity.ItemID === e.id && branchNameById.get(capacity.BranchID) === primaryLocation)
-      .sort((left, right) => right.ItemQuantity - left.ItemQuantity)[0]?.BranchID;
     const minStock = DEFAULT_MIN_STOCK;
     const status = e.quantity <= minStock ? 'LOW' : 'OK';
 
@@ -447,7 +442,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
       price: e.price,
       minStock,
       location: primaryLocation,
-      primaryBranchId,
+      branchId: e.branchId,
       status,
       productionTime: e.productionTime ?? 0,
       tab: slugifyCategory(e.category),
@@ -474,7 +469,6 @@ const inventoryApi = {
   createInventoryItem,
   createInventoryItemIngredient,
   updateInventoryItem,
-  updateInventoryItemQuantity,
   buildInventoryOverview,
 };
 

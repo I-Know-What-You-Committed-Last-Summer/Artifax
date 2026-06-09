@@ -4,6 +4,9 @@ export type CurrentUser = {
   name: string;
   role: string;
   email?: string;
+  employeeId?: number;
+  branchId?: number;
+  branchName?: string;
 };
 
 const CURRENT_USER_KEY = 'artifax.currentUser';

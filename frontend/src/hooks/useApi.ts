@@ -1,12 +1,19 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://artifax-5lqg.onrender.com/api/';
+const rawApiBase = process.env.REACT_APP_API_BASE || 'https://artifax-5lqg.onrender.com';
+const normalizedApiBase = rawApiBase.replace(/\/+$/, '');
+const API_BASE_URL = normalizedApiBase.endsWith('/api') ? normalizedApiBase : `${normalizedApiBase}/api`;
 
 // Create a singleton axios instance to ensure session cookies persist across requests
 const apiInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Send session cookies with every request
 });
+
+/**
+ * Export the raw axios instance for use in non-React modules (services)
+ */
+export const api = apiInstance;
 
 /**
  * Custom hook that returns the shared axios instance

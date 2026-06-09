@@ -14,7 +14,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import './graph.css';
 import FilterSelect from '../../../../components/common/FilterSelect';
-import { useApi } from '../../../../hooks/useApi';
+import { useApi } from '../../../../hooks';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler, Legend);
 

@@ -1,6 +1,27 @@
 import { calculateProgress, formatTimeLeft, normalizeQueueStatus, QueueJobStatus } from './craftingUtils';
+import { api as apiClient } from '../hooks/useApi';
+import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5253/api';
+function toFetchStyleError(error: unknown): Error {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+
+    if (status != null) {
+      return new Error(`Fetch error ${status} ${statusText ?? ''}`.trim());
+    }
+
+    if (error.message) {
+      return new Error(error.message);
+    }
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error('Request failed');
+}
 
 type OrderItemDto = {
   itemName: string;
@@ -47,14 +68,13 @@ export type QueueJob = {
   location: string;
 };
 
-function fetchJson<T>(url: string): Promise<T> {
-  return fetch(url, { credentials: 'include' }).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Fetch error ${response.status} ${response.statusText}`);
-    }
-
-    return response.json() as Promise<T>;
-  });
+async function fetchJson<T>(url: string): Promise<T> {
+  try {
+    const response = await apiClient.get<T>(url);
+    return response.data;
+  } catch (error) {
+    throw toFetchStyleError(error);
+  }
 }
 
 function formatDateTime(value: string): string {
@@ -90,11 +110,11 @@ function deriveJobType(name: string): CraftingJob['type'] {
 }
 
 export async function getOrders(): Promise<OrderDto[]> {
-  return fetchJson<OrderDto[]>(`${API_BASE}/Order`);
+  return fetchJson<OrderDto[]>('Order');
 }
 
 export async function getUsers(): Promise<any[]> {
-  return fetchJson<any[]>(`${API_BASE}/User`);
+  return fetchJson<any[]>('User');
 }
 
 export async function getCraftingQueue(): Promise<{ activeItems: QueueJob[]; queuedItems: QueueJob[] }> {
@@ -198,33 +218,25 @@ export async function getActiveAndQueuedJobs(): Promise<{ activeItems: CraftingJ
 }
 
 export async function updateOrderStatus(orderId: number, status: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/Order/${orderId}/status`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ status } satisfies OrderStatusUpdateDto),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  try {
+    await apiClient.put(`Order/${orderId}/status`, { status } satisfies OrderStatusUpdateDto);
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
 export async function deleteOrder(orderId: number): Promise<void> {
-  const response = await fetch(`${API_BASE}/Order/${orderId}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Fetch error ${response.status} ${response.statusText}`);
+  try {
+    await apiClient.delete(`Order/${orderId}`);
+  } catch (error) {
+    throw toFetchStyleError(error);
   }
 }
 
 const orderApi = {
   getOrders,
+  getUsers,
+  getCraftingQueue,
   getCraftingJobs,
   getActiveAndQueuedJobs,
   updateOrderStatus,
