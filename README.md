@@ -16,7 +16,27 @@ The core objective of the system is to deliver a highly scalable backend archite
 
 
 ## Installation
-    -
+
+<table>
+<tr>
+
+
+### Step 1:
+Go to the [Artifax Releases](https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax/releases) page on GitHub and select the **latest version**.
+
+### Step 2:
+Download the **`Artifax-win32-x64.zip`** asset.
+
+### Step 3:
+Extract (unzip) the contents of the downloaded ZIP file to your preferred directory.
+
+### Step 4:
+Open the extracted folder and run **`Artifax.exe`** to launch the application.
+
+
+</tr>
+</table>
+   
 ## Usage Guide
 
 <table width="100%">
