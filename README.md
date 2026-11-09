@@ -9,6 +9,7 @@
 - [Test Coverage](#test-coverage)
 - [Final Outcome](#final-outcome)
 - [Technologies used](#technologies-used)
+- [Conclusion](#conclusion)
 - [Acknowledgements](#acknowledgements)
 ## Overview
 
@@ -398,6 +399,14 @@ The following section outlines all the technologies used for development and dep
 - **Docker** - Docker packages applications and their dependencies into standardized, isolated containers. These container could then be passed along to our Render server.
 - **Render** - Render is our cloud platform of choice which we used to build and deploy our api contained within our docker application.
 - **Electron** - Electron is used for the deployment of the web app in the form of a sharable executable application. 
+
+## Conclusion
+
+Artifax brings inventory tracking, crafting, and staff management into a shared workspace designed for warehouse users with different levels of technical experience. Highlights include stock tracking across branches, blueprint-based production, a queue that manages up to three active orders per branch, and role-based access with two-factor authentication. A focused dashboard, consistent navigation, and light and dark themes aim to make everyday tasks easier to understand.
+
+Client feedback helped us address several challenges. The original database separated products from materials, making it difficult to use a crafted item as an ingredient. We redesigned it around a shared item catalogue and ingredient relationships. We also replaced a separate administrator model with role-based employee accounts, and introduced a background service and order history to track production over time. Maintaining readable, consistent components across both themes required ongoing attention to contrast, spacing, and layout.
+
+Looking ahead, a dedicated blueprint entity could support multiple recipes for the same item. A more unified theming system would make both themes easier to maintain and improve consistency and accessibility. Further work could also expand the client's requested procurement and seasonal-demand analysis and explore visual crafting simulations. Continued user feedback and testing will help guide these improvements as the application evolves.
 
 ## Copyright
 
