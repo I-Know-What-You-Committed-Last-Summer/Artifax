@@ -1,4 +1,4 @@
-![Artifax](frontend/src/assets/ReadmeImg/Artifax.png)
+![Artifax](ProjectHeader.png)
 
 ### Table Of Contents
 - [Overview](#overview)
@@ -433,3 +433,4 @@ Lastly we would like to acknowledge the following people and resources that aide
 - Stack Overflow Community
 - Github Copilot
 - Google Gemini
+
