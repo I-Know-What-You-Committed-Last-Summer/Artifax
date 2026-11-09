@@ -19,54 +19,78 @@ The core objective of the system is to deliver a highly scalable backend archite
 
 ### Prerequisites
 
-- [Git](https://git-scm.com/downloads) to clone the repository.
-- [Node.js (LTS)](https://nodejs.org/) and npm to install and run the frontend.
-- An internet connection: by default, the frontend connects to the hosted Artifax API, so you do not need to install PostgreSQL or configure a database to run the frontend.
+- **To use the Windows desktop release:** 64-bit Windows, an internet connection, an Artifax user account and [Google Authenticator](https://support.google.com/accounts/answer/1066447) on your phone for two-factor authentication. Ask an Artifax administrator for an account.
+- **To run from source:** [Git](https://git-scm.com/downloads) and [Node.js with npm](https://nodejs.org/). Running the backend locally additionally requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and access to a configured PostgreSQL database, as described below.
 
 No third-party API keys are required.
 
-> **Running the backend locally is optional.** The backend stores application data in a PostgreSQL database. PostgreSQL is a separate database server, not a package installed with Artifax. To run the backend, you need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), PostgreSQL, and connection details (server address, database name, username, and password) for an Artifax database whose tables are already set up. This repository does not include the initial database schema, so creating a new empty database is not enough; ask the project maintainers for access to a configured database. The frontend can use the hosted API instead.
-
 ### Install and run
 
-1. Clone the repository:
+#### Option 1: Use the Windows desktop release
+
+The desktop app is downloaded and run on your computer. Its frontend source is configured to use a hosted backend API by default; you do not need to run the backend or install PostgreSQL yourself. This is not a hosted website that you can open directly in a browser.
+
+1. Open the [Artifax Releases page](https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax/releases/latest).
+2. Under **Assets**, download `Artifax-win32-x64.zip`.
+3. Extract the ZIP file, open the extracted folder, and double-click `Artifax.exe`.
+4. Sign in with the email address and password supplied by your Artifax administrator.
+5. On the verification screen, select **First time?** if you have not set up your authenticator. Scan the displayed QR code with Google Authenticator, enter the six-digit code, and select **Verify Account**. On later sign-ins, enter the current code from your authenticator.
+6. Continue to the dashboard. See the [Usage Guide](#usage-guide) for the available screens.
+
+The configured hosted API is `https://artifax-5lqg.onrender.com`. Its availability and the release's connection to it could not be verified from this environment; if sign-in or data loading fails, contact the project maintainers. Access also depends on having an account on that backend.
+
+#### Option 2: Run the frontend from source
+
+The frontend defaults to the hosted API. To use it without running a local backend, ensure the hosted service is available and that you have an account. In a terminal, run:
+
+```bash
+git clone https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax.git
+cd Artifax/frontend
+npm ci
+npm exec react-scripts start
+```
+
+The React development server opens at [http://localhost:3000](http://localhost:3000). Keep it running, then follow the sign-in steps above. To open the Electron desktop app instead, open another terminal in `Artifax/frontend` and run:
+
+```bash
+npm start
+```
+
+#### Option 3: Run both backend and frontend locally
+
+PostgreSQL is the database server used to store Artifax data. Install it from [postgresql.org](https://www.postgresql.org/download/) if your database is on your own computer, or use an accessible PostgreSQL server. You also need the server address, port, database name, username, and password for an **existing Artifax database with its tables already set up**.
+
+> The repository contains later database migrations but not the initial schema. Installing PostgreSQL and creating an empty database is therefore not enough. Ask the project maintainers for access to a configured database and an Artifax account before continuing.
+
+1. Clone the repository as shown in option 2. Open a terminal in `Artifax/Backend`, then store the PostgreSQL connection string supplied by the database administrator in .NET User Secrets and start the backend:
 
    ```bash
-   git clone https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax.git
-   cd Artifax
+   dotnet user-secrets set "ConnectionStrings:ArtifaxDatabase" "<PostgreSQL connection string>"
+   dotnet restore
+   dotnet dev-certs https --trust
+   dotnet run --launch-profile https
    ```
 
-2. Install the frontend dependencies and start the React app. Leave this terminal open. The app uses the hosted Artifax API by default, so no database setup is needed:
+   Replace the placeholder with your actual connection string; do not commit it to the repository. The backend runs at `https://localhost:7040`, with API documentation at [https://localhost:7040/swagger](https://localhost:7040/swagger). Keep this terminal open.
+
+2. Open another terminal in `Artifax/frontend`, install dependencies, and point the frontend to the local backend before starting it:
+
+   **macOS/Linux**
 
    ```bash
-   cd frontend
    npm ci
+   REACT_APP_API_BASE=https://localhost:7040 npm exec react-scripts start
+   ```
+
+   **Windows PowerShell**
+
+   ```powershell
+   npm ci
+   $env:REACT_APP_API_BASE = "https://localhost:7040"
    npm exec react-scripts start
    ```
 
-   The React development server opens in your browser at [http://localhost:3000](http://localhost:3000).
-
-3. To run the Electron desktop app instead of (or as well as) using the browser, open a second terminal and run:
-
-   ```bash
-   cd Artifax/frontend
-   npm start
-   ```
-
-   Electron loads the React app from `http://localhost:3000`, so keep the React development server running.
-
-#### Run the backend locally (optional)
-
-Only follow these steps if you have the configured Artifax PostgreSQL database and its connection details from the project maintainers. Replace the example connection string with the one they provide:
-
-```bash
-cd Artifax/Backend
-dotnet user-secrets set "ConnectionStrings:ArtifaxDatabase" "Host=SERVER;Port=5432;Database=DATABASE;Username=USERNAME;Password=PASSWORD"
-dotnet restore
-dotnet run --urls http://localhost:5253
-```
-
-To make the frontend use this local backend, set `REACT_APP_API_BASE` to `http://localhost:5253` before starting the React development server. In Development mode, backend API documentation is available at [http://localhost:5253/swagger](http://localhost:5253/swagger).
+   Open [http://localhost:3000](http://localhost:3000) and sign in with an account on your local backend's database. Keep both terminals running. The backend uses secure session cookies, so HTTPS is required for sign-in.
 
 ## Usage Guide
 
