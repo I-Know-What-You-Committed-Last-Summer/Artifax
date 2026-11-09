@@ -37,7 +37,7 @@ No third-party API keys are required for local development. The frontend default
    cd Artifax
    ```
 
-2. Configure the backend with the connection details for your Artifax PostgreSQL database. User Secrets keeps the connection string out of the source tree; replace the example values with your own:
+2. Configure the backend with the connection details for your Artifax PostgreSQL database. User Secrets keeps the connection string out of the source tree; provide your own connection string:
 
    ```bash
    cd Backend
@@ -50,14 +50,14 @@ No third-party API keys are required for local development. The frontend default
 
    Keep this terminal open while using the app. In Development mode, the API documentation is available at [http://localhost:5253/swagger](http://localhost:5253/swagger).
 
-3. Open a second terminal, install the frontend dependencies, and start the desktop app. The API base URL must point to the backend started in step 2.
+3. Open a second terminal, install the frontend dependencies, and start the React development server. The API base URL must point to the backend started in step 2.
 
    **macOS/Linux**
 
    ```bash
    cd Artifax/frontend
    npm ci
-   REACT_APP_API_BASE=http://localhost:5253 npm start
+   REACT_APP_API_BASE=http://localhost:5253 npm exec react-scripts start
    ```
 
    **Windows PowerShell**
@@ -66,8 +66,17 @@ No third-party API keys are required for local development. The frontend default
    cd Artifax/frontend
    npm ci
    $env:REACT_APP_API_BASE = "http://localhost:5253"
+   npm exec react-scripts start
+   ```
+
+4. To open the Electron desktop app, open a third terminal and run:
+
+   ```bash
+   cd Artifax/frontend
    npm start
    ```
+
+   Electron loads the React development server at `http://localhost:3000`. Keep the backend and React server terminals running while using the app.
 
 ## Usage Guide
 
