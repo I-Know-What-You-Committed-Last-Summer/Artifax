@@ -4,6 +4,7 @@
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage Guide](#usage-guide)
+- [Development Process](#development-process)
 - [Additional Mockups](#additional-mockups)
 - [Test Coverage](#test-coverage)
 - [Technologies used](#technologies-used)
@@ -177,6 +178,145 @@ PostgreSQL is the database server used to store Artifax data. Install it from [p
 </table>
 
 
+
+## Development Process
+
+Artifax was developed with warehouse staff and managers in mind. The client needed a simple way to track stock across locations, manage item production, and oversee staff without adding unnecessary complexity. The team used client feedback to refine the data model and authentication approach as the product took shape.
+
+### Product and interface decisions
+
+- **Reduce training and cognitive load:** The interface groups related information into dashboard-style cards and guides users through focused screens for inventory, crafting, analytics, and staff management. A consistent sidebar and shared layout make navigation predictable.
+- **Support long shifts and varied work environments:** A calm blue palette, readable typography, large controls, and clear contrast make key information easier to scan. Light and dark themes accommodate different lighting conditions and user preferences.
+- **Separate access by responsibility:** Staff and administrators use the same account model, with role-based access to operational and administrative features. Sign-in is followed by a six-digit authenticator check.
+- **Keep production visible and manageable:** Crafting blueprints define which ingredients and quantities go into an item. Orders move through a queue, with no more than three active orders per branch, while order history records status changes.
+
+### Application architecture
+
+The desktop client is built with React and Electron. It communicates with an ASP.NET Core API over HTTPS; the API uses Entity Framework Core to access PostgreSQL. The API also runs a background service that updates active order timers, completes finished orders, and starts queued work when a branch has capacity.
+
+The presentation describes the hosted deployment as Electron/React client → Render-hosted ASP.NET API → Aiven-hosted PostgreSQL. The frontend source is configurable to use a hosted API or a local API.
+
+```mermaid
+flowchart LR
+    User[Warehouse user]
+    Desktop[Electron desktop app]
+    React[React interface]
+    API[ASP.NET Core API]
+    Controllers[API controllers]
+    EF[Entity Framework Core]
+    Worker[Order timing background service]
+    DB[(PostgreSQL database)]
+
+    User --> Desktop
+    Desktop --> React
+    React -->|HTTPS requests and session cookie| API
+    API --> Controllers
+    Controllers --> EF
+    Worker --> EF
+    EF --> DB
+```
+
+### Sign-in and work flow
+
+After credentials are checked, the user verifies a one-time code from an authenticator app. The API establishes a session and the interface loads the account’s permitted workspace. Operational work then centers on checking stock and blueprints, creating a production order, and tracking it through completion.
+
+```mermaid
+flowchart TD
+    A[Open Artifax] --> B[Enter email and password]
+    B --> C{Credentials valid?}
+    C -- No --> B
+    C -- Yes --> D[Enter six-digit authenticator code]
+    D --> E{Code valid?}
+    E -- No --> D
+    E -- Yes --> F[Open role-appropriate workspace]
+    F --> G[Review branch inventory]
+    G --> H[Choose or manage a crafting blueprint]
+    H --> I[Create production order]
+    I --> J{Expedited and branch has capacity?}
+    J -- Yes --> K[Start order]
+    J -- No --> L[Add order to queue]
+    K --> M[Track progress and order history]
+    L --> N[Background service starts oldest queued order when capacity is available]
+    N --> M
+    M --> O[Completed item is added to branch inventory]
+```
+
+### Data model and design evolution
+
+The first design kept products and raw materials in separate tables. Client feedback surfaced a common production need: an already crafted product might itself be used as an ingredient in another product. Artifax therefore represents both as `Item` records and connects them through `ItemIngredient`. This avoids duplicating the same item and supports multi-step recipes. `BranchItemCapacity` records stock separately for each item at each branch.
+
+```mermaid
+erDiagram
+    BRANCH ||--o{ EMPLOYEE : assigns
+    BRANCH ||--o{ PRODUCTION_ORDER : receives
+    BRANCH ||--o{ BRANCH_ITEM_CAPACITY : stores
+    ITEM ||--o{ BRANCH_ITEM_CAPACITY : stocked_as
+    ITEM ||--o{ PRODUCTION_ORDER : produced_as
+    EMPLOYEE ||--o{ PRODUCTION_ORDER : creates
+    PRODUCTION_ORDER ||--o{ ORDER_HISTORY : records
+    EMPLOYEE o|--o{ ORDER_HISTORY : changes
+    ITEM ||--o{ ITEM_INGREDIENT : recipe_product
+    ITEM ||--o{ ITEM_INGREDIENT : recipe_ingredient
+
+    BRANCH {
+        int BranchID PK
+        string BranchName
+    }
+    EMPLOYEE {
+        int EmployeeId PK
+        int BranchId FK
+        string EmployeeEmail
+        string EmployeeName
+        string EmployeeLevel
+        string EmployeePasswordHash
+        string TwoFactorSecret
+    }
+    ITEM {
+        int ItemID PK
+        string ItemName
+        string ItemCategory
+        int ProductionTime
+        float Price
+    }
+    BRANCH_ITEM_CAPACITY {
+        int BranchItemCapacityID PK
+        int BranchID FK
+        int ItemID FK
+        int ItemQuantity
+    }
+    ITEM_INGREDIENT {
+        int ItemIngredientID PK
+        int ProductID FK
+        int IngredientID FK
+        int IngredientQuantity
+    }
+    PRODUCTION_ORDER {
+        int OrderID PK
+        int BranchID FK
+        int ItemID FK
+        int EmployeeID FK
+        int Quantity
+        string Status
+        int TotalTime
+        int TimeElapsed
+    }
+    ORDER_HISTORY {
+        int OrderHistoryID PK
+        int OrderID FK
+        int ChangedByEmployeeID FK
+        string PreviousStatus
+        string NewStatus
+        datetime ChangedDateTime
+        string ChangeReason
+    }
+```
+
+### Challenges and trade-offs
+
+- **Recipe flexibility:** Combining products and materials into one item catalogue makes crafted goods reusable as ingredients. The current model associates one ingredient list with an item; supporting multiple alternative recipes would require a separate blueprint entity.
+- **Consistent permissions:** Replacing a separate administrator model with role-based employee accounts simplified sign-in and allowed the same session mechanism to carry each user’s role.
+- **Production timing and auditability:** A backend background service advances active orders and moves queued orders into available branch capacity. `OrderHistory` records automatic and user-driven status changes for traceability and reporting.
+- **Theme consistency:** Supporting both light and dark appearances requires charts, forms, tables, and navigation to remain readable across themes. The implementation uses shared theme tokens, while a more unified theme system remains an area for future refinement.
 
 ## Test Coverage
 
