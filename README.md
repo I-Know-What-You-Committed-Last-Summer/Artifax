@@ -7,6 +7,7 @@
 - [Development Process](#development-process)
 - [Additional Mockups](#additional-mockups)
 - [Test Coverage](#test-coverage)
+- [Final Outcome](#final-outcome)
 - [Technologies used](#technologies-used)
 - [Acknowledgements](#acknowledgements)
 ## Overview
@@ -342,6 +343,12 @@ This included verifying standard CRUD operations, complex relational updates, an
 In terms of testing we employed a suite of technologies in order to engage in various forms of both manual and automatic. This includes:
 - Jest and xUnit for automated testing of our frontend and backend applications. These two technologies were also built in additions to react and dotnet.
 - Swagger and Insomnia for manual testing of backend during early to mid and later development accordingly.
+
+## Final Outcome
+
+Artifax brings multi-location inventory tracking, crafting workflows, and role-based management together in a single application.
+
+**How-to-use demo video:** Google Drive link to be added.
 
 ## Technologies used
 
