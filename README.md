@@ -17,26 +17,58 @@ The core objective of the system is to deliver a highly scalable backend archite
 
 ## Installation
 
-<table>
-<tr>
+### Prerequisites
 
+- [Git](https://git-scm.com/downloads) to clone the repository.
+- The [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) to restore and run the backend.
+- [Node.js (LTS)](https://nodejs.org/) and npm to install and run the frontend.
+- [PostgreSQL](https://www.postgresql.org/download/) and access to an Artifax database. The backend requires PostgreSQL connection credentials.
 
-### Step 1:
-Go to the [Artifax Releases](https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax/releases) page on GitHub and select the **latest version**.
+No third-party API keys are required for local development. The frontend defaults to the hosted API; the run instructions below configure it to use a local backend.
 
-### Step 2:
-Download the **`Artifax-win32-x64.zip`** asset.
+> **Database note:** This repository currently contains only incremental database migrations, not the initial schema migration. A new, empty PostgreSQL database cannot be initialized from this repository alone. Obtain an Artifax database with the required schema (and any desired data) from the project maintainers before running the application.
 
-### Step 3:
-Extract (unzip) the contents of the downloaded ZIP file to your preferred directory.
+### Install and run
 
-### Step 4:
-Open the extracted folder and run **`Artifax.exe`** to launch the application.
+1. Clone the repository:
 
+   ```bash
+   git clone https://github.com/I-Know-What-You-Committed-Last-Summer/Artifax.git
+   cd Artifax
+   ```
 
-</tr>
-</table>
-   
+2. Configure the backend with the connection details for your Artifax PostgreSQL database. User Secrets keeps the connection string out of the source tree; replace the example values with your own:
+
+   ```bash
+   cd Backend
+   dotnet user-secrets set "ConnectionStrings:ArtifaxDatabase" "<your PostgreSQL connection string>"
+   dotnet restore
+   dotnet run --urls http://localhost:5253
+   ```
+
+   Replace the placeholder with your PostgreSQL connection string, including the host, port, database name, username, and password.
+
+   Keep this terminal open while using the app. In Development mode, the API documentation is available at [http://localhost:5253/swagger](http://localhost:5253/swagger).
+
+3. Open a second terminal, install the frontend dependencies, and start the desktop app. The API base URL must point to the backend started in step 2.
+
+   **macOS/Linux**
+
+   ```bash
+   cd Artifax/frontend
+   npm ci
+   REACT_APP_API_BASE=http://localhost:5253 npm start
+   ```
+
+   **Windows PowerShell**
+
+   ```powershell
+   cd Artifax/frontend
+   npm ci
+   $env:REACT_APP_API_BASE = "http://localhost:5253"
+   npm start
+   ```
+
 ## Usage Guide
 
 <table width="100%">
