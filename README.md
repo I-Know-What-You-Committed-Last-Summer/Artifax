@@ -5,12 +5,14 @@
 - [Installation](#installation)
 - [Usage Guide](#usage-guide)
 - [Development Process](#development-process)
-- [Additional Mockups](#additional-mockups)
 - [Test Coverage](#test-coverage)
 - [Final Outcome](#final-outcome)
 - [Technologies used](#technologies-used)
 - [Conclusion](#conclusion)
+- [Copyright](#copyright)
+- [Creators](#creators)
 - [Acknowledgements](#acknowledgements)
+
 ## Overview
 
 The purpose of this project report is to present the completed application for the simple and highly reliable inventory management system, Artifax. Developed to avoid unnecessary complication, the system provides a direct approach to tracking internal warehouse operations focusing entirely on internal warehouse components rather than external factors.
